@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from app.core.database import Base
+from sqlalchemy.orm import relationship
 
 class User(Base):
     __tablename__ = "users"
@@ -13,3 +14,8 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
 
     role = Column(String, default="user")
+    
+    quotations = relationship(
+    "Quotation",
+    back_populates="created_by_user"
+)

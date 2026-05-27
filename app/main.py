@@ -5,9 +5,12 @@ from app.core.database import Base, engine
 from app.models.user import User
 from app.models.client import Client
 from app.models.service import Service
-from app.routers.auth import router as auth_router
+from app.models.quotation import Quotation
+from app.models.quotation_item import QuotationItem
 
 from app.routers.client import router as client_router
+from app.routers.auth import router as auth_router
+from app.routers.service import router as service_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -18,6 +21,7 @@ app = FastAPI(
 
 app.include_router(client_router)
 app.include_router(auth_router)
+app.include_router(service_router)
 
 @app.get("/")
 def root():

@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text
 from app.core.database import Base
+from sqlalchemy.orm import relationship
 
 class Client(Base):
     __tablename__ = "clients"
@@ -17,3 +18,8 @@ class Client(Base):
     industry = Column(String)
 
     notes = Column(Text)
+    
+    quotations = relationship(
+    "Quotation",
+    back_populates="client"
+)
