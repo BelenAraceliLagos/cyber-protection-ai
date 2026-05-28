@@ -4,6 +4,12 @@ from fastapi import (
     HTTPException
 )
 
+from fastapi.responses import FileResponse
+
+from app.services.pdf_service import (
+    generate_quotation_pdf
+)
+
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -133,3 +139,35 @@ def get_quotation(
         )
 
     return quotation
+
+@router.post("/export-pdf/{quotation_id}")
+def export_pdf(
+    quotation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    quotation = db.query(Quotation).filter(
+        Quotation.id == quotation_id
+    ).first()
+
+    if not quotation:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Quotation not found"
+        )
+
+    pdf_path = generate_quotation_pdf(
+        quotation
+    )
+
+    quotation.pdf_path = pdf_path
+
+    db.commit()
+
+    return FileResponse(
+        path=pdf_path,
+        filename=f"quotation_{quotation.id}.pdf",
+        media_type="application/pdf"
+    )
