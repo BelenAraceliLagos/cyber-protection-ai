@@ -18,16 +18,28 @@ def generate_text(prompt: str):
             timeout=120
         )
 
+        print("STATUS:", response.status_code)
+
+        print("RAW RESPONSE:", response.text)
+
         data = response.json()
 
-        return data.get("response")
+        generated_text = data.get("response")
+
+        if not generated_text:
+
+            return """
+            ERROR:
+            Ollama respondió vacío.
+            """
+
+        return generated_text
 
     except Exception as e:
 
-        print("OLLAMA ERROR:", e)
+        print("OLLAMA ERROR:", str(e))
 
-        return """
-        Informe generado temporalmente.
-
-        No fue posible conectar con Ollama.
+        return f"""
+        ERROR OLLAMA:
+        {str(e)}
         """
