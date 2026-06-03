@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar sesión — Cyber-Protection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/pages/login.css">
+</head>
+<body>
+
+<div id="alert-container" class="alert-container"></div>
+
+<main class="login-page">
+  <div class="login-left">
+    <div class="login-left__inner page-enter">
+
+      <div class="login-left__logo">
+        <div class="login-left__logo-mark">
+          <i class="ti ti-shield-lock" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="login-left__brand">CYBER-PROTECTION</div>
+          <div class="login-left__tagline">Ciberseguridad para todos</div>
+        </div>
+      </div>
+
+      <div class="login-left__heading page-enter page-enter--d1">
+        <h1>Sistema de preventas</h1>
+        <p>Genera propuestas comerciales profesionales con inteligencia artificial, en minutos.</p>
+      </div>
+
+      <div class="login-left__features page-enter page-enter--d2">
+        <div class="login-feature">
+          <div class="login-feature__icon">
+            <i class="ti ti-robot" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="login-feature__title">IA local con Ollama</div>
+            <div class="login-feature__desc">Tus datos nunca salen del servidor</div>
+          </div>
+        </div>
+        <div class="login-feature">
+          <div class="login-feature__icon">
+            <i class="ti ti-file-description" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="login-feature__title">PDF automático</div>
+            <div class="login-feature__desc">Propuestas listas para enviar</div>
+          </div>
+        </div>
+        <div class="login-feature">
+          <div class="login-feature__icon">
+            <i class="ti ti-history" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="login-feature__title">Historial completo</div>
+            <div class="login-feature__desc">Todas las cotizaciones centralizadas</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="login-left__cta page-enter page-enter--d3">
+        <button type="button" class="btn btn--primary btn--lg btn--full" id="open-login-modal">
+          <i class="ti ti-arrow-right btn__icon" aria-hidden="true"></i>
+          Iniciar sesión
+        </button>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- Modal de inicio de sesión -->
+<div class="modal-backdrop" id="login-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+
+    <div class="modal__header">
+      <div>
+        <h2 class="modal__title" id="login-modal-title">Bienvenido</h2>
+        <p class="login-modal__sub">Ingresa tus credenciales para continuar</p>
+      </div>
+      <button type="button" class="modal__close" id="close-login-modal" aria-label="Cerrar">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+
+    <div class="modal__body">
+      <form id="login-form" novalidate>
+
+        <div class="form__group">
+          <label for="login-email">Correo electrónico</label>
+          <div class="login-input-wrap">
+            <i class="ti ti-mail login-input-wrap__icon" aria-hidden="true"></i>
+            <input
+              type="email"
+              id="login-email"
+              name="email"
+              placeholder="nombre@empresa.cl"
+              autocomplete="email"
+              required
+              class="login-input-wrap__input"
+            >
+          </div>
+        </div>
+
+        <div class="form__group">
+          <label for="login-password">Contraseña</label>
+          <div class="login-input-wrap">
+            <i class="ti ti-lock login-input-wrap__icon" aria-hidden="true"></i>
+            <input
+              type="password"
+              id="login-password"
+              name="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              required
+              class="login-input-wrap__input"
+            >
+            <button type="button" id="toggle-password" class="login-input-wrap__toggle" aria-label="Mostrar contraseña">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--full btn--lg" id="login-submit">
+          <i class="ti ti-arrow-right btn__icon" aria-hidden="true"></i>
+          Ingresar
+        </button>
+
+      </form>
+
+      <p class="login-modal__footer">Sistema interno &mdash; acceso solo para el equipo comercial</p>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { initLogin } from '../js/auth.js'
+  initLogin()
+</script>
+
+</body>
+</html>

@@ -7,50 +7,36 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.config import SECRET_KEY, ALGORITHM
-
 from app.models.user import User
 
 security = HTTPBearer()
+
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
-
     token = credentials.credentials
 
     try:
-
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
-
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
-
         if not user_id:
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid token"
-            )
-
+            raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid token"
-        )
-
-    user = db.query(User).filter(
-        User.id == int(user_id)
-    ).first()
-
+    user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
-
-        raise HTTPException(
-            status_code=401,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=401, detail="User not found")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Usuario desactivado")
 
     return user
+
+
+def require_admin(current_user: User = Depends(get_current_user)):
+    role_names = [ur.role.name for ur in current_user.user_roles]
+    if "admin" not in role_names:
+        raise HTTPException(status_code=403, detail="Acceso restringido a administradores")
+    return current_user

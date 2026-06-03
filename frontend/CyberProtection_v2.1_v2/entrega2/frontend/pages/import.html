@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importar datos — Cyber-Protection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <style>
+    .import-dropzone {
+      border: 2px dashed var(--cp-border);
+      border-radius: 12px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      background: var(--cp-bg-soft);
+    }
+    .import-dropzone--over,
+    .import-dropzone:hover {
+      border-color: var(--cp-blue-main);
+      background: var(--cp-info-bg);
+    }
+    .import-dropzone__icon {
+      font-size: 48px;
+      color: var(--cp-blue-main);
+      margin-bottom: 12px;
+    }
+    .import-dropzone__title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--cp-text-main);
+      margin-bottom: 4px;
+    }
+    .import-dropzone__sub {
+      font-size: 13px;
+      color: var(--cp-text-muted);
+      margin-bottom: 20px;
+    }
+    .import-file-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--cp-info-bg);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .import-sample {
+      background: var(--cp-bg-soft);
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+    .import-sample-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 13px;
+      border-bottom: 1px solid var(--cp-border);
+    }
+    .import-sample-row:last-child { border-bottom: none; }
+    .import-sample-name { color: var(--cp-text-main); font-weight: 500; }
+    .import-sample-price { color: var(--cp-blue-main); font-weight: 600; }
+    .import-progress-wrap {
+      margin-top: 16px;
+    }
+    .import-progress-track {
+      height: 8px;
+      background: var(--cp-border);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .import-progress-fill {
+      height: 100%;
+      background: var(--cp-blue-main);
+      border-radius: 99px;
+      width: 0%;
+      transition: width .3s;
+    }
+    .import-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      justify-content: flex-end;
+    }
+    .import-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .import-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .import-step__num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--cp-blue-main);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .import-step__text { font-size: 13px; color: var(--cp-text-muted); line-height: 1.5; }
+    .import-step__text strong { color: var(--cp-text-main); }
+  </style>
+</head>
+<body>
+<div id="alert-container" class="alert-container"></div>
+<div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="app">
+  <header class="topbar">
+    <button class="topbar__hamburger" id="hamburger" aria-label="Abrir menu">
+      <i class="ti ti-menu-2" aria-hidden="true"></i>
+    </button>
+    <div class="topbar__logo">
+      <div class="topbar__logo-mark"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+      <span class="topbar__brand">Cyber-Protection</span>
+    </div>
+  </header>
+
+  <nav class="sidebar" id="sidebar" aria-label="Navegacion principal">
+    <div class="sidebar__header">
+      <div class="sidebar__logo-mark"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+      <span class="sidebar__brand sidebar__label">CP Sistema</span>
+      <button class="sidebar__collapse-btn" id="sidebar-collapse-btn" aria-label="Colapsar sidebar">
+        <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-collapse-icon" aria-hidden="true"></i>
+      </button>
+    </div>
+        <div class="sidebar__nav">
+      <a href="dashboard.html"     class="sidebar__item" ><i class="ti ti-home" aria-hidden="true"></i><span class="sidebar__label">Dashboard</span></a>
+      <a href="clients.html"       class="sidebar__item"  ><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
+      <a href="services.html"      class="sidebar__item"  ><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
+      <a href="opportunities.html" class="sidebar__item"  ><i class="ti ti-trending-up" aria-hidden="true"></i><span class="sidebar__label">Oportunidades</span></a>
+      <a href="quotes.html"        class="sidebar__item"  ><i class="ti ti-file-invoice" aria-hidden="true"></i><span class="sidebar__label">Propuesta rápida</span></a>
+      <a href="report.html"        class="sidebar__item"  ><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
+      <div class="sidebar__divider"></div>
+      <a href="import.html"        class="sidebar__item sidebar__item--active"  aria-current="page"><i class="ti ti-upload" aria-hidden="true"></i><span class="sidebar__label">Importar datos</span></a>
+      <a href="ingestion.html"     class="sidebar__item"  ><i class="ti ti-database-import" aria-hidden="true"></i><span class="sidebar__label">Historial</span></a>
+    </div>
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-initials">??</div>
+      <div class="sidebar__user-info sidebar__label">
+        <div class="sidebar__username" id="sidebar-username">Cargando...</div>
+        <div class="sidebar__role"     id="sidebar-role">.</div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <header class="main__topbar">
+      <span class="main__topbar-title">Importar datos</span>
+    </header>
+
+    <main class="main__content">
+      <div class="page-header page-enter">
+        <div>
+          <h1 class="page-header__title">Importar servicios</h1>
+          <p class="page-header__sub">Carga tu catálogo de servicios desde un archivo Excel</p>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+
+        <!-- Panel principal de importación -->
+        <div class="card page-enter page-enter--d1">
+          <div class="card__header">
+            <div class="card__title">Cargar archivo Excel</div>
+          </div>
+          <div class="card__body">
+
+            <!-- Dropzone -->
+            <div class="import-dropzone" id="import-dropzone">
+              <div class="import-dropzone__icon">
+                <i class="ti ti-file-spreadsheet"></i>
+              </div>
+              <div class="import-dropzone__title">Arrastra tu archivo Excel aquí</div>
+              <div class="import-dropzone__sub">o haz clic para seleccionarlo desde tu computador</div>
+              <button type="button" class="btn btn--secondary" id="import-select-btn">
+                <i class="ti ti-folder-open btn__icon"></i>
+                Seleccionar archivo
+              </button>
+              <input type="file" id="import-file-input" accept=".xlsx,.xls" style="display:none">
+            </div>
+
+            <!-- Preview del archivo -->
+            <div id="import-preview" style="display:none;margin-top:16px"></div>
+
+            <!-- Barra de progreso -->
+            <div id="import-progress" style="display:none" class="import-progress-wrap">
+              <div class="import-progress-track">
+                <div class="import-progress-fill" id="import-progress-bar"></div>
+              </div>
+              <div style="font-size:12px;color:var(--cp-text-muted);text-align:center"
+                id="import-progress-txt">0 / 0</div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="import-actions">
+              <button type="button" class="btn btn--primary" id="import-confirm-btn" disabled>
+                <i class="ti ti-upload btn__icon"></i>
+                Importar servicios
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Panel de instrucciones -->
+        <div class="card page-enter page-enter--d2">
+          <div class="card__header">
+            <div class="card__title">¿Cómo funciona?</div>
+          </div>
+          <div class="card__body">
+            <div class="import-steps">
+              <div class="import-step">
+                <div class="import-step__num">1</div>
+                <div class="import-step__text">
+                  <strong>Selecciona o arrastra</strong> tu archivo Excel (.xlsx) con el catálogo de servicios.
+                </div>
+              </div>
+              <div class="import-step">
+                <div class="import-step__num">2</div>
+                <div class="import-step__text">
+                  El sistema <strong>detecta automáticamente</strong> las columnas: nombre, descripción, categoría y precio en UF.
+                </div>
+              </div>
+              <div class="import-step">
+                <div class="import-step__num">3</div>
+                <div class="import-step__text">
+                  Revisa el <strong>preview</strong> con los primeros servicios detectados y confirma la importación.
+                </div>
+              </div>
+              <div class="import-step">
+                <div class="import-step__num">4</div>
+                <div class="import-step__text">
+                  Los servicios quedan disponibles en el <strong>catálogo</strong> y para generar propuestas PDF.
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:20px;padding:12px;background:var(--cp-info-bg);border-radius:8px;font-size:12px;color:var(--cp-text-muted)">
+              <i class="ti ti-info-circle" style="color:var(--cp-blue-main)"></i>
+              El archivo debe tener una hoja con columnas <strong>Servicio</strong>, <strong>Descripción</strong> y <strong>Valor Ref. (UF)</strong>. Los precios con rango (ej: 50–150) se promedian automáticamente.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- SheetJS para leer Excel en el navegador -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script type="module">
+  import { initSidebar }      from '../js/sidebar.js'
+  import { loadUserInfo }     from '../js/auth.js'
+  import { initProfileModal } from '../js/profile.js'
+  import { initImportServices } from '../js/import_services.js'
+  import { requireAuth }      from '../js/utils.js'
+  requireAuth()
+  loadUserInfo()
+  initSidebar()
+  initProfileModal()
+  initImportServices()
+</script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Servicios — Cyber-Protection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <link rel="stylesheet" href="../css/components.css">
+</head>
+<body>
+<div id="alert-container" class="alert-container"></div>
+<div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="app">
+  <header class="topbar">
+    <button class="topbar__hamburger" id="hamburger" aria-label="Abrir menu">
+      <i class="ti ti-menu-2" aria-hidden="true"></i>
+    </button>
+    <div class="topbar__logo">
+      <div class="topbar__logo-mark"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+      <span class="topbar__brand">Cyber-Protection</span>
+    </div>
+  </header>
+
+  <nav class="sidebar" id="sidebar" aria-label="Navegacion principal">
+    <div class="sidebar__header">
+      <div class="sidebar__logo-mark"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+      <span class="sidebar__brand sidebar__label">CP Sistema</span>
+      <button class="sidebar__collapse-btn" id="sidebar-collapse-btn" aria-label="Colapsar sidebar">
+        <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-collapse-icon" aria-hidden="true"></i>
+      </button>
+    </div>
+        <div class="sidebar__nav">
+      <a href="dashboard.html"     class="sidebar__item" ><i class="ti ti-home" aria-hidden="true"></i><span class="sidebar__label">Dashboard</span></a>
+      <a href="clients.html"       class="sidebar__item"  ><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
+      <a href="services.html"      class="sidebar__item sidebar__item--active"  aria-current="page"><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
+      <a href="opportunities.html" class="sidebar__item"  ><i class="ti ti-trending-up" aria-hidden="true"></i><span class="sidebar__label">Oportunidades</span></a>
+      <a href="quotes.html"        class="sidebar__item"  ><i class="ti ti-file-invoice" aria-hidden="true"></i><span class="sidebar__label">Propuesta rápida</span></a>
+      <a href="report.html"        class="sidebar__item"  ><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
+      <div class="sidebar__divider"></div>
+      <a href="import.html"        class="sidebar__item"  ><i class="ti ti-upload" aria-hidden="true"></i><span class="sidebar__label">Importar datos</span></a>
+      <a href="ingestion.html"     class="sidebar__item"  ><i class="ti ti-database-import" aria-hidden="true"></i><span class="sidebar__label">Historial</span></a>
+    </div>
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-initials">??</div>
+      <div class="sidebar__user-info sidebar__label">
+        <div class="sidebar__username" id="sidebar-username">Cargando...</div>
+        <div class="sidebar__role"     id="sidebar-role">.</div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <header class="main__topbar">
+      <span class="main__topbar-title">Servicios</span>
+    </header>
+
+    <main class="main__content">
+      <div class="page-header page-enter">
+        <div>
+          <h1 class="page-header__title">Servicios</h1>
+          <p class="page-header__sub">Catálogo de servicios disponibles para propuestas</p>
+        </div>
+        <button class="btn btn--primary" id="new-service-btn" onclick="openNewServiceModal()">
+          <i class="ti ti-plus btn__icon" aria-hidden="true"></i>
+          Nuevo servicio
+        </button>
+      </div>
+
+      <div class="card page-enter page-enter--d1">
+        <div class="card__header">
+          <div class="card__title">
+            Servicios activos
+            <span class="badge badge--info" id="services-count">—</span>
+          </div>
+          <div class="card__actions">
+            <div class="search-wrap">
+              <i class="ti ti-search search-wrap__icon" aria-hidden="true"></i>
+              <input type="search" id="service-search" class="search-wrap__input"
+                placeholder="Buscar servicio...">
+            </div>
+          </div>
+        </div>
+        <div class="card__body table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Servicio</th>
+                <th>Precio base</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="services-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal nuevo / editar servicio -->
+<div class="modal-backdrop" id="service-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="service-modal-title">
+    <div class="modal__header">
+      <h2 class="modal__title" id="service-modal-title">Nuevo servicio</h2>
+      <button class="modal__close" data-close-modal="service-modal" aria-label="Cerrar">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div class="modal__body">
+      <form id="service-form" novalidate>
+
+        <div class="form__group">
+          <label for="sf-name">Nombre del servicio *</label>
+          <input type="text" id="sf-name" placeholder="Ej: Incident Response (IR)"
+            class="form__input" required>
+        </div>
+
+        <div class="form__group">
+          <label for="sf-description">Descripción</label>
+          <textarea id="sf-description" rows="3"
+            placeholder="Breve descripción del servicio que aparecerá en la propuesta..."
+            class="form__input"></textarea>
+        </div>
+
+        <div class="form__group">
+          <label for="sf-price">Precio base (UF)</label>
+          <input type="number" id="sf-price" min="0" step="0.1"
+            placeholder="0.0 = A convenir" class="form__input">
+        </div>
+
+        <div class="form__group">
+          <label for="sf-active">Estado</label>
+          <select id="sf-active" class="form__input">
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+          </select>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+          <button type="button" class="btn btn--secondary" data-close-modal="service-modal">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn--primary" id="service-submit">
+            <i class="ti ti-device-floppy btn__icon" aria-hidden="true"></i>
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initSidebar }      from '../js/sidebar.js'
+  import { loadUserInfo }     from '../js/auth.js'
+  import { initProfileModal } from '../js/profile.js'
+  import { initServices }     from '../js/services.js'
+  loadUserInfo()
+  initSidebar()
+  initProfileModal()
+  initServices()
+</script>
+</body>
+</html>
