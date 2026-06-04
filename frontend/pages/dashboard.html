@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Cyber-Protection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/pages/dashboard.css">
+</head>
+<body>
+
+<div id="alert-container" class="alert-container"></div>
+<div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="app">
+
+  <!-- MOBILE TOPBAR -->
+  <header class="topbar" role="banner">
+    <button class="topbar__hamburger" id="hamburger" aria-label="Abrir menu">
+      <i class="ti ti-menu-2" aria-hidden="true"></i>
+    </button>
+    <div class="topbar__logo">
+      <div class="topbar__logo-mark">
+        <i class="ti ti-shield-lock" aria-hidden="true"></i>
+      </div>
+      <span class="topbar__brand">Cyber-Protection</span>
+    </div>
+    <div class="topbar__actions">
+      <button class="topbar__icon-btn" id="logout-btn-mobile" aria-label="Cerrar sesion">
+        <i class="ti ti-logout" aria-hidden="true"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar" aria-label="Navegacion principal">
+    <div class="sidebar__header">
+      <div class="sidebar__logo-mark">
+        <i class="ti ti-shield-lock" aria-hidden="true"></i>
+      </div>
+      <span class="sidebar__brand sidebar__label">CP Sistema</span>
+      <button class="sidebar__collapse-btn" id="sidebar-collapse-btn" aria-label="Colapsar sidebar">
+        <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-collapse-icon" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="sidebar__nav">
+      <a href="dashboard.html" class="sidebar__item sidebar__item--active" aria-current="page">
+        <i class="ti ti-home" aria-hidden="true"></i>
+        <span class="sidebar__label">Dashboard</span>
+      </a>
+      <a href="clients.html" class="sidebar__item">
+        <i class="ti ti-users" aria-hidden="true"></i>
+        <span class="sidebar__label">Clientes</span>
+      </a>
+      <a href="services.html" class="sidebar__item">
+        <i class="ti ti-briefcase" aria-hidden="true"></i>
+        <span class="sidebar__label">Servicios</span>
+      </a>
+      <a href="quotes.html" class="sidebar__item">
+        <i class="ti ti-file-invoice" aria-hidden="true"></i>
+        <span class="sidebar__label">Cotizaciones</span>
+      </a>
+      <a href="report.html" class="sidebar__item">
+        <i class="ti ti-robot" aria-hidden="true"></i>
+        <span class="sidebar__label">Generar informe</span>
+      </a>
+      <div class="sidebar__divider"></div>
+      <a href="import.html" class="sidebar__item">
+        <i class="ti ti-upload" aria-hidden="true"></i>
+        <span class="sidebar__label">Importar datos</span>
+      </a>
+    </div>
+
+    <div class="sidebar__user">
+      <button class="sidebar__avatar" id="sidebar-initials" aria-label="Editar perfil" title="Editar perfil">??</button>
+      <div class="sidebar__user-info sidebar__label">
+        <div class="sidebar__username" id="sidebar-username">Cargando...</div>
+        <div class="sidebar__role" id="sidebar-role">-</div>
+      </div>
+      <button class="sidebar__logout sidebar__label" id="logout-btn-sidebar" aria-label="Cerrar sesion" title="Cerrar sesion">
+        <i class="ti ti-logout" aria-hidden="true"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="main__topbar" role="banner">
+      <span class="main__topbar-title">Dashboard</span>
+    </header>
+
+    <main class="main__content">
+
+      <div class="page-header page-enter">
+        <div>
+          <h1 class="page-header__title" id="welcome-title">Bienvenido</h1>
+          <p class="page-header__sub">Que necesitas hacer hoy?</p>
+        </div>
+      </div>
+
+      <div class="grid-modules" role="list">
+        <a href="clients.html" class="module-card module-card--accent page-enter page-enter--d1" role="listitem">
+          <div class="module-card__icon"><i class="ti ti-users" aria-hidden="true"></i></div>
+          <div class="module-card__name">Clientes</div>
+          <div class="module-card__desc">Registrar y administrar clientes potenciales</div>
+          <div class="module-card__arrow">Ir al modulo <i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+        </a>
+        <a href="services.html" class="module-card page-enter page-enter--d2" role="listitem">
+          <div class="module-card__icon"><i class="ti ti-briefcase" aria-hidden="true"></i></div>
+          <div class="module-card__name">Servicios</div>
+          <div class="module-card__desc">Catalogo de servicios con precios</div>
+          <div class="module-card__arrow">Ir al modulo <i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+        </a>
+        <a href="quotes.html" class="module-card page-enter page-enter--d3" role="listitem">
+          <div class="module-card__icon"><i class="ti ti-file-invoice" aria-hidden="true"></i></div>
+          <div class="module-card__name">Cotizaciones</div>
+          <div class="module-card__desc">Crear y consultar historial completo</div>
+          <div class="module-card__arrow">Ir al modulo <i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+        </a>
+        <a href="report.html" class="module-card page-enter page-enter--d4" role="listitem">
+          <div class="module-card__icon"><i class="ti ti-robot" aria-hidden="true"></i></div>
+          <div class="module-card__name">Generar informe</div>
+          <div class="module-card__desc">IA local - Ollama - PDF automatico</div>
+          <div class="module-card__arrow">Ir al modulo <i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+        </a>
+        <a href="import.html" class="module-card page-enter page-enter--d5" role="listitem">
+          <div class="module-card__icon"><i class="ti ti-upload" aria-hidden="true"></i></div>
+          <div class="module-card__name">Importar datos</div>
+          <div class="module-card__desc">Cargar cotizaciones historicas CSV / Excel</div>
+          <div class="module-card__arrow">Ir al modulo <i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+        </a>
+      </div>
+
+      <div class="card page-enter page-enter--d6" style="margin-top: var(--space-xl)">
+        <div class="card__header">
+          <span class="card__title">Cotizaciones recientes</span>
+          <a href="quotes.html" class="btn btn--sm btn--ghost">Ver todas <i class="ti ti-arrow-right btn__icon" aria-hidden="true"></i></a>
+        </div>
+        <div class="card__body" style="padding: 0">
+          <div class="table-wrapper" style="border: none; border-radius: 0">
+            <table class="table" aria-label="Cotizaciones recientes">
+              <thead>
+              <tr><th>Cliente</th><th>Fecha</th><th>Estado</th></tr>
+              </thead>
+              <tbody id="recent-quotes-tbody">
+              <tr class="table--loading">
+                <td><span class="table__skel skeleton" style="width:65%"></span></td>
+                <td><span class="table__skel skeleton" style="width:40%"></span></td>
+                <td><span class="table__skel skeleton" style="width:55px"></span></td>
+              </tr>
+              <tr class="table--loading">
+                <td><span class="table__skel skeleton" style="width:80%"></span></td>
+                <td><span class="table__skel skeleton" style="width:40%"></span></td>
+                <td><span class="table__skel skeleton" style="width:55px"></span></td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script type="module">
+  import { initSidebar } from '../js/sidebar.js'
+  import { loadUserInfo } from '../js/auth.js'
+  import { initProfileModal } from '../js/profile.js'
+  import { requireAuth, formatDate, animateTableRows } from '../js/utils.js'
+  import { quotesAPI } from '../js/api.js'
+
+  requireAuth()
+  loadUserInfo()
+  initSidebar()
+  initProfileModal()
+
+  function logout() {
+    sessionStorage.removeItem('cp_token')
+    window.location.href = '/pages/login.html'
+  }
+  document.getElementById('logout-btn-mobile')?.addEventListener('click', logout)
+  document.getElementById('logout-btn-sidebar')?.addEventListener('click', logout)
+
+  const payload = (() => {
+    try { return JSON.parse(atob(sessionStorage.getItem('cp_token').split('.')[1])) }
+    catch { return {} }
+  })()
+
+  const name = payload.name || payload.email || ''
+  if (name) {
+    document.getElementById('welcome-title').textContent = 'Hola, ' + name.split(' ')[0] + '!'
+  }
+
+  async function loadRecentQuotes() {
+    const tbody = document.getElementById('recent-quotes-tbody')
+    if (!tbody) return
+    try {
+      const quotes = (await quotesAPI.getAll() || []).slice(0, 5)
+      if (!quotes.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--cp-text-muted);font-size:13px">Sin cotizaciones aún</td></tr>'
+        return
+      }
+      tbody.innerHTML = quotes.map(q =>
+        '<tr>' +
+        '<td style="font-weight:500;color:var(--cp-blue-main)">' + (q.client_name || '-') + '</td>' +
+        '<td style="color:var(--cp-text-muted)">' + formatDate(q.created_at) + '</td>' +
+        '<td><span class="badge badge--' + (q.status === 'sent' ? 'success' : 'info') + '">' + (q.status === 'sent' ? 'Enviada' : 'Borrador') + '</span></td>' +
+        '</tr>'
+      ).join('')
+      animateTableRows(tbody)
+    } catch {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--cp-text-muted);font-size:13px">No se pudieron cargar</td></tr>'
+    }
+  }
+
+  loadRecentQuotes()
+</script>
+
+</body>
+</html>

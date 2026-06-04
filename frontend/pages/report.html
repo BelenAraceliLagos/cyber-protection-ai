@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generar informe — Cyber-Protection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/pages/report.css">
+</head>
+<body>
+
+<div id="alert-container" class="alert-container"></div>
+<div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="app">
+
+  <header class="topbar">
+    <button class="topbar__hamburger" id="hamburger" aria-label="Abrir menú">
+      <i class="ti ti-menu-2" aria-hidden="true"></i>
+    </button>
+    <div class="topbar__logo">
+      <div class="topbar__logo-mark"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+      <span class="topbar__brand">Cyber-Protection</span>
+    </div>
+  </header>
+
+  <nav class="sidebar" id="sidebar" aria-label="Navegación principal">
+    <div class="sidebar__header">
+      <div class="sidebar__logo-mark"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+      <span class="sidebar__brand sidebar__label">CP Sistema</span>
+      <button class="sidebar__collapse-btn" id="sidebar-collapse-btn" aria-label="Colapsar sidebar">
+        <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-collapse-icon" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="sidebar__nav">
+      <a href="dashboard.html" class="sidebar__item"><i class="ti ti-home" aria-hidden="true"></i><span class="sidebar__label">Dashboard</span></a>
+      <a href="clients.html"   class="sidebar__item"><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
+      <a href="services.html"  class="sidebar__item"><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
+      <a href="quotes.html"    class="sidebar__item"><i class="ti ti-file-invoice" aria-hidden="true"></i><span class="sidebar__label">Cotizaciones</span></a>
+      <a href="report.html"    class="sidebar__item sidebar__item--active" aria-current="page"><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
+      <div class="sidebar__divider"></div>
+      <a href="import.html"    class="sidebar__item"><i class="ti ti-upload" aria-hidden="true"></i><span class="sidebar__label">Importar datos</span></a>
+    </div>
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-initials">??</div>
+      <div class="sidebar__user-info sidebar__label">
+        <div class="sidebar__username" id="sidebar-username">Cargando...</div>
+        <div class="sidebar__role" id="sidebar-role">—</div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <header class="main__topbar">
+      <span class="main__topbar-title">Generar informe con IA</span>
+    </header>
+
+    <main class="main__content">
+
+      <div class="page-header page-enter">
+        <div>
+          <h1 class="page-header__title">Generador de informes</h1>
+          <p class="page-header__sub">Selecciona una cotización y la IA generará la propuesta completa</p>
+        </div>
+      </div>
+
+      <!-- STEP 1: SELECT QUOTE -->
+      <div class="card page-enter page-enter--d1" style="margin-bottom: var(--space-lg)">
+        <div class="card__header">
+          <span class="card__title">
+            <span class="report-step">1</span>
+            Seleccionar cotización
+          </span>
+        </div>
+        <div class="card__body">
+          <div class="form__group" style="margin:0">
+            <label for="report-quote-select">Cotización base para el informe</label>
+            <select id="report-quote-select">
+              <option value="">Cargando cotizaciones...</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: GENERATE -->
+      <div class="card page-enter page-enter--d2" style="margin-bottom: var(--space-lg)">
+        <div class="card__header">
+          <span class="card__title">
+            <span class="report-step">2</span>
+            Generar con Ollama
+          </span>
+          <div class="report-ai-badge">
+            <i class="ti ti-robot" aria-hidden="true"></i>
+            IA local · Llama 3
+          </div>
+        </div>
+        <div class="card__body">
+          <p style="font-size:13px;color:var(--cp-text-muted);margin-bottom:var(--space-md);line-height:1.7">
+            El modelo generará automáticamente: introducción, descripción de riesgos, propuesta de servicios, beneficios esperados, recomendaciones y conclusión.
+          </p>
+          <button class="btn btn--primary" id="generate-btn">
+            <i class="ti ti-sparkles btn__icon" aria-hidden="true"></i>
+            Generar informe
+          </button>
+        </div>
+
+        <!-- OLLAMA SPINNER -->
+        <div class="ollama-spinner" id="ollama-spinner" style="display:none" aria-live="polite" aria-label="Generando informe">
+          <div class="ollama-spinner__ring">
+            <svg viewBox="0 0 72 72" aria-hidden="true">
+              <circle class="track" cx="36" cy="36" r="30"/>
+              <circle class="arc"   cx="36" cy="36" r="30"/>
+            </svg>
+            <div class="ollama-spinner__icon">
+              <i class="ti ti-robot" aria-hidden="true"></i>
+            </div>
+          </div>
+          <p class="ollama-spinner__text">Generando informe...</p>
+          <p class="ollama-spinner__sub">Ollama está procesando tu solicitud. Esto puede tomar hasta 30 segundos.</p>
+          <div class="ollama-spinner__progress">
+            <div class="ollama-spinner__progress-bar" id="ollama-progress-bar"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- STEP 3: REVIEW & EXPORT -->
+      <div class="card page-enter page-enter--d3" id="report-result" style="display:none">
+        <div class="card__header">
+          <span class="card__title">
+            <span class="report-step">3</span>
+            Revisar y exportar
+          </span>
+          <span class="badge badge--success">
+            <i class="ti ti-check" aria-hidden="true"></i>
+            Generado
+          </span>
+        </div>
+        <div class="card__body">
+          <p style="font-size:13px;color:var(--cp-text-muted);margin-bottom:var(--space-md)">
+            Revisa el contenido generado. Puedes editar cualquier sección antes de exportar.
+          </p>
+          <textarea
+            id="report-editor"
+            style="min-height:400px;font-family:var(--font-mono);font-size:13px;line-height:1.7"
+            placeholder="El informe aparecerá aquí..."
+          ></textarea>
+        </div>
+        <div class="card__footer">
+          <button class="btn btn--secondary" onclick="document.getElementById('report-editor').value=''">
+            <i class="ti ti-trash btn__icon" aria-hidden="true"></i>
+            Limpiar
+          </button>
+          <button class="btn btn--primary" id="export-btn">
+            <i class="ti ti-file-type-pdf btn__icon" aria-hidden="true"></i>
+            Exportar PDF
+          </button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script type="module">
+  import { initSidebar } from '../js/sidebar.js'
+  import { loadUserInfo } from '../js/auth.js'
+  import { initProfileModal } from '../js/profile.js'
+  import { initReport } from '../js/report.js'
+
+  loadUserInfo()
+  initSidebar()
+  initProfileModal()
+  initReport()
+</script>
+
+</body>
+</html>
