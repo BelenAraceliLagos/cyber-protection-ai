@@ -160,15 +160,19 @@
   height: 28px;
   border-radius: 50%;
   border: 2px solid var(--cp-teal);
+  background: var(--cp-white);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
-.sidebar__logo-mark i {
-  font-size: 13px;
-  color: var(--cp-teal);
+.sidebar__logo-img {
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
+  display: block;
 }
 
 .sidebar__brand {
