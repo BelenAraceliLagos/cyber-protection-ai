@@ -1,26 +1,26 @@
 # IDE
 .idea/
 
-# Local scripts
+# Scripts locales
 start.sh
 stop.sh
 
-# Environment variables
+# Variables de entorno
 .env
 .env.local
 .env.*
 
-# Python virtual environments
+# Entornos virtuales de Python
 .venv/
 venv/
 
-# Python cache
+# Cache de Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Generated and temporary files
+# Archivos generados y temporales
 uploads_tmp/
 propuestas_generadas/
 *.log
@@ -28,5 +28,5 @@ propuestas_generadas/
 # macOS
 .DS_Store
 
-# Temporary folders
+# Carpetas temporales
 tmp/
