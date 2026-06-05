@@ -12,9 +12,11 @@ alembic
 python-multipart       # requerido por FastAPI para subida de archivos (UploadFile)
 
 # ── Generación de propuestas PDF ──────────────────────────────────────
-reportlab
+reportlab              # respaldo — usado por generate_proposal_BACKUP.py
 pillow
 requests
+weasyprint             # nuevo motor PDF: HTML+CSS → PDF (reemplaza ReportLab)
+jinja2                 # templates HTML para las propuestas
 
 # ── Lectura de archivos históricos (módulo de ingesta) ───────────────
 pdfplumber             # extracción de texto desde PDFs
