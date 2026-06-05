@@ -52,15 +52,17 @@
     </div>
 
         <div class="sidebar__nav">
-      <a href="dashboard.html"     class="sidebar__item sidebar__item--active"><i class="ti ti-home"></i><span class="sidebar__label">Dashboard</span></a>
-      <a href="clients.html"       class="sidebar__item"><i class="ti ti-users"></i><span class="sidebar__label">Clientes</span></a>
-      <a href="services.html"      class="sidebar__item"><i class="ti ti-briefcase"></i><span class="sidebar__label">Servicios</span></a>
-      <a href="opportunities.html" class="sidebar__item"><i class="ti ti-trending-up"></i><span class="sidebar__label">Oportunidades</span></a>
-      <a href="report.html"        class="sidebar__item"><i class="ti ti-robot"></i><span class="sidebar__label">Generar informe</span></a>
+      <a href="dashboard.html"     class="sidebar__item sidebar__item--active" aria-current="page"><i class="ti ti-home" aria-hidden="true"></i><span class="sidebar__label">Dashboard</span></a>
+      <a href="clients.html"       class="sidebar__item"  ><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
+      <a href="services.html"      class="sidebar__item"  ><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
+      <a href="opportunities.html" class="sidebar__item"  ><i class="ti ti-trending-up" aria-hidden="true"></i><span class="sidebar__label">Oportunidades</span></a>
+      <a href="quotes.html"        class="sidebar__item"  ><i class="ti ti-file-invoice" aria-hidden="true"></i><span class="sidebar__label">Propuesta rápida</span></a>
+      <a href="report.html"        class="sidebar__item"  ><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
       <div class="sidebar__divider"></div>
-      <a href="import.html"        class="sidebar__item"><i class="ti ti-upload"></i><span class="sidebar__label">Importar datos</span></a>
-      <a href="ingestion.html"     class="sidebar__item"><i class="ti ti-database-import"></i><span class="sidebar__label">Historial</span></a>
+      <a href="import.html"        class="sidebar__item"  ><i class="ti ti-upload" aria-hidden="true"></i><span class="sidebar__label">Importar datos</span></a>
+      <a href="ingestion.html"     class="sidebar__item"  ><i class="ti ti-database-import" aria-hidden="true"></i><span class="sidebar__label">Historial</span></a>
     </div>
+
     <div class="sidebar__user">
       <button class="sidebar__avatar" id="sidebar-initials" aria-label="Editar perfil" title="Editar perfil">??</button>
       <div class="sidebar__user-info sidebar__label">
@@ -101,20 +103,25 @@
           <div class="module-card__desc">Catalogo de servicios con precios</div>
           <div class="module-card__arrow">Ir al modulo <i class="ti ti-arrow-right" aria-hidden="true"></i></div>
         </a>
-
-        <a href="report.html" class="module-card page-enter page-enter--d3" role="listitem">
+        <a href="quotes.html" class="module-card page-enter page-enter--d3" role="listitem">
+          <div class="module-card__icon"><i class="ti ti-file-invoice" aria-hidden="true"></i></div>
+          <div class="module-card__name">Cotizaciones</div>
+          <div class="module-card__desc">Crear y consultar historial completo</div>
+          <div class="module-card__arrow">Ir al modulo <i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+        </a>
+        <a href="report.html" class="module-card page-enter page-enter--d4" role="listitem">
           <div class="module-card__icon"><i class="ti ti-robot" aria-hidden="true"></i></div>
           <div class="module-card__name">Generar informe</div>
           <div class="module-card__desc">IA local - Ollama - PDF automatico</div>
           <div class="module-card__arrow">Ir al modulo <i class="ti ti-arrow-right" aria-hidden="true"></i></div>
         </a>
-        <a href="import.html" class="module-card page-enter page-enter--d4" role="listitem">
+        <a href="import.html" class="module-card page-enter page-enter--d5" role="listitem">
           <div class="module-card__icon"><i class="ti ti-upload" aria-hidden="true"></i></div>
           <div class="module-card__name">Importar datos</div>
           <div class="module-card__desc">Cargar catálogo de servicios desde Excel</div>
           <div class="module-card__arrow">Ir al modulo <i class="ti ti-arrow-right" aria-hidden="true"></i></div>
         </a>
-        <a href="ingestion.html" class="module-card page-enter page-enter--d5" role="listitem"
+        <a href="ingestion.html" class="module-card page-enter page-enter--d6" role="listitem"
           style="border:1px solid #6366f120;background:linear-gradient(135deg,#6366f108,#8b5cf608)">
           <div class="module-card__icon" style="color:#8b5cf6">
             <i class="ti ti-database-import" aria-hidden="true"></i>
@@ -125,7 +132,33 @@
         </a>
       </div>
 
-
+      <div class="card page-enter page-enter--d6" style="margin-top: var(--space-xl)">
+        <div class="card__header">
+          <span class="card__title">Cotizaciones recientes</span>
+          <a href="quotes.html" class="btn btn--sm btn--ghost">Ver todas <i class="ti ti-arrow-right btn__icon" aria-hidden="true"></i></a>
+        </div>
+        <div class="card__body" style="padding: 0">
+          <div class="table-wrapper" style="border: none; border-radius: 0">
+            <table class="table" aria-label="Cotizaciones recientes">
+              <thead>
+              <tr><th>Cliente</th><th>Fecha</th><th>Estado</th></tr>
+              </thead>
+              <tbody id="recent-quotes-tbody">
+              <tr class="table--loading">
+                <td><span class="table__skel skeleton" style="width:65%"></span></td>
+                <td><span class="table__skel skeleton" style="width:40%"></span></td>
+                <td><span class="table__skel skeleton" style="width:55px"></span></td>
+              </tr>
+              <tr class="table--loading">
+                <td><span class="table__skel skeleton" style="width:80%"></span></td>
+                <td><span class="table__skel skeleton" style="width:40%"></span></td>
+                <td><span class="table__skel skeleton" style="width:55px"></span></td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
     </main>
   </div>
@@ -136,6 +169,7 @@
   import { loadUserInfo } from '../js/auth.js'
   import { initProfileModal } from '../js/profile.js'
   import { requireAuth, formatDate, animateTableRows } from '../js/utils.js'
+  import { quotesAPI } from '../js/api.js'
 
   requireAuth()
   loadUserInfo()
@@ -159,6 +193,29 @@
     document.getElementById('welcome-title').textContent = 'Hola, ' + name.split(' ')[0] + '!'
   }
 
+  async function loadRecentQuotes() {
+    const tbody = document.getElementById('recent-quotes-tbody')
+    if (!tbody) return
+    try {
+      const quotes = (await quotesAPI.getAll() || []).slice(0, 5)
+      if (!quotes.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--cp-text-muted);font-size:13px">Sin cotizaciones aún</td></tr>'
+        return
+      }
+      tbody.innerHTML = quotes.map(q =>
+        '<tr>' +
+        '<td style="font-weight:500;color:var(--cp-blue-main)">' + (q.client_name || '-') + '</td>' +
+        '<td style="color:var(--cp-text-muted)">' + formatDate(q.created_at) + '</td>' +
+        '<td><span class="badge badge--' + (q.status === 'sent' ? 'success' : 'info') + '">' + (q.status === 'sent' ? 'Enviada' : 'Borrador') + '</span></td>' +
+        '</tr>'
+      ).join('')
+      animateTableRows(tbody)
+    } catch {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--cp-text-muted);font-size:13px">No se pudieron cargar</td></tr>'
+    }
+  }
+
+  loadRecentQuotes()
 </script>
 
 </body>
