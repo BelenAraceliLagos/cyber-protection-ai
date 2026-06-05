@@ -213,6 +213,12 @@ def get_styles():
             fontName=F_REG, fontSize=10, textColor=AZUL, leading=14),
         "td_bold": ParagraphStyle("td_bold",
             fontName=F_BOLD, fontSize=10, textColor=AZUL, leading=14),
+        "td_center": ParagraphStyle("td_center",
+            fontName=F_REG, fontSize=10, textColor=AZUL,
+            leading=14, alignment=TA_CENTER),
+        "th_center": ParagraphStyle("th_center",
+            fontName=F_BOLD, fontSize=10, textColor=BLANCO,
+            leading=14, alignment=TA_CENTER),
 
         # — Condiciones —
         "cond": ParagraphStyle("cond",
@@ -437,17 +443,26 @@ def sec_metodologia(data, st):
 
 
 def sec_costos(agrupado, st, ancho, nota=""):
+    """
+    Tabla de costos por servicio con valores reales de la BD.
+    - Si base_price > 0: muestra el valor en UF con formato "XX.X UF/mes"
+    - Si base_price == 0: muestra "A convenir"
+    - Fila total: suma de todos los precios con precio, o "A convenir" si todos son 0
+    """
     C1, C2 = ancho * 0.65, ancho * 0.35
     total = 0.0
+    hay_precios = False
     elems = [sp(2)]
     elems += [
         Paragraph("Centro de Costos:", st["h1"]),
         hr(),
         Paragraph(
-            "Valores referenciales por área. "
-            "Costos definitivos a confirmar en reunión de alcance.",
+            "Valores referenciales por servicio. "
+            "Costos definitivos a confirmar en reunion de alcance.",
             st["subtitulo"]),
+        sp(4),
     ]
+
     # Header tabla
     hdr = Table([[Paragraph("Servicio", st["th"]),
                   Paragraph("Costo Mensual (UF)", st["th"])]],
@@ -463,46 +478,54 @@ def sec_costos(agrupado, st, ancho, nota=""):
     elems.append(hdr)
 
     for cat, srvs in agrupado.items():
-        cat_row = Table([[Paragraph(f"■  {cat}", st["td_bold"]),
+        # Fila categoría
+        cat_row = Table([[Paragraph(f"  {cat}", st["td_bold"]),
                           Paragraph("", st["td"])]],
                         colWidths=[C1, C2])
         cat_row.setStyle(TableStyle([
             ("BACKGROUND",    (0,0),(-1,-1), colors.HexColor("#EBF3FF")),
-            ("TOPPADDING",    (0,0),(-1,-1), 6),
-            ("BOTTOMPADDING", (0,0),(-1,-1), 6),
+            ("TOPPADDING",    (0,0),(-1,-1), 7),
+            ("BOTTOMPADDING", (0,0),(-1,-1), 7),
             ("LEFTPADDING",   (0,0),(-1,-1), 10),
             ("LINEBELOW",     (0,0),(-1,-1), 0.8, VERDE),
         ]))
         elems.append(cat_row)
+
         for i, srv in enumerate(srvs):
             precio = srv.get("base_price", 0)
-            total += precio if isinstance(precio, (int, float)) else 0
-            precio_str = (f"{precio:.1f}" if isinstance(precio, (int, float)) and precio > 0
-                          else "A convenir")
+            # Sumar solo si es número válido > 0
+            if isinstance(precio, (int, float)) and precio > 0:
+                total += precio
+                hay_precios = True
+                precio_str = f"{precio:,.1f} UF/mes"
+            else:
+                precio_str = "A convenir"
+
             bg = BLANCO if i % 2 == 0 else colors.HexColor("#F5F9FF")
-            row = Table([[Paragraph(f"  {srv['nombre']}", st["td"]),
-                          Paragraph(precio_str, st["td"])]],
-                        colWidths=[C1, C2])
+            row = Table(
+                [[Paragraph(f"    {srv['nombre']}", st["td"]),
+                  Paragraph(precio_str, st["td_center"])]],
+                colWidths=[C1, C2]
+            )
             row.setStyle(TableStyle([
                 ("BACKGROUND",    (0,0),(-1,-1), bg),
-                ("TOPPADDING",    (0,0),(-1,-1), 6),
-                ("BOTTOMPADDING", (0,0),(-1,-1), 6),
+                ("TOPPADDING",    (0,0),(-1,-1), 7),
+                ("BOTTOMPADDING", (0,0),(-1,-1), 7),
                 ("LEFTPADDING",   (0,0),(-1,-1), 10),
-                ("ALIGN",         (1,0),(1,-1),  "CENTER"),
                 ("LINEBELOW",     (0,0),(-1,-1), 0.3, colors.HexColor("#CCCCCC")),
             ]))
             elems.append(row)
 
-    total_str = f"{total:.1f} UF/mes" if total > 0 else "A convenir"
+    # Fila total
+    total_str = f"{total:,.1f} UF/mes" if hay_precios else "A convenir"
     pie = Table([[Paragraph("TOTAL SUITE", st["th"]),
-                  Paragraph(total_str, st["th"])]],
+                  Paragraph(total_str, st["th_center"])]],
                 colWidths=[C1, C2])
     pie.setStyle(TableStyle([
         ("BACKGROUND",    (0,0),(-1,-1), AZUL),
         ("TOPPADDING",    (0,0),(-1,-1), 10),
         ("BOTTOMPADDING", (0,0),(-1,-1), 10),
         ("LEFTPADDING",   (0,0),(-1,-1), 10),
-        ("ALIGN",         (1,0),(1,-1),  "CENTER"),
         ("LINEABOVE",     (0,0),(-1,-1), 2, VERDE),
     ]))
     elems.append(pie)
@@ -645,16 +668,16 @@ def generar_propuesta(data: dict, output_path: str, usar_ia: bool = True):
     # Frame cubre desde y=245 (sobre borde inf del bloque) hasta y=835 (top del bloque)
     # height = 835 - 245 = 590 pts → texto fluye sin cortes entre páginas
     # Frame interior — bloque blanco del pdf_base
-    # Imagen base analizada: blanco desde x=168 a x=575, y=252 a y=842 (plumb)
-    # y_rl_bottom = 40 (margen inferior), y_rl_top = 40+545 = 585
-    ancho_interior = 388
+    # Blanco va de x=178 a x=567pts (ancho total=389pts)
+    # Padding izq=14, der=28 para centrar el texto y alejarlo del borde verde derecho
+    ancho_interior = 389
     frame_interior = Frame(
         x1=178,
         y1=40,
         width=ancho_interior,
         height=545,
-        leftPadding=0, rightPadding=0,
-        topPadding=0, bottomPadding=0,
+        leftPadding=14, rightPadding=55,
+        topPadding=0,   bottomPadding=0,
         id='interior',
     )
 

@@ -486,6 +486,8 @@ def generate_pdf_from_opportunity(
         servicios = db.query(Service).filter(Service.id.in_(service_ids)).all()
 
     # Servicios en formato para el generador
+    # valor_uf de la oportunidad se distribuye si base_price no está definido
+    valor_uf_opp = opp.valor_uf or 0.0
     servicios_pdf = [
         {
             "nombre": s.name,
@@ -494,6 +496,14 @@ def generate_pdf_from_opportunity(
         }
         for s in servicios
     ]
+    # Si ningún servicio tiene precio propio pero la oportunidad tiene valor_uf,
+    # usarlo como referencia en la tabla
+    total_base = sum(s.get("base_price", 0) for s in servicios_pdf)
+    if total_base == 0 and valor_uf_opp > 0 and len(servicios_pdf) > 0:
+        # Distribuir el valor_uf de la oportunidad proporcionalmente
+        por_servicio = round(valor_uf_opp / len(servicios_pdf), 1)
+        for s in servicios_pdf:
+            s["base_price"] = por_servicio
 
     # Textos: IA o genéricos
     if body.usar_ia and servicios:
@@ -554,6 +564,7 @@ def generate_pdf_from_opportunity(
             f"Conocimiento de la industria {cliente.industry or 'del cliente'}: soluciones adaptadas al contexto.",
             "Alineación con el CSIRT Nacional: coordinación con organismos de ciberseguridad de Chile.",
         ],
+        "valor_uf_oportunidad": valor_uf_opp,
         "nota_costos": "Valores referenciales. Costos definitivos a confirmar tras reunión de alcance.",
         "condiciones": [
             "Los valores son netos y no incluyen IVA.",

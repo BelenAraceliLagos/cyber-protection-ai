@@ -100,12 +100,9 @@ def construir_data_propuesta(
     servicios_pdf = []
     for s in servicios:
         servicios_pdf.append({
-            "nombre": s.name,
-            "bullets": [
-                f"Descripción: {s.description}" if s.description
-                else "Servicio especializado en ciberseguridad corporativa.",
-                f"Valor mensual referencial: {s.base_price:.0f} UF.",
-            ]
+            "nombre":      s.name,
+            "descripcion": s.description or "Servicio especializado en ciberseguridad corporativa.",
+            "base_price":  s.base_price or 0,
         })
 
     # Costos para la tabla
@@ -138,8 +135,10 @@ def construir_data_propuesta(
         })
 
     return {
-        "titulo_proyecto": titulo_proyecto,
-        "preparado_para": f"{cliente.contact_name} — {cliente.company_name}",
+        "titulo_proyecto":         titulo_proyecto,
+        "titulo_portada_servicios": titulo_proyecto,
+        "nombre_cliente":           cliente.company_name,
+        "preparado_para": f"{cliente.contact_name or cliente.company_name} — {cliente.company_name}",
         "objetivo": (
             f"Fortalecer la ciberseguridad de {cliente.company_name} "
             f"mediante soluciones especializadas y cumplimiento normativo."
