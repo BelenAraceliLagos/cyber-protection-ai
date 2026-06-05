@@ -213,7 +213,9 @@
               <div class="form__group">
                 <label class="form__label">Título del informe</label>
                 <input type="text" id="r-titulo" class="form__input"
-                  placeholder="Ej: Resiliencia Digital 2025">
+                  value="Propuesta de Servicios de Ciberseguridad"
+                  readonly
+                  style="background:var(--cp-bg,#f5f7fa);color:var(--cp-text-muted);cursor:not-allowed;">
               </div>
               <div class="form__group" style="margin-bottom:0">
                 <label class="form__label">
@@ -302,12 +304,7 @@
                 </label>
               </div>
 
-              <!-- Modo sin IA -->
-              <label style="display:flex;align-items:center;gap:8px;font-size:12px;
-                color:var(--cp-text-muted);padding:8px 0;cursor:pointer">
-                <input type="checkbox" id="r-sin-ia">
-                Generar sin IA (textos genéricos — no requiere Ollama)
-              </label>
+
 
               <!-- Progreso de generación -->
               <div class="ia-progress" id="r-progress">

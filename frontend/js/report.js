@@ -58,7 +58,7 @@ async function cargarClientes() {
     if (!sel) return
     sel.innerHTML = '<option value="">— Selecciona —</option>' +
       clientes.map(c =>
-        `<option value="${c.id}">${c.company_name} · ${c.contact_name}</option>`
+        `<option value="${c.id}">${c.company_name}${c.contact_name ? ' · ' + c.contact_name : ''}</option>`
       ).join('')
   } catch (e) { showAlert('Error cargando clientes', 'error') }
 }
@@ -78,6 +78,12 @@ function bindCliente() {
   sel.addEventListener('change', () => {
     const id = parseInt(sel.value)
     clienteSel = clientes.find(c => c.id === id) || null
+    // Actualizar campo título con nombre del cliente
+    const campoTitulo = document.getElementById('r-titulo')
+    if (campoTitulo) {
+      campoTitulo.value = clienteSel
+        : 'Propuesta de Servicios de Ciberseguridad'
+    }
     actualizarBoton()
   })
   search?.addEventListener('input', () => {
@@ -147,13 +153,12 @@ window.rCheck = function(id, on) {
 }
 
 function actualizarBoton() {
-  const btn  = document.getElementById('r-generar-btn')
-  const sinIA = document.getElementById('r-sin-ia')?.checked
+  const btn = document.getElementById('r-generar-btn')
   if (!btn) return
   const ok = clienteSel && seleccionados.size > 0
   btn.disabled = !ok
   btn.innerHTML = ok
-    ? `<i class="ti ti-${sinIA ? 'file-download' : 'sparkles'} btn__icon"></i> ${sinIA ? 'Generar PDF' : 'Generar con IA'}`
+    ? '<i class="ti ti-sparkles btn__icon"></i> Generar con IA'
     : '<i class="ti ti-sparkles btn__icon"></i> Generar informe con IA'
 }
 
@@ -172,45 +177,36 @@ function resetSteps() {
 // ── Generar ───────────────────────────────────────────────────────────
 function bindGenerar() {
   const btn  = document.getElementById('r-generar-btn')
-  const sinIA = document.getElementById('r-sin-ia')
   const prog = document.getElementById('r-progress')
-
-  sinIA?.addEventListener('change', actualizarBoton)
 
   btn?.addEventListener('click', async () => {
     if (!clienteSel || !seleccionados.size) return
 
-    const usarIA   = !sinIA?.checked
-    const titulo   = document.getElementById('r-titulo')?.value.trim()
-      || `Informe de Preventa — ${clienteSel.company_name}`
+    // Siempre usar IA local — sin textos genéricos
+    const titulo   = 'Propuesta de Servicios de Ciberseguridad'
     const contexto = document.getElementById('r-antecedente')?.value.trim() || ''
 
-    showSpinner(btn, usarIA ? 'Iniciando IA...' : 'Generando...')
-    if (usarIA) {
-      prog.style.display = 'block'
-      resetSteps()
-    }
+    showSpinner(btn, 'Iniciando IA...')
+    prog.style.display = 'block'
+    resetSteps()
 
-    // Simular progreso visual (el backend procesa en secuencia)
-    let stepTimer = null
-    if (usarIA) {
-      const pasos = [
-        ['step-intro',      1500],
-        ['step-riesgo',     7000],
-        ['step-justif',    13000],
-        ['step-valor',     19000],
-        ['step-conclusion',24000],
-        ['step-pdf',       29000],
-      ]
-      let prev = null
-      pasos.forEach(([id, delay]) => {
-        setTimeout(() => {
-          if (prev) setStep(prev, 'done')
-          setStep(id, 'active')
-          prev = id
-        }, delay)
-      })
-    }
+    // Progreso visual mientras Ollama procesa
+    const pasos = [
+      ['step-intro',      1500],
+      ['step-riesgo',     7000],
+      ['step-justif',    13000],
+      ['step-valor',     19000],
+      ['step-conclusion',24000],
+      ['step-pdf',       29000],
+    ]
+    let prev = null
+    pasos.forEach(([id, delay]) => {
+      setTimeout(() => {
+        if (prev) setStep(prev, 'done')
+        setStep(id, 'active')
+        prev = id
+      }, delay)
+    })
 
     try {
       const resp = await proposalsAPI.generate({
@@ -218,7 +214,7 @@ function bindGenerar() {
         service_ids:     Array.from(seleccionados),
         titulo_proyecto: titulo,
         antecedente:     contexto,
-        usar_ia:         usarIA,
+        usar_ia:         true,
       })
 
       if (!resp.ok) {
@@ -227,23 +223,21 @@ function bindGenerar() {
       }
 
       // Marcar todos como done
-      if (usarIA) {
-        ['step-intro','step-riesgo','step-justif','step-valor','step-conclusion','step-pdf']
-          .forEach(id => setStep(id, 'done'))
-      }
+      ;['step-intro','step-riesgo','step-justif','step-valor','step-conclusion','step-pdf']
+        .forEach(id => setStep(id, 'done'))
 
-      // Descargar PDF
+      // Descargar con nombre: Preventa_NOMBRECLIENTE_CP.pdf
       const blob   = await resp.blob()
       const url    = URL.createObjectURL(blob)
       const a      = document.createElement('a')
-      const nombre = clienteSel.company_name.replace(/\s+/g,'_')
+      const nombre = clienteSel.company_name.replace(/[^a-zA-Z0-9À-ɏ]+/g, '_').replace(/^_|_$/g, '')
       a.href       = url
-      a.download   = `Informe_Preventa_${nombre}.pdf`
+      a.download   = `Preventa_${nombre}_CP.pdf`
       a.click()
       URL.revokeObjectURL(url)
 
       showAlert(
-        `✅ Informe generado${usarIA ? ' con IA' : ''} para ${clienteSel.company_name}`,
+        `✅ Informe generado con IA para ${clienteSel.company_name}`,
         'success', 6000
       )
 
