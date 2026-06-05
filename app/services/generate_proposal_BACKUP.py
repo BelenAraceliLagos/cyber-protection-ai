@@ -52,14 +52,6 @@ ASSETS_DIR = os.path.normpath(os.path.join(BASE_DIR, '..', '..', 'assets'))
 LOGO_CP    = os.path.join(ASSETS_DIR, 'logo_cyberprotection.png')
 FOTO_EDIF  = os.path.join(ASSETS_DIR, 'foto_edificio.jpg')
 
-# ── Imágenes base (pdf_base.pdf renderizado a PNG) ─────────────────────────
-# Copiar pdf_base.pdf a assets/ y ejecutar:
-#   python -c "from pdf2image import convert_from_path; pages=convert_from_path('assets/pdf_base.pdf',dpi=300); pages[0].save('assets/base_portada.png'); pages[1].save('assets/base_interior.png')"
-BASE_PORTADA  = os.path.join(ASSETS_DIR, 'base_portada.png')
-BASE_INTERIOR = os.path.join(ASSETS_DIR, 'base_interior.png')
-# Fallback: si las imágenes base no existen, usar el modo original (ReportLab dibujado)
-USE_BASE_IMG  = os.path.exists(BASE_PORTADA) and os.path.exists(BASE_INTERIOR)
-
 # ── Frame interior: desde x=124 (texto empieza ahí en original) ───────────
 FRAME_X     = 124        # margen izquierdo del texto en páginas interiores
 FRAME_W     = 566.8 - FRAME_X   # ≈ 442.8 pts
@@ -78,64 +70,142 @@ PORT_H  = PAGE_H - PORT_Y - 200
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _portada_bg(c, doc):
-    """Fondo de portada: imagen base si existe, sino dibujado con ReportLab."""
+    """Dibuja el fondo completo de la portada — coordenadas pixel-perfect del base UNAB."""
     c.saveState()
-    if USE_BASE_IMG:
-        # Imagen base limpia — el texto se superpone encima
-        c.drawImage(BASE_PORTADA, 0, 0, width=PAGE_W, height=PAGE_H,
-                    preserveAspectRatio=False, mask='auto')
-    else:
-        # Fallback: modo dibujado original
-        c.setFillColor(AZUL)
-        c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
-        c.setFillColor(BLANCO)
-        c.rect(-12, 150, 500.44, PAGE_H + 22.46, fill=1, stroke=0)
-        c.setFillColor(VERDE)
-        c.setFont(F_BOLD, 15)
-        c.saveState()
-        c.translate(526.858, (PAGE_H / 2) + 150)
-        c.rotate(-90)
-        c.drawCentredString(0, 0, "C  Y  B  E  R  -  P  R  O  T  E  C  T  I  O  N  .  C  L")
-        c.restoreState()
-        c.setFillColor(VERDE)
-        c.circle(449.71, 153.80, 174.28, fill=1, stroke=0)
-        if os.path.exists(LOGO_CP):
-            try:
-                c.drawImage(LOGO_CP, 59.55, PAGE_H - 823.04,
-                            width=219.08, height=81.03,
-                            preserveAspectRatio=True, mask='auto')
-            except Exception:
-                pass
+
+    # 1. Fondo azul completo
+    c.setFillColor(AZUL)
+    c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
+
+    # 2. Bloque blanco principal
+    # Toca borde SUPERIOR, borde INFERIOR y borde IZQUIERDO
+    # x=-24.33 (sale por izquierda), y_bottom=-22.46 (sale por abajo)
+    # y_top = PAGE_H (toca borde superior)
+    # h = PAGE_H - (-22.46) = PAGE_H + 22.46 = 864.71
+    c.setFillColor(BLANCO)
+    c.rect(-12, 150, 500.44, PAGE_H + 22.46, fill=1, stroke=0)
+
+    # 3. Texto lateral -90° (de abajo hacia arriba = igual al PDF base)
+    # BASE: chars en x=520.5, desde top=51 a top=350, matrix=[0,-0.75,0.75,0,...]
+    # Rotación -90° con centro en x=526.858, centrado verticalmente
+    c.setFillColor(VERDE)
+    c.setFont(F_BOLD, 15)
+    c.saveState()
+    c.translate(526.858, (PAGE_H / 2) + 150)
+    c.rotate(-90)
+    c.drawCentredString(0, 0, "C  Y  B  E  R  -  P  R  O  T  E  C  T  I  O  N  .  C  L")
     c.restoreState()
 
-def _interior_bg(c, doc):
-    """Fondo interior: imagen base si existe, sino dibujado con ReportLab."""
-    c.saveState()
-    if USE_BASE_IMG:
-        # Imagen base limpia — se replica identica en cada pagina extra
-        c.drawImage(BASE_INTERIOR, 0, 0, width=PAGE_W, height=PAGE_H,
-                    preserveAspectRatio=False, mask='auto')
+    # 4. Círculo verde menta — esquina inferior-derecha
+    # BASE: cx_plumb=449.71, cy_plumb=688.45 → cy_rl=153.80, radio=174.28
+    # Sale 28.48pts por la DERECHA y 20.47pts por ABAJO → solo visible cuadrante sup-izq
+    c.setFillColor(VERDE)
+    c.circle(700, -12, 400, fill=1, stroke=0)
+
+    # 5. "Elaborado para:" centrado en la parte visible del círculo
+    # Área visible: x de 275.43 a 595.50, y_rl de 0 a ~328
+    vis_cx = (275.43 + 595.50) / 2   # = 435.47
+    vis_cy = 164.0
+    c.setFillColor(GRIS)
+    c.setFont(F_BOLD, 9)
+    c.drawCentredString(vis_cx, vis_cy + 30, "Elaborado para:")
+
+    # 6. Logo del CLIENTE — dentro del círculo visible
+    logo_cliente = getattr(doc, '_logo_cliente', None)
+    if logo_cliente and os.path.exists(logo_cliente):
+        try:
+            c.drawImage(logo_cliente,
+                        vis_cx - 64.9, vis_cy - 54.75,
+                        width=129.8, height=109.5,
+                        preserveAspectRatio=True, mask='auto')
+        except Exception:
+            # Fallback: nombre del cliente en texto
+            c.setFont(F_BOLD, 13)
+            c.drawCentredString(vis_cx, vis_cy, doc._nombre_cliente or "")
     else:
-        # Fallback: modo dibujado original
-        c.setFillColor(VERDE)
-        c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
-        if os.path.exists(FOTO_EDIF):
-            try:
-                c.drawImage(FOTO_EDIF, -20.08, -18.40,
-                            width=295.79, height=860.86,
-                            preserveAspectRatio=False, mask='auto')
-            except Exception:
-                pass
-        c.setFillColor(BLANCO)
-        c.rect(91.12, PAGE_H - 603.30, 475.68, 603.23, fill=1, stroke=0)
-        c.rect(275.42, 0, 320.31, 187.64, fill=1, stroke=0)
-        if os.path.exists(LOGO_CP):
-            try:
-                c.drawImage(LOGO_CP, 301.55, 44.50,
-                            width=267.85, height=98.29,
-                            preserveAspectRatio=True, mask='auto')
-            except Exception:
-                pass
+        # Sin logo: mostrar nombre cliente
+        nombre = getattr(doc, '_nombre_cliente', '')
+        if nombre:
+            c.setFont(F_BOLD, 13)
+            c.drawCentredString(vis_cx, vis_cy, nombre)
+
+    # 7. Logo Cyber-Protection — borde inferior izquierdo
+    # BASE: x0=59.55, y0_plumb=742.01, y1_plumb=823.04 → y_rl_bottom=PAGE_H-823.04=19.21
+    # w=219.08, h=81.03
+    if os.path.exists(LOGO_CP):
+        try:
+            c.drawImage(LOGO_CP, 59.55, PAGE_H - 100,
+                        width=219.08, height=81.03,
+                        preserveAspectRatio=True, mask='auto')
+        except Exception:
+            pass
+
+    c.restoreState()
+
+
+def _interior_bg(c, doc):
+    """
+    Fondo páginas interiores (pág 2 en adelante). SIN círculo.
+
+    Estructura:
+    - Fondo verde menta completo
+    - Foto lateral: x=-20.08, w=295.79, altura completa
+    - Bloque blanco contenido: toca borde SUPERIOR, termina en y_bottom=238.95
+    - Bloque blanco logo: esquina SUPERIOR DERECHA (x0=275.42, toca borde superior)
+    - Logo CP: dentro del bloque blanco superior derecho, pegado arriba
+    - Texto lateral -90°
+    """
+    c.saveState()
+
+    # 1. Fondo verde menta completo
+    c.setFillColor(VERDE)
+    c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
+
+    # 2. Foto lateral — coordenadas exactas del base
+    # x0=-20.08, y0=-18.40, w=295.79, h=860.86
+    if os.path.exists(FOTO_EDIF):
+        try:
+            c.drawImage(FOTO_EDIF, -20.08, -18.40,
+                        width=295.79, height=860.86,
+                        preserveAspectRatio=False, mask='auto')
+        except Exception:
+            c.setFillColor(colors.HexColor("#1a3a6e"))
+            c.rect(-20.08, 0, 295.79, PAGE_H, fill=1, stroke=0)
+    else:
+        c.setFillColor(colors.HexColor("#1a3a6e"))
+        c.rect(-20.08, 0, 295.79, PAGE_H, fill=1, stroke=0)
+
+    # 3. Bloque blanco contenido
+    # Toca borde SUPERIOR (y_top=PAGE_H), NO toca borde inferior
+    # RL: x=91.12, y_bottom=PAGE_H-603.30=238.95, h=603.23
+    c.setFillColor(BLANCO)
+    c.rect(91.12, PAGE_H - 603.30, 475.68, 603.23, fill=1, stroke=0)
+
+    # 4. Bloque blanco logo — esquina SUPERIOR DERECHA
+    # x0=275.42, toca borde superior: y_top=PAGE_H, h=187.64
+    bloque_logo_h = 187.64
+    c.rect(275.42, PAGE_H - bloque_logo_h, 320.31, bloque_logo_h, fill=1, stroke=0)
+
+    # 5. Logo CP — pegado al borde superior derecho
+    # w=267.85, h=98.29, margen 20pts desde borde superior
+    if os.path.exists(LOGO_CP):
+        try:
+            logo_y = PAGE_H - 98.29 - 20
+            c.drawImage(LOGO_CP, 301.55, logo_y,
+                        width=267.85, height=98.29,
+                        preserveAspectRatio=True, mask='auto')
+        except Exception:
+            pass
+
+    # 6. Texto lateral -90° en franja verde derecha
+    c.setFillColor(AZUL)
+    c.setFont(F_BOLD, 12)
+    c.saveState()
+    c.translate(584, PAGE_H / 2+80)
+    c.rotate(-90)
+    c.drawCentredString(0, 0, "C  Y  B  E  R  -  P  R  O  T  E  C  T  I  O  N  .  C  L")
+    c.restoreState()
+
     c.restoreState()
 
 def _on_page(c, doc):
@@ -626,14 +696,11 @@ def generar_propuesta(data: dict, output_path: str, usar_ia: bool = True):
     # PORTADA: bloque blanco x0=-24.33, y_bottom=-22.46, y_top=723.32
     # Logo CP en y_rl = PAGE_H-823.04 = 19.21 a 19.21+81.03 = 100.24
     # Título debe aparecer en top=118 → y_rl = PAGE_H-118 = 724 (tope del frame)
-    # Frame portada — zona blanca del pdf_base
-    # Imagen base analizada: blanco desde x=0 a x=480, y=0 a y=715 (plumb)
-    # Texto empieza debajo del logo CP (aprox y_plumb=120 → y_rl=PAGE_H-120=721)
     frame_portada = Frame(
-        x1=40,
-        y1=PAGE_H - 660,               # y_rl: texto hasta y_plumb=660 desde arriba
-        width=420,
-        height=520,
+        x1=59.55,                      # alineado con logo CP y texto del base
+        y1=110,                        # sobre el logo CP (tope: 19.21+81.03=100.24)
+        width=400,                     # hasta aprox x=460 (dentro del bloque blanco)
+        height=PAGE_H - 110 - 88,     # desde y=110 hasta y≈724 (debajo del borde sup)
         leftPadding=0, rightPadding=0,
         topPadding=0, bottomPadding=0,
         id='portada',
@@ -644,15 +711,12 @@ def generar_propuesta(data: dict, output_path: str, usar_ia: bool = True):
     # Primer texto en x0=123.6, top=243.8 → y_rl=PAGE_H-243.8=598.45
     # Frame cubre desde y=245 (sobre borde inf del bloque) hasta y=835 (top del bloque)
     # height = 835 - 245 = 590 pts → texto fluye sin cortes entre páginas
-    # Frame interior — bloque blanco del pdf_base
-    # Imagen base analizada: blanco desde x=168 a x=575, y=252 a y=842 (plumb)
-    # y_rl_bottom = 40 (margen inferior), y_rl_top = 40+545 = 585
-    ancho_interior = 388
+    ancho_interior = 566.8 - 123.6    # = 443.2 pts
     frame_interior = Frame(
-        x1=178,
-        y1=40,
+        x1=123.6,                      # x exacto del texto en pág 4 del base
+        y1=245,                        # sobre el borde inferior del bloque blanco
         width=ancho_interior,
-        height=545,
+        height=590,                    # cubre zona completa del bloque blanco
         leftPadding=0, rightPadding=0,
         topPadding=0, bottomPadding=0,
         id='interior',

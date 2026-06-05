@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="{{ css_path }}">
+</head>
+<body>
+
+{# ══════════════════════════════════════════════════════════════
+   PORTADA — layout pixel-perfect del base UNAB
+   Medidas clave (pdfplumber):
+     Bloque blanco: left=-8.58mm, top=41.95mm, w=176.54mm, h=263.10mm
+     Título: top=41.95mm+14mm, left=21mm, size=38.5pt
+     Círculo: left=97.1mm, top=181.4mm, diam=123mm
+     Logo CP top: left=21mm, top=46mm, w=77.3mm
+     Logo CP bottom: left=21mm, bottom=6.8mm, w=77.3mm
+     Logo cliente: dentro del círculo, en el cuadrante visible
+     Texto lateral: x=183.6mm, centro vertical, size=11pt, rotate(-90deg)
+══════════════════════════════════════════════════════════════ #}
+<div class="portada">
+
+  {# Bloque blanco izquierdo #}
+  <div class="bloque-blanco"></div>
+
+  {# Contenido sobre el bloque blanco #}
+  <div class="portada-texto">
+    <img src="{{ logo_cp }}" alt="Cyber-Protection" style="
+      position:absolute; left:21mm; top:46mm; width:77.3mm; height:auto;">
+
+    <div style="position:absolute; left:21mm; top:90mm; width:150mm;">
+      <p class="portada-titulo">{{ titulo_portada_servicios | replace('\n','<br>') | safe }}</p>
+      <p class="portada-prep-label">Preparado para:</p>
+      <p class="portada-prep-valor">{{ preparado_para }}</p>
+      {% if objetivo %}
+      <p class="portada-objetivo">{{ objetivo }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Texto lateral vertical -90° #}
+  <div class="texto-lateral">
+    <span>C&nbsp;&nbsp;Y&nbsp;&nbsp;B&nbsp;&nbsp;E&nbsp;&nbsp;R&nbsp;&nbsp;-&nbsp;&nbsp;P&nbsp;&nbsp;R&nbsp;&nbsp;O&nbsp;&nbsp;T&nbsp;&nbsp;E&nbsp;&nbsp;C&nbsp;&nbsp;T&nbsp;&nbsp;I&nbsp;&nbsp;O&nbsp;&nbsp;N&nbsp;&nbsp;.&nbsp;&nbsp;C&nbsp;&nbsp;L</span>
+  </div>
+
+  {# Círculo verde menta — esquina inferior derecha, parcialmente fuera #}
+  <div class="circulo-verde">
+    <p class="elab-label">Elaborado para:</p>
+    {% if logo_cliente and logo_cliente != 'None' %}
+    <img class="logo-cliente-img" src="{{ logo_cliente }}" alt="{{ nombre_cliente }}">
+    {% else %}
+    <p class="nombre-cliente-txt">{{ nombre_cliente }}</p>
+    {% endif %}
+  </div>
+
+  {# Logo CP inferior izquierdo #}
+  <img class="logo-cp-bottom" src="{{ logo_cp }}" alt="Cyber-Protection">
+</div>
+
+
+{# ══════════════════════════════════════════════════════════════
+   MACRO: página interior estándar (pág 2, 4, 5, 6, 7, 8)
+   Layout: foto lateral | bloque blanco contenido | bloque logo inf-der
+   El h2 aparece dentro del bloque contenido en top=92.2mm
+══════════════════════════════════════════════════════════════ #}
+{% macro pagina_std(titulo_sec) %}
+<div class="interior">
+  <img class="foto-lateral" src="{{ foto_edificio }}" alt="">
+  <div class="bloque-contenido"></div>
+  <div class="bloque-logo-inf">
+    <img src="{{ logo_cp }}" alt="Cyber-Protection">
+  </div>
+  <div class="contenido">
+    <h2>{{ titulo_sec }}</h2>
+    {{ caller() }}
+  </div>
+</div>
+{% endmacro %}
+
+
+{# ══════════════════════════════════════════════════════════════
+   MACRO: página interior con BANNER (pág 3 — Alcance)
+   En el base el título aparece sobre fondo verde menta dentro
+   del bloque, a top=52.9mm de la página (150pts medido)
+══════════════════════════════════════════════════════════════ #}
+{% macro pagina_banner(titulo_sec) %}
+<div class="interior">
+  <img class="foto-lateral" src="{{ foto_edificio }}" alt="">
+  <div class="bloque-contenido"></div>
+  <div class="bloque-logo-inf">
+    <img src="{{ logo_cp }}" alt="Cyber-Protection">
+  </div>
+  <div class="banner-seccion">
+    <h2>{{ titulo_sec }}</h2>
+  </div>
+  <div class="contenido-post-banner">
+    {{ caller() }}
+  </div>
+</div>
+{% endmacro %}
+
+
+{# ══════════════════════════════════════════════════════════════
+   PÁG 2 — INTRODUCCIÓN
+══════════════════════════════════════════════════════════════ #}
+{% call pagina_std("Introducción") %}
+  <p>{{ introduccion }}</p>
+
+  {% if frase_clave %}
+  <p class="frase-clave">"{{ frase_clave }}"</p>
+  {% endif %}
+
+  {% if cierre_intro %}
+  <p>{{ cierre_intro }}</p>
+  {% endif %}
+
+  <div class="firma">
+    <p class="firma-linea">________________________</p>
+    <p class="firma-nombre">Andrés Barrientos Cisternas</p>
+    <p class="firma-cargo">CTO / CYBERPROTECTION.CL</p>
+  </div>
+{% endcall %}
+
+
+{# ══════════════════════════════════════════════════════════════
+   PÁG 3 — ALCANCE (con banner verde)
+══════════════════════════════════════════════════════════════ #}
+{% call pagina_banner("Alcance") %}
+  {% if antecedente_titulo %}
+  <h3>{{ antecedente_titulo }}</h3>
+  {% endif %}
+
+  <p>{{ alcance_intro }}</p>
+
+  {% if antecedente_bullets %}
+  <ul class="lista-alcance">
+    {% for b in antecedente_bullets %}
+    <li>{{ b }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+{% endcall %}
+
+
+{# ══════════════════════════════════════════════════════════════
+   PÁG 4 — SERVICIOS PROPUESTOS
+══════════════════════════════════════════════════════════════ #}
+{% call pagina_std("Servicios Propuestos:") %}
+  <p>Suite de {{ servicios | length }} servicio(s) diseñados para proteger integralmente la infraestructura de {{ nombre_cliente }}.</p>
+
+  {% for srv in servicios %}
+  <div class="bloque-servicio">
+    <div class="srv-header">{{ srv.nombre }}</div>
+    {% if srv.descripcion %}
+    <p class="srv-desc">{{ srv.descripcion }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  {% if valor_estrategico %}
+  <p class="valor-estrategico">{{ valor_estrategico }}</p>
+  {% endif %}
+{% endcall %}
+
+
+{# ══════════════════════════════════════════════════════════════
+   PÁG 5 — CUMPLIMIENTO + MATRIZ DE VALOR
+══════════════════════════════════════════════════════════════ #}
+{% call pagina_std("Cumplimiento y Matriz de Valor") %}
+  {% if cumplimiento %}
+  <h3 class="sub-titulo">C. Cumplimiento Normativo — "Gobernanza y Ley"</h3>
+  <p>{{ cumplimiento.intro }}</p>
+  <ul class="lista-cumplimiento">
+    {% for b in cumplimiento.bullets %}
+    <li>{{ b }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if matriz_valor %}
+  <h3 class="sub-titulo" style="margin-top:5mm">Matriz de Valor para {{ nombre_cliente }}</h3>
+  <table class="tabla-matriz">
+    <thead>
+      <tr>
+        <th>Servicio</th>
+        <th>Beneficio Directo</th>
+        <th>Valor Agregado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fila in matriz_valor %}
+      <tr>
+        <td><strong>{{ fila.servicio }}</strong></td>
+        <td>{{ fila.beneficio }}</td>
+        <td>{{ fila.valor_agregado }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+{% endcall %}
+
+
+{# ══════════════════════════════════════════════════════════════
+   PÁG 6 — METODOLOGÍA + DIFERENCIADORES
+══════════════════════════════════════════════════════════════ #}
+{% call pagina_std("Metodología y Diferenciadores") %}
+  {% if metodologia %}
+  <h3 class="sub-titulo">4. Metodología de Trabajo</h3>
+  <ul class="lista-metodologia">
+    {% for paso in metodologia %}
+    <li>{{ paso }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if diferenciadores %}
+  <h3 class="sub-titulo" style="margin-top:5mm">5. Diferenciadores Locales</h3>
+  <ul class="lista-metodologia">
+    {% for d in diferenciadores %}
+    <li>{{ d }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+{% endcall %}
+
+
+{# ══════════════════════════════════════════════════════════════
+   PÁG 7 — CENTRO DE COSTOS
+══════════════════════════════════════════════════════════════ #}
+{% call pagina_std("Centro de Costos") %}
+  <table class="tabla-costos">
+    <thead>
+      <tr>
+        <th>Servicio</th>
+        <th>Costo Mensual (UF)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for srv in servicios %}
+      <tr>
+        <td>{{ srv.nombre }}</td>
+        <td class="td-centro">A convenir</td>
+      </tr>
+      {% endfor %}
+      <tr class="fila-total">
+        <td>TOTAL SUITE</td>
+        <td class="td-centro">A convenir</td>
+      </tr>
+    </tbody>
+  </table>
+
+  {% if nota_costos %}
+  <p class="nota-costos">{{ nota_costos }}</p>
+  {% endif %}
+{% endcall %}
+
+
+{# ══════════════════════════════════════════════════════════════
+   PÁG 8 — CONDICIONES COMERCIALES
+══════════════════════════════════════════════════════════════ #}
+{% call pagina_std("Condiciones Comerciales:") %}
+  {% for linea in condiciones %}
+    {% if linea %}
+    <p class="cond-linea">{{ linea }}</p>
+    {% else %}
+    <div class="cond-espacio"></div>
+    {% endif %}
+  {% endfor %}
+{% endcall %}
+
+</body>
+</html>

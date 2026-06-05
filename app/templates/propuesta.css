@@ -1,0 +1,449 @@
+/* ═══════════════════════════════════════════════════════════════
+   propuesta.css — Pixel-perfect del PDF base UNAB
+   Medidas extraídas con pdfplumber. Unidades en mm para WeasyPrint.
+   Fuente original: Red Hat Display Bold (embebida en el PDF base)
+   ═══════════════════════════════════════════════════════════════
+
+   PORTADA — coordenadas exactas:
+     Fondo azul:    0,0 → 210.2×297.2mm  fill #155FCF
+     Bloque blanco: left=-8.58mm, top=41.95mm, w=176.54mm, h=263.10mm
+                    (sale por izquierda, sale por abajo, NO toca el borde superior)
+     Círculo verde: cx=158.6mm desde izq, cy=242.9mm desde arriba, r=61.5mm
+                    sale 10mm por la derecha y 7.2mm por abajo
+     Logo CP:       left=21.0mm, top=261.8mm (desde arriba), w=77.3mm, h=28.6mm
+     Logo cliente:  left=147.1mm, top=7.8mm, w=45.8mm, h=38.6mm
+     Título:        left=21.0mm, top=41.95mm, size=38.5pt → ~13.6mm
+     Texto lateral: x=183.6mm, cy=71.0mm, size=15.1pt, rotado -90°
+
+   INTERIORES pág 2 (molde):
+     Foto lateral:   x=-7.1mm, w=104.3mm, h=303.7mm (toda la altura)
+     Bloque blanco contenido: x=32.1mm, top=0, w=167.8mm, h=212.8mm
+     Bloque blanco logo:      x=97.2mm, top=230.9mm, w=113mm, h=66.2mm
+     Logo CP:        x=106.4mm, top=246.8mm, w=94.5mm, h=34.7mm
+     Texto h2:       x=43.6mm (123.6pts), top=261.2pts=92.2mm, size=26pt
+*/
+
+/* ── Google Font — Red Hat Display (aproximación a la fuente del base) ── */
+@import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@700&display=swap');
+
+@page {
+  size: 210mm 297mm;
+  margin: 0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Red Hat Display', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   PORTADA
+══════════════════════════════════════════════════════════════ */
+
+.portada {
+  width: 210mm;
+  height: 297mm;
+  background: #155FCF;
+  position: relative;
+  page-break-after: always;
+  overflow: hidden;
+}
+
+/* Bloque blanco principal
+   Medido: x0=-24.33pts=-8.58mm, y0=118.93pts=41.95mm, w=176.54mm, h=263.10mm
+   Sale por izquierda y por abajo. NO toca el borde superior.            */
+.bloque-blanco {
+  position: absolute;
+  left: -8.58mm;
+  top: 41.95mm;
+  width: 176.54mm;
+  height: 263.10mm;
+  background: white;
+  padding: 0 0 0 21mm; /* padding-left = x logo CP = 21mm */
+}
+
+/* Logo CP arriba dentro del blanco
+   Medido: left=21mm, top=261.8mm desde arriba de la página
+   top relativo al bloque: 261.8 - 41.95 = 219.85mm desde top del bloque */
+.logo-cp-top {
+  position: absolute;
+  left: 0;          /* ya tiene padding-left del bloque */
+  top: 0;
+  padding-top: 5mm;
+  width: 77.3mm;
+  height: auto;
+  display: block;
+}
+
+/* Contenido de texto en el bloque blanco */
+.portada-texto {
+  position: absolute;
+  left: 21mm;
+  top: 41.95mm;
+  width: 155mm;
+  padding-top: 14mm; /* espacio para el logo CP arriba */
+}
+
+/* Título portada — size=38.5pt medido, font=Red Hat Display Bold */
+.portada-titulo {
+  font-size: 38.5pt;
+  font-weight: 700;
+  color: #155FCF;
+  line-height: 1.10;
+  margin-bottom: 8mm;
+  margin-top: 28mm; /* dejar espacio para logo */
+}
+
+.portada-prep-label {
+  font-size: 11.5pt;
+  font-weight: 700;
+  color: #155FCF;
+  margin-bottom: 2mm;
+}
+
+.portada-prep-valor {
+  font-size: 11.5pt;
+  font-weight: 700;
+  color: #155FCF;
+  margin-bottom: 5mm;
+  max-width: 140mm;
+}
+
+.portada-objetivo {
+  font-size: 11.5pt;
+  font-weight: 700;
+  color: #155FCF;
+  max-width: 140mm;
+  line-height: 1.45;
+}
+
+/* Texto lateral vertical CYBER-PROTECTION.CL
+   Medido: x=183.6mm desde izq, centro vertical cy=71mm desde arriba de página
+   matrix=[0,-0.75,0.75,0,...] → -90° (de abajo hacia arriba)
+   size=15.1pt                                                            */
+.texto-lateral {
+  position: absolute;
+  right: 0mm;
+  top: 0;
+  width: 13mm;
+  height: 297mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.texto-lateral span {
+  display: block;
+  font-size: 11pt;
+  font-weight: 700;
+  color: #155FCF;
+  letter-spacing: 2.5px;
+  white-space: nowrap;
+  transform: rotate(-90deg);
+  transform-origin: center center;
+}
+
+/* Círculo verde menta
+   Medido: cx=158.6mm, cy_from_top=242.9mm, r=61.5mm
+   Sale 10mm por derecha, 7.2mm por abajo.
+   Convertido a left/top del div (esquina sup-izq del bounding box):
+     left = cx - r = 158.6 - 61.5 = 97.1mm
+     top  = cy - r = 242.9 - 61.5 = 181.4mm                            */
+.circulo-verde {
+  position: absolute;
+  left: 97.1mm;
+  top: 181.4mm;
+  width: 123mm;   /* 2 × radio = 2 × 61.5 = 123mm */
+  height: 123mm;
+  background: #8EE3C8;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12mm;
+  text-align: center;
+}
+
+.elab-label {
+  font-size: 8pt;
+  font-weight: 700;
+  color: #155FCF;
+  margin-bottom: 3mm;
+}
+
+.logo-cliente-img {
+  max-width: 42mm;
+  max-height: 38mm;
+  object-fit: contain;
+}
+
+.nombre-cliente-txt {
+  font-size: 13pt;
+  font-weight: 700;
+  color: #155FCF;
+  text-align: center;
+}
+
+/* Logo CP inferior izquierdo
+   Medido: x0=59.5pts=21.0mm, y1=823pts → bottom desde abajo = (842.25-823)*0.352778=6.8mm
+   WeasyPrint usa top/bottom desde arriba, así que: top = 261.8mm                */
+.logo-cp-bottom {
+  position: absolute;
+  left: 21.0mm;
+  bottom: 6.8mm;
+  width: 77.3mm;
+  height: auto;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   PÁGINAS INTERIORES
+   Molde exacto de pág 2 (y pág 4 para variantes):
+
+   Foto lateral:    x=-7.1mm, top=-6.5mm, w=104.3mm, h=303.7mm
+   Bloque contenido: x=32.1mm, top=0, w=167.8mm, h=212.8mm
+   Bloque logo sup: x=97.2mm, top=230.9mm, w=113mm, h=66.2mm
+   Logo CP en bloque: x=106.4mm, top=246.8mm, w=94.5mm, h=34.7mm
+   Texto h2: x=43.6mm, top=92.2mm (desde arriba), size=26pt
+══════════════════════════════════════════════════════════════ */
+
+.interior {
+  width: 210mm;
+  height: 297mm;
+  background: #8EE3C8;
+  position: relative;
+  page-break-after: always;
+  overflow: hidden;
+}
+
+/* Foto lateral izquierda — cubre toda la altura */
+.foto-lateral {
+  position: absolute;
+  left: -7.1mm;
+  top: -6.5mm;
+  width: 104.3mm;
+  height: 303.7mm;
+  object-fit: cover;
+}
+
+/* Bloque blanco contenido — desde top=0 hasta h=212.8mm */
+.bloque-contenido {
+  position: absolute;
+  left: 32.1mm;
+  top: 0;
+  width: 167.8mm;
+  right: 0;
+  height: 212.8mm;
+  background: white;
+}
+
+/* Bloque blanco logo inferior derecho
+   Medido: x=97.2mm, top=230.9mm, w=113mm, h=66.2mm */
+.bloque-logo-inf {
+  position: absolute;
+  left: 97.2mm;
+  top: 230.9mm;
+  width: 113mm;
+  height: 66.2mm;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4mm 6mm;
+}
+
+.bloque-logo-inf img {
+  width: 94.5mm;
+  height: 34.7mm;
+  object-fit: contain;
+}
+
+/* Contenido de texto (dentro del bloque contenido)
+   Primer texto en top=92.2mm desde arriba de página */
+.contenido {
+  position: absolute;
+  left: 32.1mm;
+  top: 92.2mm;       /* donde empieza el h2 en el original */
+  right: 0;
+  bottom: 0;
+  padding: 0 12mm 8mm 11.5mm; /* 123.6pts - 91.1pts = 32.5pts = 11.5mm */
+  overflow: hidden;
+}
+
+/* ── Tipografía interior ── */
+
+h2 {
+  font-size: 26pt;      /* medido exacto */
+  font-weight: 700;
+  color: #155FCF;
+  margin-bottom: 5mm;
+  line-height: 1.15;
+}
+
+h3, .sub-titulo {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #155FCF;
+  margin-bottom: 2.5mm;
+  margin-top: 4mm;
+}
+
+p {
+  font-size: 9pt;
+  color: #155FCF;
+  line-height: 1.65;
+  margin-bottom: 3mm;
+  text-align: justify;
+}
+
+/* Frase clave en negrita */
+.frase-clave {
+  font-size: 9pt;
+  font-weight: 700;
+  color: #155FCF;
+  line-height: 1.65;
+  margin: 3mm 0;
+  text-align: justify;
+}
+
+/* Firma */
+.firma {
+  margin-top: 7mm;
+  text-align: center;
+}
+.firma-linea  { color: #155FCF; font-size: 9pt; text-align: center; margin-bottom: 1mm; }
+.firma-nombre { font-size: 9pt; font-weight: 700; color: #155FCF; text-align: center; }
+.firma-cargo  { font-size: 8pt; color: #155FCF; text-align: center; }
+
+/* Pág 3 — Banner "Alcance"
+   En el base el título "Alcance" está sobre un rectángulo verde menta
+   posicionado a top=150pts=52.9mm, dentro del bloque blanco que comienza en top=0.
+   El banner es el mismo bloque verde de fondo visible entre el bloque contenido
+   y el logo. Lo simulamos con un div encima del contenido.             */
+.banner-seccion {
+  position: absolute;
+  left: 32.1mm;
+  top: 52.9mm;          /* top=150pts desde arriba */
+  right: 0;
+  height: 26mm;
+  background: #8EE3C8;
+  display: flex;
+  align-items: center;
+  padding-left: 11.5mm;
+}
+
+.banner-seccion h2 {
+  color: #155FCF;
+  font-size: 26pt;
+  margin: 0;
+}
+
+/* Para páginas con banner, el contenido empieza más abajo */
+.contenido-post-banner {
+  position: absolute;
+  left: 32.1mm;
+  top: 79mm;            /* 52.9 + 26mm del banner */
+  right: 0;
+  bottom: 0;
+  padding: 0 12mm 8mm 11.5mm;
+  background: white;
+  overflow: hidden;
+}
+
+/* ── Listas ── */
+.lista-alcance li,
+.lista-cumplimiento li,
+.lista-metodologia li {
+  font-size: 9pt;
+  color: #155FCF;
+  line-height: 1.6;
+  margin-bottom: 1.8mm;
+  margin-left: 4mm;
+}
+
+/* ── Bloques de servicio ── */
+.bloque-servicio {
+  margin-bottom: 3mm;
+}
+
+.srv-header {
+  font-size: 9pt;
+  font-weight: 700;
+  color: white;
+  background: #155FCF;
+  padding: 2.5mm 4mm;
+  border-radius: 2px;
+  margin-bottom: 1.5mm;
+}
+
+.srv-desc {
+  font-size: 8.5pt;
+  color: #155FCF;
+  padding-left: 2mm;
+  margin-bottom: 0;
+  line-height: 1.55;
+}
+
+.valor-estrategico {
+  font-size: 8.5pt;
+  font-style: italic;
+  color: #155FCF;
+  margin-top: 3mm;
+  line-height: 1.55;
+}
+
+/* ── Tablas ── */
+.tabla-matriz,
+.tabla-costos {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2.5mm 0;
+  font-size: 8.5pt;
+}
+
+.tabla-matriz th,
+.tabla-costos th {
+  background: #155FCF;
+  color: white;
+  font-weight: 700;
+  padding: 3.5mm 4mm;
+  text-align: left;
+}
+
+.tabla-matriz td,
+.tabla-costos td {
+  color: #155FCF;
+  padding: 3mm 4mm;
+  border-bottom: 0.3px solid #c0cfe8;
+  vertical-align: top;
+}
+
+.tabla-matriz tr:nth-child(even) td,
+.tabla-costos tr:nth-child(even) td {
+  background: #EBF3FF;
+}
+
+.td-centro { text-align: center; }
+
+.fila-total td {
+  background: #155FCF !important;
+  color: white !important;
+  font-weight: 700;
+  border-top: 1.5px solid #8EE3C8;
+}
+
+.nota-costos {
+  font-size: 7.5pt;
+  font-style: italic;
+  color: #888;
+  text-align: center;
+  margin-top: 2.5mm;
+}
+
+/* ── Condiciones ── */
+.cond-linea  { font-size: 9pt; color: #155FCF; line-height: 1.6; margin-bottom: 1.5mm; }
+.cond-espacio { height: 3mm; }
