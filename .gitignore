@@ -1,0 +1,32 @@
+# IDE
+.idea/
+
+# Scripts locales
+start.sh
+stop.sh
+
+# Variables de entorno
+.env
+.env.local
+.env.*
+
+# Entornos virtuales de Python
+.venv/
+venv/
+
+# Cache de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos generados y temporales
+uploads_tmp/
+propuestas_generadas/
+*.log
+
+# macOS
+.DS_Store
+
+# Carpetas temporales
+tmp/
