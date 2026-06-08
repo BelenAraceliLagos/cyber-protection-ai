@@ -12,163 +12,375 @@
   <link rel="stylesheet" href="../css/animations.css">
   <link rel="stylesheet" href="../css/layout.css">
   <link rel="stylesheet" href="../css/components.css">
+  <style>
+    .quotes-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .quotes-grid { grid-template-columns: 1fr; } }
+
+    /* Categorías */
+    .q-categoria { border: 1px solid var(--cp-border); border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+    .q-categoria__header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; background: var(--cp-bg-soft); cursor: pointer; user-select: none; transition: background .15s; }
+    .q-categoria__header:hover { background: var(--cp-info-bg); }
+    .q-categoria__nombre { font-weight: 600; font-size: 13px; flex: 1; }
+    .q-categoria__sel-all { font-size: 11px !important; padding: 2px 8px !important; height: auto !important; opacity: 0; transition: opacity .2s; }
+    .q-categoria__header:hover .q-categoria__sel-all { opacity: 1; }
+    .q-categoria__body { display: none; flex-direction: column; max-height: 300px; overflow-y: auto; }
+    .q-categoria__body--open { display: flex; }
+
+    .q-servicio { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--cp-border); cursor: pointer; transition: background .15s; }
+    .q-servicio:last-child { border-bottom: none; }
+    .q-servicio:hover { background: var(--cp-info-bg); }
+    .q-servicio:has(.q-servicio__check:checked) { background: #eef2ff; border-left: 3px solid var(--cp-blue-main); }
+    .q-servicio__check { margin-top: 3px; flex-shrink: 0; accent-color: var(--cp-blue-main); width: 15px; height: 15px; }
+    .q-servicio__info { flex: 1; min-width: 0; }
+    .q-servicio__nombre { font-size: 13px; font-weight: 500; color: var(--cp-text-main); }
+    .q-servicio__desc { font-size: 11px; color: var(--cp-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .q-servicio__precio { font-size: 11px; font-weight: 600; color: var(--cp-blue-main); white-space: nowrap; flex-shrink: 0; }
+
+    /* Panel derecho */
+    .q-resumen { position: sticky; top: 80px; }
+    .q-contador-wrap { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--cp-info-bg); border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--cp-blue-main); margin-bottom: 16px; }
+
+    /* Botones de generación */
+    .q-botones { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+    .btn-ia {
+      width: 100%; justify-content: center;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none; color: white;
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 16px; border-radius: 8px;
+      font-weight: 600; font-size: 14px; cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn-ia:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+    .btn-ia:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    /* Form */
+    .form__group { margin-bottom: 14px; }
+    .form__label { display: block; font-size: 12px; font-weight: 600; color: var(--cp-text-muted); margin-bottom: 5px; }
+    .form__input { width: 100%; padding: 9px 12px; border: 1px solid var(--cp-border); border-radius: 8px; font-family: inherit; font-size: 13px; background: var(--cp-bg); color: var(--cp-text-main); outline: none; transition: border-color .2s; box-sizing: border-box; }
+    .form__input:focus { border-color: var(--cp-blue-main); }
+    textarea.form__input { resize: vertical; min-height: 72px; }
+
+    /* Badge IA */
+    .badge-ia { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; background: linear-gradient(135deg,#6366f1,#8b5cf6); color: white; }
+
+    /* ── MODAL IA ── */
+    .modal-ia-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,.5);
+      align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-ia-box {
+      background: var(--cp-bg);
+      border-radius: 16px;
+      width: 100%; max-width: 520px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    }
+    .modal-ia-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--cp-border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .modal-ia-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg,#6366f1,#8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .modal-ia-title { font-size: 17px; font-weight: 700; color: var(--cp-text-main); }
+    .modal-ia-sub   { font-size: 12px; color: var(--cp-text-muted); margin-top: 2px; }
+    .modal-ia-body  { padding: 20px 24px; }
+    .modal-ia-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--cp-border);
+      display: flex; gap: 10px; justify-content: flex-end;
+    }
+
+    /* Pasos en modal */
+    .modal-progress { display: none; margin-top: 16px; }
+    .modal-step {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 10px; border-radius: 8px;
+      font-size: 13px; color: var(--cp-text-muted);
+      transition: all .3s;
+    }
+    .modal-step--active { background: var(--cp-info-bg); color: var(--cp-blue-main); font-weight: 600; }
+    .modal-step--done   { color: #10b981; }
+    .modal-step--done::before  { content: '✓ '; font-weight: 700; }
+    .modal-step--active::after { content: '...'; }
+  </style>
 </head>
 <body>
 <div id="alert-container" class="alert-container"></div>
-<div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
 <div class="app">
   <header class="topbar">
-    <button class="topbar__hamburger" id="hamburger" aria-label="Abrir menu"><i class="ti ti-menu-2" aria-hidden="true"></i></button>
+    <button class="topbar__hamburger" id="hamburger"><i class="ti ti-menu-2"></i></button>
     <div class="topbar__logo">
-      <div class="topbar__logo-mark"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+      <div class="topbar__logo-mark"><i class="ti ti-shield-lock"></i></div>
       <span class="topbar__brand">Cyber-Protection</span>
     </div>
   </header>
-  <nav class="sidebar" id="sidebar" aria-label="Navegacion principal">
+
+  <nav class="sidebar" id="sidebar">
     <div class="sidebar__header">
-      <div class="sidebar__logo-mark"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+      <div class="sidebar__logo-mark"><i class="ti ti-shield-lock"></i></div>
       <span class="sidebar__brand sidebar__label">CP Sistema</span>
-      <button class="sidebar__collapse-btn" id="sidebar-collapse-btn" aria-label="Colapsar sidebar">
-        <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-collapse-icon" aria-hidden="true"></i>
+      <button class="sidebar__collapse-btn" id="sidebar-collapse-btn">
+        <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-collapse-icon"></i>
       </button>
     </div>
-    <div class="sidebar__nav">
-      <a href="dashboard.html" class="sidebar__item"><i class="ti ti-home" aria-hidden="true"></i><span class="sidebar__label">Dashboard</span></a>
-      <a href="clients.html"   class="sidebar__item"><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
-      <a href="services.html"  class="sidebar__item"><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
-      <a href="quotes.html"    class="sidebar__item"><i class="ti ti-file-invoice" aria-hidden="true"></i><span class="sidebar__label">Cotizaciones</span></a>
-      <a href="report.html"    class="sidebar__item"><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
+        <div class="sidebar__nav">
+      <a href="dashboard.html"     class="sidebar__item" ><i class="ti ti-home" aria-hidden="true"></i><span class="sidebar__label">Dashboard</span></a>
+      <a href="clients.html"       class="sidebar__item"  ><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
+      <a href="services.html"      class="sidebar__item"  ><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
+      <a href="opportunities.html" class="sidebar__item"  ><i class="ti ti-trending-up" aria-hidden="true"></i><span class="sidebar__label">Oportunidades</span></a>
+      <a href="quotes.html"        class="sidebar__item sidebar__item--active"  aria-current="page"><i class="ti ti-file-invoice" aria-hidden="true"></i><span class="sidebar__label">Propuesta rápida</span></a>
+      <a href="report.html"        class="sidebar__item"  ><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
       <div class="sidebar__divider"></div>
-      <a href="import.html"    class="sidebar__item"><i class="ti ti-upload" aria-hidden="true"></i><span class="sidebar__label">Importar datos</span></a>
+      <a href="import.html"        class="sidebar__item"  ><i class="ti ti-upload" aria-hidden="true"></i><span class="sidebar__label">Importar datos</span></a>
+      <a href="ingestion.html"     class="sidebar__item"  ><i class="ti ti-database-import" aria-hidden="true"></i><span class="sidebar__label">Historial</span></a>
     </div>
     <div class="sidebar__user">
       <div class="sidebar__avatar" id="sidebar-initials">??</div>
       <div class="sidebar__user-info sidebar__label">
         <div class="sidebar__username" id="sidebar-username">Cargando...</div>
-        <div class="sidebar__role" id="sidebar-role">.</div>
+        <div class="sidebar__role"     id="sidebar-role">.</div>
       </div>
     </div>
   </nav>
+
   <div class="main">
     <header class="main__topbar">
-      <span class="main__topbar-title">Cotizaciones</span>
+      <span class="main__topbar-title">Nueva cotización</span>
     </header>
+
     <main class="main__content">
-
-  <div class="page-header page-enter">
-    <div>
-      <h1 class="page-header__title">Cotizaciones</h1>
-      <p class="page-header__sub">
-        Crear y administrar cotizaciones
-      </p>
-    </div>
-  </div>
-
-  <div class="card page-enter page-enter--d1">
-
-    <div class="card__header">
-      <span class="card__title">
-        Nueva Cotización
-      </span>
-    </div>
-
-    <div class="card__body">
-
-      <form id="quote-form">
-
-        <div class="form__group">
-          <label>Cliente</label>
-
-          <select
-            id="quote-client"
-            required
-          >
-            <option value="">
-              Cargando clientes...
-            </option>
-          </select>
-
+      <div class="page-header page-enter">
+        <div>
+          <h1 class="page-header__title">Generar propuesta</h1>
+          <p class="page-header__sub">Elige el cliente, selecciona los servicios y descarga el PDF</p>
         </div>
+      </div>
 
-        <div class="form__group">
+      <div class="quotes-grid">
 
-          <label>
-            Servicios
-          </label>
+        <!-- ── Columna izquierda ── -->
+        <div style="display:flex;flex-direction:column;gap:16px" class="page-enter page-enter--d1">
 
-          <div id="services-container">
+          <!-- Cliente -->
+          <div class="card">
+            <div class="card__header">
+              <div class="card__title"><i class="ti ti-user" style="color:var(--cp-blue-main)"></i> Cliente</div>
+            </div>
+            <div class="card__body">
+              <div class="form__group">
+                <label class="form__label">Buscar cliente</label>
+                <input type="search" id="q-cliente-search" class="form__input" placeholder="Nombre de empresa...">
+              </div>
+              <div class="form__group" style="margin-bottom:0">
+                <label class="form__label">Seleccionar</label>
+                <select id="q-cliente" class="form__input" size="5" style="height:auto;padding:4px">
+                  <option value="">Cargando clientes...</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
-            Cargando servicios...
-
+          <!-- Catálogo de servicios -->
+          <div class="card">
+            <div class="card__header">
+              <div class="card__title"><i class="ti ti-briefcase" style="color:var(--cp-blue-main)"></i> Servicios por categoría</div>
+            </div>
+            <div class="card__body" style="padding-top:8px">
+              <div id="q-catalogo">
+                <div style="text-align:center;padding:24px;color:var(--cp-text-muted)">
+                  <i class="ti ti-loader" style="font-size:24px"></i>
+                  <p>Cargando catálogo...</p>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
 
-        <button
-          type="submit"
-          class="btn btn--primary"
-        >
-          Crear Cotización
-        </button>
+        <!-- ── Columna derecha ── -->
+        <div class="q-resumen page-enter page-enter--d2">
+          <div class="card">
+            <div class="card__header">
+              <div class="card__title"><i class="ti ti-file-description" style="color:var(--cp-blue-main)"></i> Resumen</div>
+            </div>
+            <div class="card__body">
 
-      </form>
+              <!-- Contador -->
+              <div class="q-contador-wrap">
+                <i class="ti ti-checkbox"></i>
+                <span id="q-contador">Ningún servicio seleccionado</span>
+              </div>
 
-    </div>
+              <!-- Título -->
+              <div class="form__group">
+                <label class="form__label">Título de la propuesta</label>
+                <input type="text" id="q-titulo" class="form__input"
+                  placeholder="Ej: Resiliencia Digital ACME 2025">
+              </div>
 
-  </div>
+              <!-- Info cliente -->
+              <div id="q-cliente-info" style="display:none;margin-bottom:16px;
+                padding:12px;background:var(--cp-info-bg);border-radius:8px"></div>
 
-  <div
-    class="card page-enter page-enter--d2"
-    style="margin-top:20px"
-  >
+              <!-- Botones -->
+              <div class="q-botones">
 
-    <div class="card__header">
-      <span class="card__title">
-        Cotizaciones Registradas
-      </span>
-    </div>
+                <!-- Botón simple -->
+                <button class="btn btn--primary" id="q-generar-simple" disabled
+                  style="width:100%;justify-content:center">
+                  <i class="ti ti-file-download btn__icon"></i>
+                  Generar propuesta PDF
+                </button>
 
-    <div class="card__body">
+                <!-- Divisor -->
+                <div style="display:flex;align-items:center;gap:8px;margin:2px 0">
+                  <div style="flex:1;height:1px;background:var(--cp-border)"></div>
+                  <span style="font-size:11px;color:var(--cp-text-muted)">o bien</span>
+                  <div style="flex:1;height:1px;background:var(--cp-border)"></div>
+                </div>
 
-      <table
-        id="quotes-table"
-        style="width:100%"
-      >
+                <!-- Botón IA -->
+                <button class="btn-ia" id="q-generar-ia" disabled>
+                  <i class="ti ti-sparkles"></i>
+                  Generar informe con IA
+                </button>
 
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Cliente</th>
-            <th>Total</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
+              </div>
 
-        <tbody></tbody>
+              <div style="margin-top:8px;font-size:11px;color:var(--cp-text-muted);text-align:center">
+                El PDF se descarga directamente a tu computador
+              </div>
 
-      </table>
+              <!-- Instrucciones -->
+              <div style="margin-top:20px;border-top:1px solid var(--cp-border);padding-top:16px">
+                <div style="font-size:12px;font-weight:600;color:var(--cp-text-muted);margin-bottom:10px">PASOS</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
 
-    </div>
+                  <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--cp-text-muted)">
+                    <span style="width:18px;height:18px;border-radius:50%;background:var(--cp-blue-main);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
+                    Selecciona el <strong style="color:var(--cp-text-main);margin-left:3px">cliente</strong>
+                  </div>
 
-  </div>
+                  <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--cp-text-muted)">
+                    <span style="width:18px;height:18px;border-radius:50%;background:var(--cp-blue-main);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
+                    Expande las <strong style="color:var(--cp-text-main);margin:0 3px">categorías</strong> y marca servicios
+                  </div>
 
-</main>
+                  <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--cp-text-muted)">
+                    <span style="width:18px;height:18px;border-radius:50%;background:var(--cp-blue-main);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
+                    Personaliza el <strong style="color:var(--cp-text-main);margin:0 3px">título</strong> (opcional)
+                  </div>
+
+                  <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--cp-text-muted)">
+                    <span style="width:18px;height:18px;border-radius:50%;background:var(--cp-blue-main);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</span>
+                    Elige <strong style="color:var(--cp-text-main);margin:0 3px">PDF simple</strong> o <strong style="color:#8b5cf6;margin-left:3px">con IA</strong>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
   </div>
 </div>
+
+<!-- ══ MODAL CONFIRMACIÓN IA ══════════════════════════════════════════ -->
+<div class="modal-ia-overlay" id="modal-ia">
+  <div class="modal-ia-box">
+
+    <div class="modal-ia-header">
+      <div class="modal-ia-icon">🤖</div>
+      <div>
+        <div class="modal-ia-title">Generar informe con IA</div>
+        <div class="modal-ia-sub">
+          La IA redactará introducción, análisis de riesgo, justificación de servicios,
+          valor estratégico y conclusión personalizada
+        </div>
+      </div>
+      <button id="modal-ia-close" style="margin-left:auto;background:none;border:none;
+        font-size:20px;cursor:pointer;color:var(--cp-text-muted)">✕</button>
+    </div>
+
+    <div class="modal-ia-body">
+
+      <!-- Resumen de la cotización -->
+      <div id="modal-resumen" style="margin-bottom:16px"></div>
+
+      <!-- Título personalizable -->
+      <div class="form__group">
+        <label class="form__label">Título del informe</label>
+        <input type="text" id="modal-titulo" class="form__input"
+          placeholder="Ej: Informe de Preventa — ACME 2025">
+      </div>
+
+      <!-- Contexto para la IA -->
+      <div class="form__group" style="margin-bottom:0">
+        <label class="form__label">
+          Contexto adicional para la IA
+          <span style="font-weight:400;color:var(--cp-text-muted)">(recomendado)</span>
+        </label>
+        <textarea id="modal-antecedente" class="form__input"
+          placeholder="Ej: La empresa sufrió un intento de phishing en 2024. Su equipo de TI es pequeño. Tienen oficinas en Santiago y Viña del Mar. Les preocupa especialmente el cumplimiento de la Ley 21.459."></textarea>
+        <div style="font-size:11px;color:var(--cp-text-muted);margin-top:4px">
+          Mientras más contexto entregues, más personalizado será el informe
+        </div>
+      </div>
+
+      <!-- Progreso de generación -->
+      <div class="modal-progress" id="modal-progress">
+        <div style="font-size:12px;font-weight:600;color:var(--cp-text-muted);margin-bottom:8px">
+          Generando con Ollama/Gemma...
+        </div>
+        <div id="modal-step-1" class="modal-step">📝 Introducción personalizada</div>
+        <div id="modal-step-2" class="modal-step">⚠️ Análisis de riesgo por industria</div>
+        <div id="modal-step-3" class="modal-step">🎯 Justificación de servicios</div>
+        <div id="modal-step-4" class="modal-step">💼 Valor estratégico</div>
+        <div id="modal-step-5" class="modal-step">✍️ Conclusión y cierre</div>
+        <div id="modal-step-6" class="modal-step">📄 Ensamblando PDF...</div>
+      </div>
+
+    </div>
+
+    <div class="modal-ia-footer">
+      <button class="btn btn--secondary" id="modal-ia-cancelar">Cancelar</button>
+      <button class="btn-ia" id="modal-ia-confirmar" style="width:auto;padding:10px 20px">
+        <i class="ti ti-sparkles"></i>
+        Confirmar y generar
+      </button>
+    </div>
+
+  </div>
+</div>
+
 <script type="module">
-
-import { initSidebar } from '../js/sidebar.js'
-import { loadUserInfo } from '../js/auth.js'
-import { initProfileModal } from '../js/profile.js'
-import { requireAuth } from '../js/utils.js'
-import { initQuotes } from '../js/quotes.js'
-
-requireAuth()
-loadUserInfo()
-initSidebar()
-initProfileModal()
-initQuotes()
-
+  import { initSidebar }      from '../js/sidebar.js'
+  import { loadUserInfo }     from '../js/auth.js'
+  import { initProfileModal } from '../js/profile.js'
+  import { initQuotes }       from '../js/quotes.js'
+  loadUserInfo()
+  initSidebar()
+  initProfileModal()
+  initQuotes()
 </script>
 </body>
 </html>

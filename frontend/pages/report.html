@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Generar informe — Cyber-Protection</title>
+  <title>Generar Informe — Cyber-Protection</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -12,174 +12,359 @@
   <link rel="stylesheet" href="../css/animations.css">
   <link rel="stylesheet" href="../css/layout.css">
   <link rel="stylesheet" href="../css/components.css">
-  <link rel="stylesheet" href="../css/pages/report.css">
+  <style>
+    .report-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 960px) { .report-grid { grid-template-columns: 1fr; } }
+
+    /* Categorías */
+    .r-categoria {
+      border: 1px solid var(--cp-border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .r-categoria__header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 14px;
+      background: var(--cp-bg-soft);
+      cursor: pointer;
+      user-select: none;
+    }
+    .r-categoria__header:hover { background: var(--cp-info-bg); }
+    .r-categoria__nombre { font-weight: 600; font-size: 13px; flex: 1; }
+    .r-categoria__sel-all {
+      font-size: 11px !important;
+      padding: 2px 8px !important;
+      height: auto !important;
+      opacity: 0; transition: opacity .2s;
+    }
+    .r-categoria__header:hover .r-categoria__sel-all { opacity: 1; }
+    .r-categoria__body { display: none; flex-direction: column; max-height: 260px; overflow-y: auto; }
+    .r-categoria__body--open { display: flex; }
+
+    .r-servicio {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 9px 14px; border-bottom: 1px solid var(--cp-border);
+      cursor: pointer; transition: background .15s;
+    }
+    .r-servicio:last-child { border-bottom: none; }
+    .r-servicio:hover { background: var(--cp-info-bg); }
+    .r-servicio:has(.r-servicio__check:checked) {
+      background: #eef2ff;
+      border-left: 3px solid var(--cp-blue-main);
+    }
+    .r-servicio__check { margin-top: 3px; flex-shrink: 0; accent-color: var(--cp-blue-main); width:15px; height:15px; }
+    .r-servicio__nombre { font-size: 13px; font-weight: 500; color: var(--cp-text-main); }
+    .r-servicio__desc { font-size: 11px; color: var(--cp-text-muted); }
+
+    /* Panel derecho */
+    .r-panel { position: sticky; top: 80px; }
+
+    /* Secciones IA */
+    .ia-secciones {
+      display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;
+    }
+    .ia-seccion {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: var(--cp-bg-soft);
+      border-radius: 8px;
+      border: 1px solid var(--cp-border);
+      cursor: pointer;
+      user-select: none;
+      transition: border-color .2s, background .2s;
+    }
+    .ia-seccion:has(input:checked) {
+      background: var(--cp-info-bg);
+      border-color: var(--cp-blue-main);
+    }
+    .ia-seccion input { accent-color: var(--cp-blue-main); width:15px; height:15px; }
+    .ia-seccion__label { font-size: 13px; font-weight: 500; color: var(--cp-text-main); }
+    .ia-seccion__desc  { font-size: 11px; color: var(--cp-text-muted); }
+
+    /* Progreso de generación */
+    .ia-progress { display: none; }
+    .ia-step {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: 8px;
+      font-size: 13px; color: var(--cp-text-muted);
+      transition: all .3s;
+    }
+    .ia-step--active { color: var(--cp-blue-main); font-weight: 600; background: var(--cp-info-bg); }
+    .ia-step--done   { color: #10b981; }
+    .ia-step__icon   { font-size: 16px; width: 20px; text-align: center; }
+
+    /* Form */
+    .form__group { margin-bottom: 14px; }
+    .form__label { display: block; font-size: 12px; font-weight: 600; color: var(--cp-text-muted); margin-bottom: 5px; }
+    .form__input {
+      width: 100%; padding: 9px 12px;
+      border: 1px solid var(--cp-border); border-radius: 8px;
+      font-family: inherit; font-size: 13px;
+      background: var(--cp-bg); color: var(--cp-text-main);
+      outline: none; transition: border-color .2s; box-sizing: border-box;
+    }
+    .form__input:focus { border-color: var(--cp-blue-main); }
+    textarea.form__input { resize: vertical; min-height: 72px; }
+    .badge-ia {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 99px;
+      font-size: 11px; font-weight: 600;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+    }
+  </style>
 </head>
 <body>
-
 <div id="alert-container" class="alert-container"></div>
-<div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
 
 <div class="app">
-
   <header class="topbar">
-    <button class="topbar__hamburger" id="hamburger" aria-label="Abrir menú">
-      <i class="ti ti-menu-2" aria-hidden="true"></i>
-    </button>
+    <button class="topbar__hamburger" id="hamburger"><i class="ti ti-menu-2"></i></button>
     <div class="topbar__logo">
-      <div class="topbar__logo-mark"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+      <div class="topbar__logo-mark"><i class="ti ti-shield-lock"></i></div>
       <span class="topbar__brand">Cyber-Protection</span>
     </div>
   </header>
 
-  <nav class="sidebar" id="sidebar" aria-label="Navegación principal">
+  <nav class="sidebar" id="sidebar">
     <div class="sidebar__header">
-      <div class="sidebar__logo-mark"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+      <div class="sidebar__logo-mark"><i class="ti ti-shield-lock"></i></div>
       <span class="sidebar__brand sidebar__label">CP Sistema</span>
-      <button class="sidebar__collapse-btn" id="sidebar-collapse-btn" aria-label="Colapsar sidebar">
-        <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-collapse-icon" aria-hidden="true"></i>
+      <button class="sidebar__collapse-btn" id="sidebar-collapse-btn">
+        <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-collapse-icon"></i>
       </button>
     </div>
-    <div class="sidebar__nav">
-      <a href="dashboard.html" class="sidebar__item"><i class="ti ti-home" aria-hidden="true"></i><span class="sidebar__label">Dashboard</span></a>
-      <a href="clients.html"   class="sidebar__item"><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
-      <a href="services.html"  class="sidebar__item"><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
-      <a href="quotes.html"    class="sidebar__item"><i class="ti ti-file-invoice" aria-hidden="true"></i><span class="sidebar__label">Cotizaciones</span></a>
-      <a href="report.html"    class="sidebar__item sidebar__item--active" aria-current="page"><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
+        <div class="sidebar__nav">
+      <a href="dashboard.html"     class="sidebar__item" ><i class="ti ti-home" aria-hidden="true"></i><span class="sidebar__label">Dashboard</span></a>
+      <a href="clients.html"       class="sidebar__item"  ><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
+      <a href="services.html"      class="sidebar__item"  ><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
+      <a href="opportunities.html" class="sidebar__item"  ><i class="ti ti-trending-up" aria-hidden="true"></i><span class="sidebar__label">Oportunidades</span></a>
+      <a href="quotes.html"        class="sidebar__item"  ><i class="ti ti-file-invoice" aria-hidden="true"></i><span class="sidebar__label">Propuesta rápida</span></a>
+      <a href="report.html"        class="sidebar__item sidebar__item--active"  aria-current="page"><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
       <div class="sidebar__divider"></div>
-      <a href="import.html"    class="sidebar__item"><i class="ti ti-upload" aria-hidden="true"></i><span class="sidebar__label">Importar datos</span></a>
+      <a href="import.html"        class="sidebar__item"  ><i class="ti ti-upload" aria-hidden="true"></i><span class="sidebar__label">Importar datos</span></a>
+      <a href="ingestion.html"     class="sidebar__item"  ><i class="ti ti-database-import" aria-hidden="true"></i><span class="sidebar__label">Historial</span></a>
     </div>
     <div class="sidebar__user">
       <div class="sidebar__avatar" id="sidebar-initials">??</div>
       <div class="sidebar__user-info sidebar__label">
         <div class="sidebar__username" id="sidebar-username">Cargando...</div>
-        <div class="sidebar__role" id="sidebar-role">—</div>
+        <div class="sidebar__role"     id="sidebar-role">.</div>
       </div>
     </div>
   </nav>
 
   <div class="main">
     <header class="main__topbar">
-      <span class="main__topbar-title">Generar informe con IA</span>
+      <span class="main__topbar-title">Generar Informe con IA</span>
     </header>
 
     <main class="main__content">
-
       <div class="page-header page-enter">
         <div>
-          <h1 class="page-header__title">Generador de informes</h1>
-          <p class="page-header__sub">Selecciona una cotización y la IA generará la propuesta completa</p>
-        </div>
-      </div>
-
-      <!-- STEP 1: SELECT QUOTE -->
-      <div class="card page-enter page-enter--d1" style="margin-bottom: var(--space-lg)">
-        <div class="card__header">
-          <span class="card__title">
-            <span class="report-step">1</span>
-            Seleccionar cotización
-          </span>
-        </div>
-        <div class="card__body">
-          <div class="form__group" style="margin:0">
-            <label for="report-quote-select">Cotización base para el informe</label>
-            <select id="report-quote-select">
-              <option value="">Cargando cotizaciones...</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- STEP 2: GENERATE -->
-      <div class="card page-enter page-enter--d2" style="margin-bottom: var(--space-lg)">
-        <div class="card__header">
-          <span class="card__title">
-            <span class="report-step">2</span>
-            Generar con Ollama
-          </span>
-          <div class="report-ai-badge">
-            <i class="ti ti-robot" aria-hidden="true"></i>
-            IA local · Llama 3
-          </div>
-        </div>
-        <div class="card__body">
-          <p style="font-size:13px;color:var(--cp-text-muted);margin-bottom:var(--space-md);line-height:1.7">
-            El modelo generará automáticamente: introducción, descripción de riesgos, propuesta de servicios, beneficios esperados, recomendaciones y conclusión.
+          <h1 class="page-header__title">
+            Informe de Preventa
+            <span class="badge-ia"><i class="ti ti-robot"></i> IA Local</span>
+          </h1>
+          <p class="page-header__sub">
+            La IA redacta cada sección usando los datos reales del cliente y los servicios seleccionados
           </p>
-          <button class="btn btn--primary" id="generate-btn">
-            <i class="ti ti-sparkles btn__icon" aria-hidden="true"></i>
-            Generar informe
-          </button>
         </div>
+      </div>
 
-        <!-- OLLAMA SPINNER -->
-        <div class="ollama-spinner" id="ollama-spinner" style="display:none" aria-live="polite" aria-label="Generando informe">
-          <div class="ollama-spinner__ring">
-            <svg viewBox="0 0 72 72" aria-hidden="true">
-              <circle class="track" cx="36" cy="36" r="30"/>
-              <circle class="arc"   cx="36" cy="36" r="30"/>
-            </svg>
-            <div class="ollama-spinner__icon">
-              <i class="ti ti-robot" aria-hidden="true"></i>
+      <div class="report-grid">
+
+        <!-- ── Columna izquierda ── -->
+        <div style="display:flex;flex-direction:column;gap:16px" class="page-enter page-enter--d1">
+
+          <!-- Cliente -->
+          <div class="card">
+            <div class="card__header">
+              <div class="card__title"><i class="ti ti-user" style="color:var(--cp-blue-main)"></i> Cliente</div>
+            </div>
+            <div class="card__body">
+              <div class="form__group">
+                <label class="form__label">Buscar</label>
+                <input type="search" id="r-cliente-search" class="form__input" placeholder="Nombre de empresa...">
+              </div>
+              <div class="form__group" style="margin-bottom:0">
+                <label class="form__label">Seleccionar</label>
+                <select id="r-cliente" class="form__input" size="4" style="height:auto;padding:4px">
+                  <option value="">Cargando...</option>
+                </select>
+              </div>
             </div>
           </div>
-          <p class="ollama-spinner__text">Generando informe...</p>
-          <p class="ollama-spinner__sub">Ollama está procesando tu solicitud. Esto puede tomar hasta 30 segundos.</p>
-          <div class="ollama-spinner__progress">
-            <div class="ollama-spinner__progress-bar" id="ollama-progress-bar"></div>
+
+          <!-- Contexto adicional -->
+          <div class="card">
+            <div class="card__header">
+              <div class="card__title"><i class="ti ti-info-circle" style="color:var(--cp-blue-main)"></i> Contexto para la IA</div>
+            </div>
+            <div class="card__body">
+              <div class="form__group">
+                <label class="form__label">Título del informe</label>
+                <input type="text" id="r-titulo" class="form__input"
+                  placeholder="Ej: Resiliencia Digital 2025">
+              </div>
+              <div class="form__group" style="margin-bottom:0">
+                <label class="form__label">
+                  Antecedente o contexto del cliente
+                  <span style="font-weight:400;color:var(--cp-text-muted)">(opcional pero recomendado)</span>
+                </label>
+                <textarea id="r-antecedente" class="form__input"
+                  placeholder="Ej: La empresa sufrió un intento de phishing en marzo 2025. Su equipo de TI es de 3 personas. Tienen servidores en AWS y oficinas en Santiago y Concepción."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Catálogo de servicios -->
+          <div class="card">
+            <div class="card__header">
+              <div class="card__title"><i class="ti ti-briefcase" style="color:var(--cp-blue-main)"></i> Servicios a incluir</div>
+            </div>
+            <div class="card__body" style="padding-top:8px">
+              <div id="r-catalogo">
+                <div style="text-align:center;padding:20px;color:var(--cp-text-muted)">
+                  <i class="ti ti-loader" style="font-size:24px"></i>
+                  <p>Cargando...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── Columna derecha ── -->
+        <div class="r-panel page-enter page-enter--d2">
+          <div class="card">
+            <div class="card__header">
+              <div class="card__title">
+                <i class="ti ti-sparkles" style="color:#8b5cf6"></i>
+                Configurar informe
+              </div>
+            </div>
+            <div class="card__body">
+
+              <!-- Contador servicios -->
+              <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;
+                background:var(--cp-info-bg);border-radius:8px;font-size:13px;
+                font-weight:500;color:var(--cp-blue-main);margin-bottom:16px">
+                <i class="ti ti-checkbox"></i>
+                <span id="r-contador">Ningún servicio seleccionado</span>
+              </div>
+
+              <!-- Secciones del informe -->
+              <div class="form__label" style="margin-bottom:8px">Secciones a generar con IA</div>
+              <div class="ia-secciones">
+                <label class="ia-seccion">
+                  <input type="checkbox" id="sec-intro" checked>
+                  <div>
+                    <div class="ia-seccion__label">📝 Introducción personalizada</div>
+                    <div class="ia-seccion__desc">Presentación adaptada al cliente y su industria</div>
+                  </div>
+                </label>
+                <label class="ia-seccion">
+                  <input type="checkbox" id="sec-riesgo" checked>
+                  <div>
+                    <div class="ia-seccion__label">⚠️ Análisis de riesgo</div>
+                    <div class="ia-seccion__desc">Amenazas relevantes para su sector en Chile</div>
+                  </div>
+                </label>
+                <label class="ia-seccion">
+                  <input type="checkbox" id="sec-justif" checked>
+                  <div>
+                    <div class="ia-seccion__label">🎯 Justificación de servicios</div>
+                    <div class="ia-seccion__desc">Por qué estos servicios son los correctos</div>
+                  </div>
+                </label>
+                <label class="ia-seccion">
+                  <input type="checkbox" id="sec-valor" checked>
+                  <div>
+                    <div class="ia-seccion__label">💼 Valor estratégico</div>
+                    <div class="ia-seccion__desc">Retorno e impacto para el negocio</div>
+                  </div>
+                </label>
+                <label class="ia-seccion">
+                  <input type="checkbox" id="sec-conclusion" checked>
+                  <div>
+                    <div class="ia-seccion__label">✍️ Conclusión y cierre</div>
+                    <div class="ia-seccion__desc">Llamada a la acción y próximos pasos</div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Modo sin IA -->
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px;
+                color:var(--cp-text-muted);padding:8px 0;cursor:pointer">
+                <input type="checkbox" id="r-sin-ia">
+                Generar sin IA (textos genéricos — no requiere Ollama)
+              </label>
+
+              <!-- Progreso de generación -->
+              <div class="ia-progress" id="r-progress">
+                <div style="font-size:12px;font-weight:600;color:var(--cp-text-muted);
+                  margin:12px 0 8px">Generando con IA...</div>
+                <div id="r-steps">
+                  <div class="ia-step" id="step-intro">
+                    <span class="ia-step__icon">📝</span> Introducción
+                  </div>
+                  <div class="ia-step" id="step-riesgo">
+                    <span class="ia-step__icon">⚠️</span> Análisis de riesgo
+                  </div>
+                  <div class="ia-step" id="step-justif">
+                    <span class="ia-step__icon">🎯</span> Justificación de servicios
+                  </div>
+                  <div class="ia-step" id="step-valor">
+                    <span class="ia-step__icon">💼</span> Valor estratégico
+                  </div>
+                  <div class="ia-step" id="step-conclusion">
+                    <span class="ia-step__icon">✍️</span> Conclusión
+                  </div>
+                  <div class="ia-step" id="step-pdf">
+                    <span class="ia-step__icon">📄</span> Generando PDF...
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botón generar -->
+              <button class="btn btn--primary" id="r-generar-btn"
+                disabled style="width:100%;justify-content:center;margin-top:12px">
+                <i class="ti ti-sparkles btn__icon"></i>
+                Generar informe con IA
+              </button>
+
+              <p style="font-size:11px;color:var(--cp-text-muted);text-align:center;margin-top:8px">
+                La IA puede tardar 20–40 segundos según la cantidad de servicios
+              </p>
+
+            </div>
           </div>
         </div>
 
       </div>
-
-      <!-- STEP 3: REVIEW & EXPORT -->
-      <div class="card page-enter page-enter--d3" id="report-result" style="display:none">
-        <div class="card__header">
-          <span class="card__title">
-            <span class="report-step">3</span>
-            Revisar y exportar
-          </span>
-          <span class="badge badge--success">
-            <i class="ti ti-check" aria-hidden="true"></i>
-            Generado
-          </span>
-        </div>
-        <div class="card__body">
-          <p style="font-size:13px;color:var(--cp-text-muted);margin-bottom:var(--space-md)">
-            Revisa el contenido generado. Puedes editar cualquier sección antes de exportar.
-          </p>
-          <textarea
-            id="report-editor"
-            style="min-height:400px;font-family:var(--font-mono);font-size:13px;line-height:1.7"
-            placeholder="El informe aparecerá aquí..."
-          ></textarea>
-        </div>
-        <div class="card__footer">
-          <button class="btn btn--secondary" onclick="document.getElementById('report-editor').value=''">
-            <i class="ti ti-trash btn__icon" aria-hidden="true"></i>
-            Limpiar
-          </button>
-          <button class="btn btn--primary" id="export-btn">
-            <i class="ti ti-file-type-pdf btn__icon" aria-hidden="true"></i>
-            Exportar PDF
-          </button>
-        </div>
-      </div>
-
     </main>
   </div>
 </div>
 
 <script type="module">
-  import { initSidebar } from '../js/sidebar.js'
-  import { loadUserInfo } from '../js/auth.js'
+  import { initSidebar }   from '../js/sidebar.js'
+  import { loadUserInfo }  from '../js/auth.js'
   import { initProfileModal } from '../js/profile.js'
-  import { initReport } from '../js/report.js'
-
+  import { initReport }    from '../js/report.js'
   loadUserInfo()
   initSidebar()
   initProfileModal()
   initReport()
 </script>
-
 </body>
 </html>

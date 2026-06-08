@@ -72,50 +72,18 @@ export const servicesAPI = {
 
 /* ── QUOTES ── */
 export const quotesAPI = {
-
-  getAll() {
-    return request('GET', '/quotations')
-  },
-
-  getById(id) {
-    return request('GET', `/quotations/${id}`)
-  },
-
-  create(data) {
-    return request('POST', '/quotations', data)
-  },
-
-  update(id, data) {
-    return request(
-      'PUT',
-      `/quotations/${id}`,
-      data
-    )
-  },
-
-  delete(id) {
-    return request(
-      'DELETE',
-      `/quotations/${id}`
-    )
-  }
+  getAll()         { return request('GET',    '/quotes') },
+  getById(id)      { return request('GET',    `/quotes/${id}`) },
+  create(data)     { return request('POST',   '/quotes', data) },
+  update(id, data) { return request('PUT',    `/quotes/${id}`, data) },
+  delete(id)       { return request('DELETE', `/quotes/${id}`) }
 }
 
 /* ── REPORT (Ollama) ── */
 export const reportAPI = {
-  generate(quoteId) {
-    return request(
-      'POST',
-      `/ai/generate/${quoteId}`
-    )
-  },
+  generate(quoteId)        { return request('POST', '/reports/generate', { quote_id: quoteId }) },
   update(id, content)      { return request('PUT',  `/reports/${id}`, { content }) },
-  exportPdf(id) {
-    return request(
-        'POST',
-        `/quotations/export-pdf/${id}`
-    )
-}
+  exportPdf(id)            { return request('POST', `/reports/${id}/export`) }
 }
 
 /* ── USERS (admin) ── */
@@ -138,3 +106,22 @@ export const importAPI = {
 }
 
 export { getToken, setToken, removeToken }
+
+/* ── PROPOSALS ── */
+export const proposalsAPI = {
+  generate(data) {
+    // Descarga directa del PDF
+    const token = getToken()
+    return fetch(`${BASE_URL}/proposals/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(data)
+    })
+  },
+  preview(clienteId, serviceIds) {
+    return request('GET', `/proposals/preview/${clienteId}?service_ids=${serviceIds.join(',')}`)
+  }
+}
