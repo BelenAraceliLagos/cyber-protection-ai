@@ -71,15 +71,6 @@ export const servicesAPI = {
   delete(id)       { return request('DELETE', `/services/${id}`) }
 }
 
-/* ── QUOTES ── */
-export const quotesAPI = {
-  getAll()         { return request('GET',    '/quotes') },
-  getById(id)      { return request('GET',    `/quotes/${id}`) },
-  create(data)     { return request('POST',   '/quotes', data) },
-  update(id, data) { return request('PUT',    `/quotes/${id}`, data) },
-  delete(id)       { return request('DELETE', `/quotes/${id}`) }
-}
-
 /* ── REPORT (Ollama) ── */
 export const reportAPI = {
   generate(quoteId)        { return request('POST', '/reports/generate', { quote_id: quoteId }) },

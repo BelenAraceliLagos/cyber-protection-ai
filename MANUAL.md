@@ -234,7 +234,6 @@ ollama serve
 | Dashboard | /pages/dashboard.html | Vista general |
 | Clientes | /pages/clients.html | CRUD de clientes |
 | Servicios | /pages/services.html | Catálogo de servicios |
-| Cotizaciones | /pages/quotes.html | Generar propuestas PDF |
 | Generar Informe | /pages/report.html | Informes con IA |
 | Importar Excel | /pages/import.html | Carga masiva desde Excel |
 | Historial IA | /pages/ingestion.html | Importar documentos históricos |

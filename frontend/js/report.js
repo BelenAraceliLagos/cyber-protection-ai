@@ -3,7 +3,7 @@
 import { clientsAPI, servicesAPI, proposalsAPI } from './api.js'
 import { showAlert, showSpinner, hideSpinner, requireAuth } from './utils.js'
 
-// ── Categorías y keywords (igual que quotes.js) ───────────────────────
+// ── Categorías y keywords de servicios ────────────────────────────────
 const CATEGORIAS_ORDEN = [
   '🛡  Detección y Respuesta',
   '🔑  Gestión de Identidades y Accesos',

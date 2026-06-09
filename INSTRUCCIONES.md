@@ -57,10 +57,8 @@ Abrir: http://localhost:5500/pages/login.html
 | `app/services/generate_proposal.py` | ✅ PDF con diseño corporativo + categorización automática |
 | `frontend/js/api.js` | ✅ Puerto 8080 + proposalsAPI agregado |
 | `frontend/js/services.js` | ✅ CRUD completo (reemplaza módulo en construcción) |
-| `frontend/js/quotes.js` | ✅ Nuevo — cotizaciones con selección por categoría |
 | `frontend/js/import_services.js` | ✅ Importador Excel con detección de duplicados |
 | `frontend/pages/services.html` | ✅ CRUD completo |
-| `frontend/pages/quotes.html` | ✅ Nueva — generación de propuestas PDF |
 | `frontend/pages/import.html` | ✅ Importador completo con drag & drop |
 
 ## Endpoints disponibles
