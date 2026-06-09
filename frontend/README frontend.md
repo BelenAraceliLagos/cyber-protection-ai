@@ -12,6 +12,7 @@ cyber-protection-frontend/
 │   ├── dashboard.html      → bienvenida + módulos
 │   ├── clients.html        → CRUD clientes (completo)
 │   ├── services.html       → catálogo servicios (stub)
+│   ├── usuarios.html       → gestión de usuarios admin
 │   ├── report.html         → generador Ollama (completo)
 │   └── import.html         → importación históricos (stub)
 ├── css/

@@ -31,7 +31,7 @@ python -c "from passlib.context import CryptContext; ctx = CryptContext(schemes=
 ```
 Insertar en pgAdmin:
 ```sql
-INSERT INTO users (email, hashed_password, is_active)
+INSERT INTO users (name, email, hashed_password, role)
 VALUES ('admin@cyberprotection.cl', 'HASH_AQUI', true);
 INSERT INTO profiles (user_id, name) VALUES (1, 'Administrador');
 INSERT INTO user_roles (user_id, role_id) VALUES (1, 1);
@@ -67,7 +67,7 @@ Abrir: http://localhost:5500/pages/login.html
 |--------|------|-------------|
 | POST | /auth/login | Iniciar sesión |
 | PUT | /auth/me | Actualizar perfil |
-| GET/POST/PUT | /users/ | Gestión de usuarios (admin) |
+| GET/POST/PUT/DELETE | /users/ | Gestión de usuarios (admin) |
 | GET/POST/PUT/DELETE | /clients/ | Gestión de clientes |
 | GET/POST/PUT/DELETE | /services/ | Gestión de servicios |
 | POST | /proposals/generate | Generar PDF → descarga directa |

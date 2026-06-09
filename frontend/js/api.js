@@ -83,6 +83,7 @@ export const usersAPI = {
   getAll()         { return request('GET',    '/users') },
   create(data)     { return request('POST',   '/users', data) },
   update(id, data) { return request('PUT',    `/users/${id}`, data) },
+  delete(id)       { return request('DELETE', `/users/${id}`) }
 }
 
 /* ── IMPORT ── */

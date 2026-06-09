@@ -8,21 +8,42 @@ import {
   getInitials, debounce, requireAuth
 } from './utils.js'
 
-let allUsers   = []
-let editingId  = null
+let allUsers = []
+let editingId = null
+let currentUserId = null
+
+function escapeHtml(value = '') {
+  return String(value).replace(/[&<>"]|'/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[char]))
+}
+
+function roleLabel(role) {
+  return role === 'admin' ? 'Administrador' : 'Comercial'
+}
+
+function isAdminToken() {
+  const token = sessionStorage.getItem('cp_token')
+  if (!token) return false
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    currentUserId = Number(payload.sub)
+    return payload.role === 'admin'
+  } catch {
+    return false
+  }
+}
 
 export function initUsers() {
   if (!requireAuth()) return
 
-  const token = sessionStorage.getItem('cp_token')
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    if (payload.role !== 'admin') {
-      window.location.href = '/pages/dashboard.html'
-      return
-    }
-  } catch {
-    window.location.href = '/pages/login.html'
+  if (!isAdminToken()) {
+    window.location.href = '/pages/dashboard.html'
     return
   }
 
@@ -39,7 +60,7 @@ async function loadUsers() {
   const tbody = document.getElementById('users-tbody')
   if (!tbody) return
 
-  renderSkeletonRows(tbody, 4)
+  renderSkeletonRows(tbody, 3)
 
   try {
     allUsers = await usersAPI.getAll()
@@ -49,7 +70,7 @@ async function loadUsers() {
     renderEmptyState(
       tbody.closest('.card') || tbody.parentElement,
       'Error al cargar usuarios',
-      'No se pudo conectar con el servidor.',
+      'No se pudo obtener la lista de usuarios.',
       'ti-users-group'
     )
   }
@@ -63,6 +84,7 @@ function renderTable(users) {
   if (count) count.textContent = `${users.length} usuario${users.length !== 1 ? 's' : ''}`
 
   if (!users.length) {
+    tbody.innerHTML = ''
     renderEmptyState(
       tbody.closest('.card') || tbody.parentElement,
       'Sin usuarios',
@@ -72,44 +94,47 @@ function renderTable(users) {
     return
   }
 
-  tbody.innerHTML = users.map(u => `
-    <tr>
-      <td>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--cp-info-bg);
-            display:flex;align-items:center;justify-content:center;
-            font-size:11px;font-weight:600;color:var(--cp-blue-main);flex-shrink:0">
-            ${getInitials(u.name || u.email)}
+  tbody.innerHTML = users.map(user => {
+    const name = user.name || 'Sin nombre'
+    const email = user.email || ''
+    const isCurrentUser = Number(user.id) === currentUserId
+
+    return `
+      <tr>
+        <td>
+          <div class="users-table__person">
+            <div class="users-table__avatar">${escapeHtml(getInitials(name || email) || 'U')}</div>
+            <div>
+              <div class="users-table__name">${escapeHtml(name)}</div>
+              <div class="users-table__email">${escapeHtml(email)}</div>
+            </div>
           </div>
-          <div>
-            <div style="font-weight:500;color:var(--cp-blue-main)">${u.name || '—'}</div>
-            <div style="font-size:11px;color:var(--cp-text-muted)">${u.email}</div>
+        </td>
+        <td>
+          <span class="badge ${user.role === 'admin' ? 'badge--warning' : 'badge--info'}">
+            ${roleLabel(user.role)}
+          </span>
+        </td>
+        <td>
+          <div class="users-table__actions">
+            <button class="btn btn--sm btn--secondary" data-user-edit="${user.id}" aria-label="Editar usuario">
+              <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
+            </button>
+            <button class="btn btn--sm btn--danger" data-user-delete="${user.id}" ${isCurrentUser ? 'disabled' : ''} aria-label="Eliminar usuario">
+              <i class="ti ti-trash btn__icon" aria-hidden="true"></i>
+            </button>
           </div>
-        </div>
-      </td>
-      <td>
-        <span class="badge ${u.role === 'admin' ? 'badge--warning' : 'badge--info'}">
-          ${u.role === 'admin' ? 'Administrador' : 'Comercial'}
-        </span>
-      </td>
-      <td>
-        <span class="badge ${u.is_active ? 'badge--success' : 'badge--neutral'}">
-          ${u.is_active ? 'Activo' : 'Desactivado'}
-        </span>
-      </td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn--sm btn--secondary" onclick="editUser(${u.id})" aria-label="Editar">
-            <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
-          </button>
-          <button class="btn btn--sm ${u.is_active ? 'btn--danger' : 'btn--secondary'}"
-            onclick="toggleActive(${u.id}, ${!u.is_active})"
-            aria-label="${u.is_active ? 'Desactivar' : 'Activar'}">
-            <i class="ti ${u.is_active ? 'ti-user-off' : 'ti-user-check'} btn__icon" aria-hidden="true"></i>
-          </button>
-        </div>
-      </td>
-    </tr>`).join('')
+        </td>
+      </tr>`
+  }).join('')
+
+  tbody.querySelectorAll('[data-user-edit]').forEach(btn => {
+    btn.addEventListener('click', () => openEditModal(Number(btn.dataset.userEdit)))
+  })
+
+  tbody.querySelectorAll('[data-user-delete]').forEach(btn => {
+    btn.addEventListener('click', () => deleteUser(Number(btn.dataset.userDelete)))
+  })
 
   animateTableRows(tbody)
 }
@@ -121,9 +146,10 @@ function bindSearch() {
   input.addEventListener('input', debounce(() => {
     const q = input.value.toLowerCase().trim()
     const filtered = q
-      ? allUsers.filter(u =>
-          (u.name  || '').toLowerCase().includes(q) ||
-          (u.email || '').toLowerCase().includes(q))
+      ? allUsers.filter(user =>
+          (user.name || '').toLowerCase().includes(q) ||
+          (user.email || '').toLowerCase().includes(q) ||
+          roleLabel(user.role).toLowerCase().includes(q))
       : allUsers
     renderTable(filtered)
   }, 250))
@@ -134,15 +160,16 @@ function bindCreateForm() {
   if (!btn) return
 
   btn.addEventListener('click', async () => {
-    const name     = document.getElementById('cu-name').value.trim()
-    const email    = document.getElementById('cu-email').value.trim()
+    const name = document.getElementById('cu-name').value.trim()
+    const email = document.getElementById('cu-email').value.trim()
     const password = document.getElementById('cu-password').value
-    const roleName = document.getElementById('cu-role').value
+    const role = document.getElementById('cu-role').value
 
     if (!name || !email || !password) {
       showAlert('Nombre, correo y contraseña son obligatorios.', 'warning')
       return
     }
+
     if (password.length < 8) {
       showAlert('La contraseña debe tener al menos 8 caracteres.', 'warning')
       return
@@ -150,7 +177,7 @@ function bindCreateForm() {
 
     showSpinner(btn, 'Creando...')
     try {
-      await usersAPI.create({ name, email, password, role_name: roleName })
+      await usersAPI.create({ name, email, password, role })
       showAlert('Usuario creado correctamente.', 'success')
       closeModal('create-user-modal')
       document.getElementById('create-user-form').reset()
@@ -170,21 +197,22 @@ function bindEditForm() {
   btn.addEventListener('click', async () => {
     if (!editingId) return
 
-    const name        = document.getElementById('eu-name').value.trim()
-    const roleName    = document.getElementById('eu-role').value
-    const isActive    = document.getElementById('eu-status').value === 'true'
+    const name = document.getElementById('eu-name').value.trim()
+    const email = document.getElementById('eu-email').value.trim()
+    const role = document.getElementById('eu-role').value
     const newPassword = document.getElementById('eu-password').value
 
-    if (!name) {
-      showAlert('El nombre no puede estar vacío.', 'warning')
+    if (!name || !email) {
+      showAlert('Nombre y correo son obligatorios.', 'warning')
       return
     }
+
     if (newPassword && newPassword.length < 8) {
       showAlert('La contraseña debe tener al menos 8 caracteres.', 'warning')
       return
     }
 
-    const payload = { name, role_name: roleName, is_active: isActive }
+    const payload = { name, email, role }
     if (newPassword) payload.new_password = newPassword
 
     showSpinner(btn, 'Guardando...')
@@ -217,8 +245,8 @@ function bindModalClose() {
   })
 
   document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) {
+    backdrop.addEventListener('click', event => {
+      if (event.target === backdrop) {
         closeModal(backdrop.id)
         editingId = null
       }
@@ -232,28 +260,34 @@ function openCreateModal() {
   document.getElementById('cu-name')?.focus()
 }
 
-window.editUser = function(id) {
-  const user = allUsers.find(u => u.id === id)
+function openEditModal(id) {
+  const user = allUsers.find(item => Number(item.id) === Number(id))
   if (!user) return
 
   editingId = id
-  document.getElementById('eu-id').value       = id
-  document.getElementById('eu-name').value     = user.name || ''
-  document.getElementById('eu-role').value     = user.role
-  document.getElementById('eu-status').value   = String(user.is_active)
+  document.getElementById('eu-id').value = user.id
+  document.getElementById('eu-name').value = user.name || ''
+  document.getElementById('eu-email').value = user.email || ''
+  document.getElementById('eu-role').value = user.role || 'user'
   document.getElementById('eu-password').value = ''
   openModal('edit-user-modal')
   document.getElementById('eu-name')?.focus()
 }
 
-window.toggleActive = async function(id, newState) {
-  const user  = allUsers.find(u => u.id === id)
-  const label = newState ? 'activar' : 'desactivar'
-  if (!confirm(`¿Deseas ${label} a "${user?.name || user?.email}"?`)) return
+async function deleteUser(id) {
+  const user = allUsers.find(item => Number(item.id) === Number(id))
+  if (!user) return
+
+  if (Number(user.id) === currentUserId) {
+    showAlert('No puedes eliminar tu propio usuario.', 'warning')
+    return
+  }
+
+  if (!confirm(`¿Eliminar a "${user.name || user.email}"? Esta acción no se puede deshacer.`)) return
 
   try {
-    await usersAPI.update(id, { is_active: newState })
-    showAlert(`Usuario ${newState ? 'activado' : 'desactivado'}.`, 'success')
+    await usersAPI.delete(id)
+    showAlert('Usuario eliminado correctamente.', 'success')
     await loadUsers()
   } catch (err) {
     showAlert(err.message, 'error')
