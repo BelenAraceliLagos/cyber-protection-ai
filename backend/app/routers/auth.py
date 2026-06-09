@@ -2,12 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.dependencies import get_current_user
 from app.models.user import User
 
 from app.schemas.user import (
     UserCreate,
     UserLogin,
-    UserResponse
+    UserResponse,
+    UserUpdate
 )
 
 from app.core.security import (
@@ -92,3 +94,53 @@ def login(
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+@router.get("/me", response_model=UserResponse)
+def get_me(
+    current_user: User = Depends(get_current_user)
+):
+    return current_user
+
+
+@router.put("/me", response_model=UserResponse)
+def update_me(
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if data.name is not None:
+        name = data.name.strip()
+        if not name:
+            raise HTTPException(
+                status_code=400,
+                detail="Name cannot be empty"
+            )
+        current_user.name = name
+
+    if data.new_password:
+        if not data.current_password:
+            raise HTTPException(
+                status_code=400,
+                detail="Current password is required"
+            )
+
+        if len(data.new_password) < 8:
+            raise HTTPException(
+                status_code=400,
+                detail="New password must be at least 8 characters"
+            )
+
+        if not verify_password(data.current_password, current_user.hashed_password):
+            raise HTTPException(
+                status_code=401,
+                detail="Current password is incorrect"
+            )
+
+        current_user.hashed_password = hash_password(data.new_password)
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+
+    return current_user
+

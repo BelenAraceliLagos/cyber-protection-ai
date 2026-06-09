@@ -2,7 +2,7 @@
 
 import { showAlert, requireAuth } from './utils.js'
 
-const BASE_URL = 'http://localhost:8080'
+const BASE_URL = 'http://localhost:8000'
 
 function getToken() {
   const token = sessionStorage.getItem('cp_token')

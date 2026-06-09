@@ -194,7 +194,7 @@
   import { requireAuth, animateTableRows } from '../js/utils.js'
 
   requireAuth()
-  loadUserInfo()
+  const currentUser = await loadUserInfo()
   initSidebar()
   initProfileModal()
 
@@ -205,12 +205,7 @@
   document.getElementById('logout-btn-mobile')?.addEventListener('click', logout)
   document.getElementById('logout-btn-sidebar')?.addEventListener('click', logout)
 
-  const payload = (() => {
-    try { return JSON.parse(atob(sessionStorage.getItem('cp_token').split('.')[1])) }
-    catch { return {} }
-  })()
-
-  const name = payload.name || payload.email || ''
+  const name = currentUser?.name || currentUser?.email || ''
   if (name) {
     document.getElementById('welcome-title').textContent = 'Hola, ' + name.split(' ')[0] + '!'
   }
@@ -231,7 +226,7 @@
     if (!tbody) return
     try {
       const token = sessionStorage.getItem('cp_token')
-      const res = await fetch('http://localhost:8080/opportunities/pipeline', {
+      const res = await fetch('http://localhost:8000/opportunities/pipeline', {
         headers: { 'Authorization': 'Bearer ' + token }
       })
       if (!res.ok) throw new Error()
