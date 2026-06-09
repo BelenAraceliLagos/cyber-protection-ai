@@ -71,21 +71,31 @@ export function initLogout() {
   })
 }
 
-export function loadUserInfo() {
+function getInitials(value = '') {
+  return value
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase())
+    .join('') || 'U'
+}
+
+export async function loadUserInfo() {
   requireAuth()
-  const raw = sessionStorage.getItem('cp_token')
-  if (!raw) return
 
   try {
-    const payload = JSON.parse(atob(raw.split('.')[1]))
-    const nameEl  = document.getElementById('sidebar-username')
-    const roleEl  = document.getElementById('sidebar-role')
-    const initEl  = document.getElementById('sidebar-initials')
+    const user = await authAPI.getMe()
+    const nameEl = document.getElementById('sidebar-username')
+    const roleEl = document.getElementById('sidebar-role')
+    const initEl = document.getElementById('sidebar-initials')
+    const displayName = user?.name || user?.email || 'Usuario'
 
-    if (nameEl)  nameEl.textContent  = payload.name  || payload.email || 'Usuario'
-    if (roleEl)  roleEl.textContent  = payload.role  === 'admin' ? 'Administrador' : 'Comercial'
-    if (initEl)  initEl.textContent  = (payload.name || payload.email || 'U').substring(0, 2).toUpperCase()
+    if (nameEl) nameEl.textContent = displayName
+    if (roleEl) roleEl.textContent = user?.role === 'admin' ? 'Administrador' : 'Comercial'
+    if (initEl) initEl.textContent = getInitials(displayName)
+
+    return user
   } catch {
-    /* token malformed — ignore */
+    /* authAPI redirects on 401; keep the page quiet while that happens */
   }
 }

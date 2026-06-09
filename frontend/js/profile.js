@@ -96,22 +96,48 @@ export function initProfileModal() {
   const newPass    = document.getElementById('p-new-pass')
   const confirmPass = document.getElementById('p-confirm-pass')
 
-  function getPayload() {
-    try { return JSON.parse(atob(sessionStorage.getItem('cp_token').split('.')[1])) }
-    catch { return {} }
+  function getInitials(value = '') {
+    return value
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(part => part[0]?.toUpperCase())
+      .join('') || '??'
   }
 
-  function open() {
-    const payload = getPayload()
-    nameInput.value    = payload.name  || ''
-    curPass.value      = ''
-    newPass.value      = ''
-    confirmPass.value  = ''
-    const initials = (payload.name || payload.email || '??').substring(0, 2).toUpperCase()
-    document.getElementById('profile-avatar-big').textContent    = initials
-    document.getElementById('profile-email-display').textContent = payload.email || ''
+  function renderUser(user) {
+    const displayName = user?.name || user?.email || ''
+    nameInput.value = user?.name || ''
+    document.getElementById('profile-avatar-big').textContent = getInitials(displayName)
+    document.getElementById('profile-email-display').textContent = user?.email || ''
+
+    const sidebarName = document.getElementById('sidebar-username')
+    const sidebarRole = document.getElementById('sidebar-role')
+    const sidebarInitials = document.getElementById('sidebar-initials')
+
+    if (sidebarName) sidebarName.textContent = displayName || 'Usuario'
+    if (sidebarRole) sidebarRole.textContent = user?.role === 'admin' ? 'Administrador' : 'Comercial'
+    if (sidebarInitials) sidebarInitials.textContent = getInitials(displayName)
+  }
+
+  async function open() {
+    curPass.value = ''
+    newPass.value = ''
+    confirmPass.value = ''
     openModal('profile-modal')
-    nameInput.focus()
+    nameInput.value = 'Cargando...'
+    nameInput.disabled = true
+
+    try {
+      const user = await authAPI.getMe()
+      renderUser(user)
+      nameInput.disabled = false
+      nameInput.focus()
+    } catch (err) {
+      closeModal('profile-modal')
+      showAlert(err.message || 'No se pudo cargar el perfil.', 'error')
+      nameInput.disabled = false
+    }
   }
 
   function close() { closeModal('profile-modal') }
@@ -154,13 +180,10 @@ export function initProfileModal() {
       const body = { name }
       if (newP) { body.current_password = curP; body.new_password = newP }
 
-      await authAPI.updateMe(body)
-      showAlert('Perfil actualizado. Volviendo a iniciar sesión...', 'success')
+      const updatedUser = await authAPI.updateMe(body)
+      renderUser(updatedUser)
+      showAlert('Perfil actualizado correctamente.', 'success')
       close()
-      setTimeout(() => {
-        sessionStorage.removeItem('cp_token')
-        window.location.href = '/pages/login.html'
-      }, 2000)
     } catch (err) {
       showAlert(err.message, 'error')
     } finally {

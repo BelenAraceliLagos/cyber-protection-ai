@@ -51,6 +51,7 @@ async function request(method, endpoint, body = null) {
 /* ── AUTH ── */
 export const authAPI = {
   login(email, password) { return request('POST', '/auth/login', { email, password }) },
+  getMe()                { return request('GET',  '/auth/me') },
   updateMe(data)         { return request('PUT',  '/auth/me', data) },
 }
 
