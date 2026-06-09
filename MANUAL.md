@@ -87,7 +87,7 @@ Copia el hash generado (empieza con `$2b$12$...`) y ejecuta en pgAdmin:
 
 ```sql
 -- Paso 1: Insertar usuario
-INSERT INTO users (email, hashed_password, is_active)
+INSERT INTO users (name, email, hashed_password, role)
 VALUES ('admin@cyberprotection.cl', 'PEGA_EL_HASH_AQUI', true);
 
 -- Paso 2: Ver el id asignado
@@ -245,7 +245,7 @@ ollama serve
 |---|---|---|
 | POST | /auth/login | Iniciar sesión |
 | PUT | /auth/me | Actualizar perfil |
-| GET/POST/PUT | /users/ | Gestión de usuarios |
+| GET/POST/PUT/DELETE | /users/ | Gestión de usuarios |
 | GET/POST/PUT/DELETE | /clients/ | Gestión de clientes |
 | GET/POST/PUT/DELETE | /services/ | Gestión de servicios |
 | POST | /proposals/generate | Generar PDF de propuesta |
