@@ -12,7 +12,6 @@ cyber-protection-frontend/
 │   ├── dashboard.html      → bienvenida + módulos
 │   ├── clients.html        → CRUD clientes (completo)
 │   ├── services.html       → catálogo servicios (stub)
-│   ├── quotes.html         → cotizaciones (stub)
 │   ├── report.html         → generador Ollama (completo)
 │   └── import.html         → importación históricos (stub)
 ├── css/
@@ -61,7 +60,6 @@ const BASE_URL = 'http://localhost:8000'  // URL del backend FastAPI
 | Login      | POST /auth/login                | ✅ Listo       |
 | Clientes   | GET/POST/PUT/DELETE /clients    | ✅ Listo       |
 | Servicios  | GET/POST/PUT/DELETE /services   | ⚠️ Falta router|
-| Cotizaciones | GET/POST/PUT/DELETE /quotes   | ❌ Pendiente   |
 | Informe IA | POST /reports/generate          | ❌ Pendiente   |
 | Importar   | POST /import/quotes             | ❌ Pendiente   |
 
