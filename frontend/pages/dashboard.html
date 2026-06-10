@@ -138,9 +138,8 @@
           <div class="module-card__desc">Cargar catálogo de servicios desde Excel</div>
           <div class="module-card__arrow">Ir al modulo <i class="ti ti-arrow-right" aria-hidden="true"></i></div>
         </a>
-        <a href="ingestion.html" class="module-card page-enter page-enter--d6" role="listitem"
-          style="border:1px solid #6366f120;background:linear-gradient(135deg,#6366f108,#8b5cf608)">
-          <div class="module-card__icon" style="color:#8b5cf6">
+        <a href="ingestion.html" class="module-card module-card--ai-history page-enter page-enter--d6" role="listitem">
+          <div class="module-card__icon module-card__icon--violet">
             <i class="ti ti-database-import" aria-hidden="true"></i>
           </div>
           <div class="module-card__name">Historial con IA</div>
@@ -149,29 +148,29 @@
         </a>
       </div>
 
-            <div class="card page-enter page-enter--d6" style="margin-top: var(--space-xl)">
+            <div class="card dashboard-opps-card page-enter page-enter--d6">
         <div class="card__header">
           <span class="card__title">Oportunidades activas</span>
           <a href="opportunities.html" class="btn btn--sm btn--ghost">Ver todas <i class="ti ti-arrow-right btn__icon" aria-hidden="true"></i></a>
         </div>
-        <div class="card__body" style="padding: 0">
-          <div class="table-wrapper" style="border: none; border-radius: 0">
+        <div class="card__body dashboard-card-body--flush">
+          <div class="table-wrapper dashboard-table-wrapper--flush">
             <table class="table" aria-label="Oportunidades activas">
               <thead>
               <tr><th>Deal</th><th>Cliente</th><th>Etapa</th><th>Valor (UF)</th></tr>
               </thead>
               <tbody id="recent-opps-tbody">
               <tr class="table--loading">
-                <td><span class="table__skel skeleton" style="width:65%"></span></td>
-                <td><span class="table__skel skeleton" style="width:55%"></span></td>
-                <td><span class="table__skel skeleton" style="width:70px"></span></td>
-                <td><span class="table__skel skeleton" style="width:40px"></span></td>
+                <td><span class="table__skel skeleton skeleton--w-65"></span></td>
+                <td><span class="table__skel skeleton skeleton--w-55"></span></td>
+                <td><span class="table__skel skeleton skeleton--w-70"></span></td>
+                <td><span class="table__skel skeleton skeleton--w-40"></span></td>
               </tr>
               <tr class="table--loading">
-                <td><span class="table__skel skeleton" style="width:80%"></span></td>
-                <td><span class="table__skel skeleton" style="width:60%"></span></td>
-                <td><span class="table__skel skeleton" style="width:70px"></span></td>
-                <td><span class="table__skel skeleton" style="width:40px"></span></td>
+                <td><span class="table__skel skeleton skeleton--w-80"></span></td>
+                <td><span class="table__skel skeleton skeleton--w-60"></span></td>
+                <td><span class="table__skel skeleton skeleton--w-70"></span></td>
+                <td><span class="table__skel skeleton skeleton--w-40"></span></td>
               </tr>
               </tbody>
             </table>
@@ -230,20 +229,20 @@
       const etapas = ['prospecto','propuesta','negociacion','aprobacion']
       const opps = etapas.flatMap(e => data.pipeline[e] || []).slice(0, 5)
       if (!opps.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--cp-text-muted);font-size:13px">Sin oportunidades activas</td></tr>'
+        tbody.innerHTML = '<tr><td colspan="4" class="dashboard-table-empty">Sin oportunidades activas</td></tr>'
         return
       }
       tbody.innerHTML = opps.map(o =>
         '<tr>' +
-        '<td style="font-weight:500;color:var(--cp-blue-main)">' + (o.titulo || '—') + '</td>' +
-        '<td style="color:var(--cp-text-muted)">' + (o.cliente_nombre || '—') + '</td>' +
+        '<td class="dashboard-table__deal">' + (o.titulo || '—') + '</td>' +
+        '<td class="dashboard-table__client">' + (o.cliente_nombre || '—') + '</td>' +
         '<td><span class="badge badge--' + (ETAPA_BADGE[o.etapa] || 'info') + '">' + (ETAPA_LABEL[o.etapa] || o.etapa) + '</span></td>' +
         '<td>' + (o.valor_uf > 0 ? o.valor_uf + ' UF' : '—') + '</td>' +
         '</tr>'
       ).join('')
       animateTableRows(tbody)
     } catch {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--cp-text-muted);font-size:13px">No se pudieron cargar</td></tr>'
+      tbody.innerHTML = '<tr><td colspan="4" class="dashboard-table-empty">No se pudieron cargar</td></tr>'
     }
   }
 

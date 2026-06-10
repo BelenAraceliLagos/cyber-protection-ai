@@ -146,7 +146,7 @@ function renderUpcoming() {
   items.sort((a,b) => a.fecha - b.fecha)
 
   if (!items.length) {
-    cont.innerHTML = '<div class="empty-state" style="padding:1rem">Sin hitos en los próximos 7 días</div>'
+    cont.innerHTML = '<div class="empty-state empty-state--sm">Sin hitos en los próximos 7 días</div>'
     return
   }
 
@@ -182,7 +182,7 @@ function renderKanban() {
     const cards = state.pipeline[etapa] || []
     const cardsHtml = cards.length
       ? cards.map(dealCard).join('')
-      : '<div class="empty-state" style="padding:.8rem;font-size:.74rem">Sin deals</div>'
+      : '<div class="empty-state empty-state--compact">Sin deals</div>'
     return `
       <div class="kanban-col">
         <div class="kanban-col-hdr">
@@ -204,13 +204,13 @@ function dealCard(opp) {
     .filter(h => !h.completado && h.fecha_inicio)
     .sort((a,b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))[0]
   const hitoTxt = prox
-    ? `<i class="ti ti-calendar" style="font-size:11px"></i> ${TIPO_LABEL[prox.tipo]} — ${fmtDate(prox.fecha_inicio)}`
+    ? `<i class="ti ti-calendar opp-icon--xs"></i> ${TIPO_LABEL[prox.tipo]} — ${fmtDate(prox.fecha_inicio)}`
     : 'Sin hito agendado'
   return `
     <div class="deal-card${isSel ? ' sel' : ''}" onclick="selectDeal(${opp.id})">
       <div class="dc-nombre">${opp.titulo || opp.cliente_nombre}</div>
       <div class="dc-meta">${hitoTxt}</div>
-      ${opp.valor_uf > 0 ? `<div class="dc-uf"><i class="ti ti-currency-dollar" style="font-size:11px"></i> ${opp.valor_uf} UF/mes</div>` : ''}
+      ${opp.valor_uf > 0 ? `<div class="dc-uf"><i class="ti ti-currency-dollar opp-icon--xs"></i> ${opp.valor_uf} UF/mes</div>` : ''}
       <span class="prob-pill ${pill}">${prob}%</span>
     </div>`
 }
@@ -231,7 +231,7 @@ function renderDealDetail(opp) {
   panel.innerHTML = `
     <h3>
       ${opp.titulo}
-      <span class="prob-pill ${pillClass}" style="margin-left:8px">${ETAPA_LABEL[opp.etapa] || opp.etapa}</span>
+      <span class="prob-pill prob-pill--spaced ${pillClass}">${ETAPA_LABEL[opp.etapa] || opp.etapa}</span>
     </h3>
     <div class="detail-grid">
       <div><div class="di-lbl">Cliente</div><div class="di-val">${opp.cliente_nombre || '—'}</div></div>
@@ -241,7 +241,7 @@ function renderDealDetail(opp) {
       <div><div class="di-lbl">Email</div><div class="di-val">${cli?.email || '—'}</div></div>
       <div><div class="di-lbl">Industria</div><div class="di-val">${cli?.industry || '—'}</div></div>
     </div>
-    ${opp.notas ? `<p style="font-size:.8rem;color:#666;margin-bottom:.8rem">${opp.notas}</p>` : ''}
+    ${opp.notas ? `<p class="deal-note">${opp.notas}</p>` : ''}
     <div class="deal-actions">
       <button class="btn btn--secondary btn--sm" onclick="openEditOppModal(${opp.id})">
         <i class="ti ti-edit btn__icon" aria-hidden="true"></i> Editar
@@ -288,7 +288,7 @@ window.renderGantt = function() {
   const hitos = opp.hitos || []
 
   if (!hitos.length) {
-    cont.innerHTML = `<div class="empty-state" style="padding:2rem">
+    cont.innerHTML = `<div class="empty-state empty-state--lg">
       Sin hitos. Haz clic en <strong>+ Agregar hito</strong> para comenzar.
     </div>`
     return
@@ -338,8 +338,8 @@ window.renderGantt = function() {
           <div class="hl-name">${h.titulo}</div>
           <div class="hl-sub">${TIPO_LABEL[h.tipo] || h.tipo} · ${statusTxt}</div>
         </td>
-        <td class="gantt-cell" colspan="${weeks.length}" style="position:relative;min-width:${weeks.length*44}px">
-          <div style="position:absolute;left:${todayPct}%;top:0;bottom:0;width:1.5px;background:#c0392b;opacity:.5;z-index:2"></div>
+        <td class="gantt-cell gantt-cell--timeline" colspan="${weeks.length}" style="min-width:${weeks.length*44}px">
+          <div class="gantt-today-line" style="left:${todayPct}%"></div>
           ${h.fecha_inicio ? `<div class="gantt-bar ${barClass}" style="${barStyle}">${h.titulo.substring(0,18)}</div>` : ''}
         </td>
       </tr>`
@@ -348,7 +348,7 @@ window.renderGantt = function() {
   cont.innerHTML = `
     <div class="gantt-wrap">
       <table class="gantt-tbl">
-        <thead><tr><th style="text-align:left;min-width:165px">Hito</th>${weekHdrs}</tr></thead>
+        <thead><tr><th class="gantt-heading--label">Hito</th>${weekHdrs}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`

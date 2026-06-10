@@ -17,12 +17,9 @@ function injectModal() {
           </button>
         </div>
         <div class="modal__body">
-          <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:var(--space-lg)">
-            <div id="profile-avatar-big"
-              style="width:64px;height:64px;border-radius:50%;background:var(--cp-blue-mid);
-                display:flex;align-items:center;justify-content:center;
-                font-size:22px;font-weight:600;color:var(--cp-cyan);margin-bottom:var(--space-sm)">??</div>
-            <div id="profile-email-display" style="font-size:13px;color:var(--cp-text-muted)">-</div>
+          <div class="profile-summary">
+            <div id="profile-avatar-big" class="profile-summary__avatar">??</div>
+            <div id="profile-email-display" class="profile-summary__email">-</div>
           </div>
           <form id="profile-form" novalidate>
             <div class="form__group">
@@ -30,41 +27,32 @@ function injectModal() {
               <input type="text" id="p-name" placeholder="Tu nombre completo">
             </div>
             <div class="divider"></div>
-            <p style="font-size:12px;font-weight:500;color:var(--cp-text-muted);margin-bottom:var(--space-md)">
+            <p class="profile-password-note">
               Cambiar contraseña — deja en blanco si no quieres cambiarla
             </p>
             <div class="form__group">
               <label for="p-current-pass">Contraseña actual</label>
-              <div style="position:relative">
-                <input type="password" id="p-current-pass" placeholder="Tu contraseña actual" style="padding-right:40px">
-                <button type="button" data-toggle="p-current-pass"
-                  style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
-                    width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-                    color:var(--cp-text-muted);background:none;border:none;cursor:pointer">
+              <div class="password-field">
+                <input type="password" id="p-current-pass" class="password-field__input" placeholder="Tu contraseña actual">
+                <button type="button" class="password-field__toggle" data-toggle="p-current-pass">
                   <i class="ti ti-eye"></i>
                 </button>
               </div>
             </div>
             <div class="form__group">
               <label for="p-new-pass">Nueva contraseña</label>
-              <div style="position:relative">
-                <input type="password" id="p-new-pass" placeholder="Mínimo 8 caracteres" style="padding-right:40px">
-                <button type="button" data-toggle="p-new-pass"
-                  style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
-                    width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-                    color:var(--cp-text-muted);background:none;border:none;cursor:pointer">
+              <div class="password-field">
+                <input type="password" id="p-new-pass" class="password-field__input" placeholder="Mínimo 8 caracteres">
+                <button type="button" class="password-field__toggle" data-toggle="p-new-pass">
                   <i class="ti ti-eye"></i>
                 </button>
               </div>
             </div>
             <div class="form__group">
               <label for="p-confirm-pass">Confirmar nueva contraseña</label>
-              <div style="position:relative">
-                <input type="password" id="p-confirm-pass" placeholder="Repite la nueva contraseña" style="padding-right:40px">
-                <button type="button" data-toggle="p-confirm-pass"
-                  style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
-                    width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-                    color:var(--cp-text-muted);background:none;border:none;cursor:pointer">
+              <div class="password-field">
+                <input type="password" id="p-confirm-pass" class="password-field__input" placeholder="Repite la nueva contraseña">
+                <button type="button" class="password-field__toggle" data-toggle="p-confirm-pass">
                   <i class="ti ti-eye"></i>
                 </button>
               </div>

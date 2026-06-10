@@ -101,7 +101,7 @@ function renderCatalogo() {
     bloque.innerHTML = `
       <div class="r-categoria__header" onclick="rToggleCat(this)">
         <span class="r-categoria__nombre">${cat}</span>
-        <span class="badge badge--info" style="font-size:10px">${srvs.length}</span>
+        <span class="badge badge--info badge--xs">${srvs.length}</span>
         <button class="r-categoria__sel-all btn btn--xs btn--secondary"
           onclick="event.stopPropagation();rSelAll('${cat.replace(/'/g,"\\'")}')">
           Todos

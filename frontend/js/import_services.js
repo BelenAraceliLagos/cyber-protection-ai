@@ -171,10 +171,10 @@ export function initImportServices() {
     preview.style.display = 'block'
     preview.innerHTML = `
       <div class="import-file-info">
-        <i class="ti ti-loader" style="font-size:24px;color:var(--cp-blue-main)"></i>
+        <i class="ti ti-loader import-file-info__icon"></i>
         <div>
-          <div style="font-weight:600">${file.name}</div>
-          <div style="font-size:12px;color:var(--cp-text-muted)">Analizando y verificando duplicados...</div>
+          <div class="import-file-info__title">${file.name}</div>
+          <div class="import-file-info__meta">Analizando y verificando duplicados...</div>
         </div>
       </div>`
 
@@ -194,33 +194,33 @@ export function initImportServices() {
 
       preview.innerHTML = `
         <div class="import-file-info">
-          <i class="ti ti-file-spreadsheet" style="font-size:24px;color:var(--cp-blue-main)"></i>
+          <i class="ti ti-file-spreadsheet import-file-info__icon"></i>
           <div>
-            <div style="font-weight:600">${file.name}</div>
-            <div style="font-size:12px;color:var(--cp-text-muted)">
+            <div class="import-file-info__title">${file.name}</div>
+            <div class="import-file-info__meta">
               ${todosLosServicios.length} servicios en el archivo
             </div>
           </div>
         </div>
 
         <!-- Resumen de conteos -->
-        <div style="display:flex;gap:10px;margin-bottom:14px">
-          <div style="flex:1;padding:12px;background:var(--cp-info-bg);border-radius:8px;text-align:center">
-            <div style="font-size:22px;font-weight:700;color:var(--cp-blue-main)">${serviciosNuevos.length}</div>
-            <div style="font-size:11px;color:var(--cp-text-muted)">Nuevos a importar</div>
+        <div class="import-summary">
+          <div class="import-summary__card">
+            <div class="import-summary__value">${serviciosNuevos.length}</div>
+            <div class="import-summary__label">Nuevos a importar</div>
           </div>
-          <div style="flex:1;padding:12px;background:${hayDuplicados ? '#fff8e1' : 'var(--cp-bg-soft)'};border-radius:8px;text-align:center">
-            <div style="font-size:22px;font-weight:700;color:${hayDuplicados ? '#f59e0b' : 'var(--cp-text-muted)'}">
+          <div class="import-summary__card ${hayDuplicados ? 'import-summary__card--warning' : 'import-summary__card--muted'}">
+            <div class="import-summary__value ${hayDuplicados ? 'import-summary__value--warning' : 'import-summary__value--muted'}">
               ${serviciosDuplicados.length}
             </div>
-            <div style="font-size:11px;color:var(--cp-text-muted)">Ya existen en BD</div>
+            <div class="import-summary__label">Ya existen en BD</div>
           </div>
         </div>
 
         ${hayNuevos ? `
           <!-- Preview de nuevos -->
           <div class="import-sample">
-            <div style="font-size:12px;font-weight:600;color:var(--cp-text-muted);margin-bottom:6px">
+            <div class="import-sample__title">
               Primeros 3 servicios nuevos:
             </div>
             ${serviciosNuevos.slice(0, 3).map(s => `
@@ -234,25 +234,22 @@ export function initImportServices() {
 
         ${hayDuplicados ? `
           <!-- Detalle de duplicados -->
-          <details style="margin-top:10px">
-            <summary style="font-size:12px;font-weight:600;color:#f59e0b;cursor:pointer;padding:8px 12px;
-              background:#fff8e1;border-radius:8px;list-style:none;display:flex;align-items:center;gap:6px">
+          <details class="import-duplicates">
+            <summary class="import-duplicates__summary">
               <i class="ti ti-alert-triangle"></i>
               ${serviciosDuplicados.length} servicio${serviciosDuplicados.length > 1 ? 's' : ''} ya existe${serviciosDuplicados.length === 1 ? '' : 'n'} — se omitirán
             </summary>
-            <div style="margin-top:6px;padding:10px 12px;background:#fffbeb;border-radius:8px;
-              border:1px solid #fde68a;max-height:140px;overflow-y:auto">
+            <div class="import-duplicates__list">
               ${serviciosDuplicados.map(n => `
-                <div style="font-size:12px;color:#92400e;padding:3px 0;
-                  border-bottom:1px solid #fde68a;display:flex;align-items:center;gap:6px">
-                  <i class="ti ti-x" style="color:#f59e0b;font-size:11px"></i>${n}
+                <div class="import-duplicates__item">
+                  <i class="ti ti-x import-duplicates__icon"></i>${n}
                 </div>`).join('')}
             </div>
           </details>` : ''}
 
         ${!hayNuevos ? `
-          <div style="text-align:center;padding:16px;color:var(--cp-text-muted);font-size:13px">
-            <i class="ti ti-circle-check" style="color:#10b981;font-size:24px;display:block;margin-bottom:6px"></i>
+          <div class="import-empty">
+            <i class="ti ti-circle-check import-empty__icon"></i>
             Todos los servicios ya están en la base de datos. No hay nada que importar.
           </div>` : ''}`
 

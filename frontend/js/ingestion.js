@@ -28,7 +28,7 @@ function showSpinner(btn, txt) {
   if (!btn) return
   btn._orig    = btn.innerHTML
   btn.disabled = true
-  btn.innerHTML = `<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> ${txt}`
+  btn.innerHTML = `<i class="ti ti-loader-2 is-spinning"></i> ${txt}`
 }
 function hideSpinner(btn) {
   if (!btn) return
@@ -50,14 +50,6 @@ let bdServicios = []   // [{id, name}]
 // ══════════════════════════════════════════════════════════════════════
 export async function initIngestion() {
   if (!requireAuth()) return
-
-  // CSS spinner
-  if (!document.getElementById('ing-spin-css')) {
-    const s = document.createElement('style')
-    s.id = 'ing-spin-css'
-    s.textContent = '@keyframes spin { to { transform: rotate(360deg); } }'
-    document.head.appendChild(s)
-  }
 
   // Esperar que el token esté disponible (puede tardar unos ms en sessionStorage)
   await new Promise(r => setTimeout(r, 150))
@@ -263,43 +255,35 @@ function mostrarModalOllama(motivo) {
 
   const modal = document.createElement('div')
   modal.id = 'modal-ollama'
-  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px'
+  modal.className = 'ollama-modal'
   modal.innerHTML = `
-    <div style="background:var(--cp-bg);border-radius:16px;max-width:460px;width:100%;
-      box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
-      <div style="padding:20px 24px 16px;border-bottom:1px solid var(--cp-border);
-        display:flex;align-items:center;gap:14px">
-        <div style="width:46px;height:46px;border-radius:12px;background:#fff8e1;
-          display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">
-          ${esSinModelo ? '📦' : '⚠️'}
-        </div>
+    <div class="ollama-modal__dialog">
+      <div class="ollama-modal__header">
+        <div class="ollama-modal__icon">${esSinModelo ? '📦' : '⚠️'}</div>
         <div>
-          <div style="font-size:16px;font-weight:700;color:var(--cp-text-main)">${titulo}</div>
-          <div style="font-size:12px;color:var(--cp-text-muted);margin-top:2px">${desc}</div>
+          <div class="ollama-modal__title">${titulo}</div>
+          <div class="ollama-modal__desc">${desc}</div>
         </div>
       </div>
-      <div style="padding:20px 24px">
+      <div class="ollama-modal__body">
         ${!esSinModelo ? `
-          <div style="font-size:13px;color:var(--cp-text-muted);margin-bottom:10px">
+          <div class="ollama-modal__hint">
             1. Abre una nueva terminal y ejecuta:
           </div>
-          <div style="background:#1e1e2e;border-radius:8px;padding:11px 16px;
-            font-family:monospace;font-size:14px;color:#a6e3a1;margin-bottom:14px">
+          <div class="ollama-modal__code ollama-modal__code--serve">
             ollama serve
           </div>` : ''}
-        <div style="font-size:13px;color:var(--cp-text-muted);margin-bottom:10px">
+        <div class="ollama-modal__hint">
           ${esSinModelo ? 'Ejecuta en la terminal:' : '2. Si no tienes el modelo Gemma:'}
         </div>
-        <div style="background:#1e1e2e;border-radius:8px;padding:11px 16px;
-          font-family:monospace;font-size:14px;color:#89b4fa;margin-bottom:16px">
+        <div class="ollama-modal__code">
           ollama pull gemma3:4b
         </div>
-        <div style="font-size:12px;padding:10px 12px;background:var(--cp-info-bg);
-          border-radius:8px;color:var(--cp-text-muted)">
+        <div class="ollama-modal__note">
           💡 Las imágenes PNG/JPG no necesitan Ollama — puedes subirlas sin iniciar el servicio.
         </div>
       </div>
-      <div style="padding:12px 24px 20px;display:flex;gap:10px;justify-content:flex-end">
+      <div class="ollama-modal__actions">
         <button onclick="document.getElementById('modal-ollama').remove()"
           class="btn btn--secondary btn--sm">Cerrar</button>
         <button onclick="window.reintentarConOllama()" class="btn btn--primary btn--sm">
@@ -346,50 +330,41 @@ function renderTarjetaImagen(container, res, idx) {
 
   div.innerHTML = `
     <div class="ing-resultado__header">
-      <i class="ti ti-photo ing-file__icon" style="color:#8b5cf6"></i>
+      <i class="ti ti-photo ing-file__icon ing-file__icon--image"></i>
       <span class="ing-resultado__title">${escH(nombre)}</span>
-      <span style="font-size:11px;padding:2px 8px;border-radius:99px;
-        background:#f3e8ff;color:#7c3aed;font-weight:600">🖼️ Logo / Imagen</span>
-      ${res.size_kb ? `<span style="font-size:11px;color:var(--cp-text-muted)">${res.size_kb} KB</span>` : ''}
+      <span class="ing-badge ing-badge--image">🖼️ Logo / Imagen</span>
+      ${res.size_kb ? `<span class="ing-muted">${res.size_kb} KB</span>` : ''}
     </div>
     <div class="ing-resultado__body">
 
-      <div style="display:flex;align-items:center;gap:16px;padding:14px;
-        background:var(--cp-bg-soft);border-radius:10px;margin-bottom:14px">
-        <img src="${BASE_URL}/ingestion/logo-preview?path=${encodeURIComponent(imgPath)}"
-          style="max-width:140px;max-height:70px;object-fit:contain;border-radius:6px;
-          background:white;padding:6px;border:1px solid var(--cp-border)"
+      <div class="ing-image-preview">
+        <img class="ing-image-preview__img" src="${BASE_URL}/ingestion/logo-preview?path=${encodeURIComponent(imgPath)}"
           onerror="this.style.display='none'">
         <div>
-          <div style="font-weight:600;font-size:13px;margin-bottom:4px">Vista previa del logo</div>
-          <div style="font-size:12px;color:var(--cp-text-muted)">
+          <div class="ing-image-preview__title">Vista previa del logo</div>
+          <div class="ing-muted ing-muted--md">
             Se guardará en
-            <code style="background:var(--cp-bg-soft);padding:1px 5px;border-radius:4px">
-              assets/logo_nombre_empresa.jpg
-            </code>
+            <code class="ing-code-inline">assets/logo_nombre_empresa.jpg</code>
           </div>
         </div>
       </div>
 
-      <div class="campo-grupo" style="margin-bottom:14px">
+      <div class="campo-grupo campo-grupo--spaced">
         <label class="campo-label">Nombre de empresa</label>
         <input class="campo-input img-empresa-input"
           placeholder="Ej: Apprecio, UNAB, Banco Estado..."
           value="${escH(nombreSugerido)}">
-        <div style="font-size:11px;color:var(--cp-text-muted);margin-top:4px">
+        <div class="ing-form-hint">
           El archivo quedará como <code>logo_nombre_empresa.jpg</code> en la carpeta
           <code>assets/</code> dentro de tu proyecto
         </div>
       </div>
 
-      <div style="display:flex;justify-content:flex-end;gap:10px">
+      <div class="ing-inline-actions">
         <button type="button" class="btn btn--secondary btn--sm img-descartar-btn">
           <i class="ti ti-x btn__icon"></i>Descartar
         </button>
-        <button type="button" class="btn btn--sm img-guardar-btn"
-          style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;
-          border:none;padding:8px 16px;border-radius:8px;font-weight:600;
-          cursor:pointer;display:flex;align-items:center;gap:6px">
+        <button type="button" class="btn btn--sm btn--ai-gradient img-guardar-btn">
           <i class="ti ti-device-floppy"></i>
           Guardar en assets
         </button>
@@ -414,7 +389,7 @@ function renderTarjetaImagen(container, res, idx) {
 
     const origHTML = btn.innerHTML
     btn.disabled   = true
-    btn.innerHTML  = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Guardando...'
+    btn.innerHTML  = '<i class="ti ti-loader-2 is-spinning"></i> Guardando...'
 
     try {
       const token = getToken()
@@ -444,7 +419,7 @@ function renderTarjetaImagen(container, res, idx) {
       div.style.pointerEvents = 'none'
       div.querySelector('.ing-resultado__header')
         ?.insertAdjacentHTML('beforeend',
-          '<span style="margin-left:auto;color:#10b981;font-weight:700;font-size:13px">✅ Guardado</span>')
+          '<span class="ing-saved-badge ing-saved-badge--strong">✅ Guardado</span>')
 
       showAlert(`✅ Logo guardado como: ${data.nombre_archivo} — disponible en assets/`, 'success', 7000)
 
@@ -468,19 +443,17 @@ function renderTarjeta(container, res, idx) {
   const srvs    = datos.servicios || []
   const conf    = datos.confianza || 'baja'
 
-  const confStyle = { alta: 'color:#10b981', media: 'color:#f59e0b', baja: 'color:#ef4444' }[conf] || ''
+  const confClass = `ing-confidence--${conf}`
   const confLabel = { alta: '✅ Alta', media: '⚠️ Media', baja: '❌ Baja' }[conf] || conf
 
   // ── Verificar cliente en BD ────────────────────────────────────────
   const clienteBD = clienteExisteEnBD(cliente.company_name)
   const clienteBadge = clienteBD
-    ? `<span style="font-size:11px;padding:2px 8px;border-radius:99px;
-        background:#dcfce7;color:#166534;font-weight:600;margin-left:8px">
+    ? `<span class="ing-badge ing-badge--existing">
         ♻️ Ya existe en BD (id:${clienteBD.id})
        </span>`
     : cliente.company_name
-      ? `<span style="font-size:11px;padding:2px 8px;border-radius:99px;
-          background:#dbeafe;color:#1e40af;font-weight:600;margin-left:8px">
+      ? `<span class="ing-badge ing-badge--new">
           ✨ Cliente nuevo
          </span>`
       : ''
@@ -503,32 +476,30 @@ function renderTarjeta(container, res, idx) {
     <div class="ing-resultado__header">
       <i class="ti ${icoExt(res.nombre_archivo)} ing-file__icon"></i>
       <span class="ing-resultado__title">${res.nombre_archivo}</span>
-      <span style="font-size:12px;font-weight:600;${confStyle}">Confianza: ${confLabel}</span>
-      ${res.size_kb ? `<span style="font-size:11px;color:var(--cp-text-muted)">${res.size_kb} KB</span>` : ''}
+      <span class="ing-confidence ${confClass}">Confianza: ${confLabel}</span>
+      ${res.size_kb ? `<span class="ing-muted">${res.size_kb} KB</span>` : ''}
     </div>
     <div class="ing-resultado__body">
       ${datos.error ? `
-        <div style="padding:12px;background:#fef2f2;border-radius:8px;color:#991b1b;font-size:13px">
+        <div class="ing-error-box">
           <i class="ti ti-alert-triangle"></i> ${datos.error}
         </div>` : `
 
         ${datos.proveedor_detectado ? `
-          <div style="padding:8px 12px;background:#fff8e1;border-radius:8px;font-size:12px;
-            color:#92400e;display:flex;align-items:center;gap:6px;margin-bottom:12px">
-            <i class="ti ti-alert-triangle" style="color:#f59e0b"></i>
+          <div class="ing-warning-box">
+            <i class="ti ti-alert-triangle ing-warning-box__icon"></i>
             Proveedor detectado (NO es el cliente): <strong>${escH(datos.proveedor_detectado)}</strong>
           </div>` : ''}
 
         <!-- DATOS DEL CLIENTE -->
-        <div style="margin-bottom:16px">
-          <div style="display:flex;align-items:center;margin-bottom:10px">
-            <span style="font-size:12px;font-weight:600;color:var(--cp-text-muted)">DATOS DEL CLIENTE</span>
+        <div class="ing-section">
+          <div class="ing-section__header">
+            <span class="ing-section__title">DATOS DEL CLIENTE</span>
             ${clienteBadge}
           </div>
           ${clienteBD ? `
-            <div style="padding:10px 12px;background:#f0fdf4;border-radius:8px;
-              font-size:12px;color:#166534;margin-bottom:10px;display:flex;align-items:center;gap:8px">
-              <i class="ti ti-user-check" style="font-size:16px"></i>
+            <div class="ing-existing-client">
+              <i class="ti ti-user-check ing-existing-client__icon"></i>
               <div>
                 <strong>${escH(clienteBD.company_name)}</strong> ya existe en la base de datos.
                 Solo se completarán los campos que estén vacíos actualmente.
@@ -567,67 +538,56 @@ function renderTarjeta(container, res, idx) {
             </div>
           </div>
           ${datos.contexto ? `
-            <div style="margin-top:10px;padding:10px 12px;background:var(--cp-info-bg);
-              border-radius:8px;font-size:12px;color:var(--cp-text-muted)">
+            <div class="ing-context">
               <strong>Contexto extraído:</strong> ${escH(datos.contexto)}
             </div>` : ''}
         </div>
 
         <!-- LOGOS EXTRAÍDOS -->
         ${res.logos_extra && res.logos_extra.length ? `
-          <div style="margin-bottom:16px">
-            <div style="font-size:12px;font-weight:600;color:var(--cp-text-muted);margin-bottom:8px">
+          <div class="ing-section">
+            <div class="ing-logo-title">
               LOGOS DETECTADOS EN EL DOCUMENTO — selecciona el del cliente
             </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap" id="logos-${idx}">
+            <div class="ing-logo-grid" id="logos-${idx}">
               ${res.logos_extra.map((lpath, li) => `
-                <div class="logo-opcion" id="logo-opcion-${idx}-${li}"
+                <div class="logo-opcion ing-logo-option" id="logo-opcion-${idx}-${li}"
                   onclick="window.seleccionarLogo(${idx}, ${li}, '${escH(lpath)}')"
-                  style="cursor:pointer;padding:8px;border:2px solid var(--cp-border);
-                  border-radius:10px;background:white;transition:all .2s;
-                  display:flex;flex-direction:column;align-items:center;gap:4px;min-width:90px">
+>
                   <img src="${BASE_URL}/ingestion/logo-preview?path=${encodeURIComponent(lpath)}"
-                    style="max-width:110px;max-height:55px;object-fit:contain"
+                    class="ing-logo-option__img"
                     onerror="this.parentElement.style.opacity='0.3'">
-                  <span style="font-size:10px;color:var(--cp-text-muted)">Logo ${li+1}</span>
+                  <span class="ing-logo-option__label">Logo ${li+1}</span>
                 </div>`).join('')}
-              <div onclick="window.seleccionarLogo(${idx}, -1, '')"
-                style="cursor:pointer;padding:8px;border:2px dashed var(--cp-border);border-radius:10px;
-                display:flex;flex-direction:column;align-items:center;justify-content:center;
-                gap:4px;min-width:70px;color:var(--cp-text-muted);font-size:11px;text-align:center">
-                <i class="ti ti-x" style="font-size:18px"></i>Ninguno
+              <div class="ing-logo-option ing-logo-option--empty" onclick="window.seleccionarLogo(${idx}, -1, '')">
+                <i class="ti ti-x"></i>Ninguno
               </div>
             </div>
-            <div id="logo-sel-${idx}" style="font-size:11px;color:var(--cp-text-muted);
-              margin-top:6px;font-style:italic">Sin logo seleccionado</div>
+            <div id="logo-sel-${idx}" class="ing-logo-status">Sin logo seleccionado</div>
           </div>` : ''}
 
         <!-- SERVICIOS DETECTADOS CON ESTADO -->
         ${srvsConEstado.length ? `
           <div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-              <span style="font-size:12px;font-weight:600;color:var(--cp-text-muted)">
+            <div class="ing-services-header">
+              <span class="ing-services-header__title">
                 SERVICIOS DETECTADOS
               </span>
-              ${nuevos > 0 ? `<span style="font-size:11px;padding:2px 8px;border-radius:99px;
-                background:#dbeafe;color:#1e40af;font-weight:600">✨ ${nuevos} nuevo(s)</span>` : ''}
-              ${existentes > 0 ? `<span style="font-size:11px;padding:2px 8px;border-radius:99px;
-                background:#f3f4f6;color:#6b7280;font-weight:600">♻️ ${existentes} ya en BD</span>` : ''}
+              ${nuevos > 0 ? `<span class="ing-badge ing-badge--new">✨ ${nuevos} nuevo(s)</span>` : ''}
+              ${existentes > 0 ? `<span class="ing-badge ing-badge--neutral">♻️ ${existentes} ya en BD</span>` : ''}
             </div>
             <div class="srv-lista">
               ${srvsConEstado.map((s, si) => `
-                <div class="srv-item" style="${s.enBD ? 'opacity:0.65' : ''}">
+                <div class="srv-item ${s.enBD ? 'srv-item--muted' : ''}">
                   <input type="checkbox" id="srv-${idx}-${si}"
                     ${s.enBD ? '' : 'checked'}
                     ${s.enBD ? 'title="Ya existe en BD"' : ''}>
                   <span class="srv-item__nombre">${escH(s.nombre)}</span>
                   ${s.enBD
-                    ? `<span style="font-size:10px;padding:2px 6px;border-radius:99px;
-                        background:#f3f4f6;color:#6b7280;font-weight:600;white-space:nowrap">
+                    ? `<span class="ing-badge ing-badge--neutral ing-badge--compact">
                         ♻️ En BD
                        </span>`
-                    : `<span style="font-size:10px;padding:2px 6px;border-radius:99px;
-                        background:#dbeafe;color:#1e40af;font-weight:600;white-space:nowrap">
+                    : `<span class="ing-badge ing-badge--new ing-badge--compact">
                         ✨ Nuevo
                        </span>`}
                   ${s.precio_uf
@@ -636,17 +596,16 @@ function renderTarjeta(container, res, idx) {
                 </div>`).join('')}
             </div>
             ${existentes > 0 ? `
-              <div style="font-size:11px;color:var(--cp-text-muted);margin-top:6px;font-style:italic">
+              <div class="ing-help-text">
                 Los servicios marcados como "En BD" están desmarcados por defecto para evitar duplicados.
               </div>` : ''}
           </div>` : `
-          <div style="font-size:12px;color:var(--cp-text-muted);font-style:italic;margin-top:8px">
+          <div class="ing-empty-text">
             No se detectaron servicios en este archivo.
           </div>`}
 
         <!-- ACCIONES -->
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;
-          padding-top:14px;border-top:1px solid var(--cp-border)">
+        <div class="ing-result-actions">
           <button class="btn btn--secondary btn--sm"
             onclick="window.descartarResultado(${idx})">Descartar</button>
           <button class="btn btn--primary btn--sm"
@@ -730,7 +689,7 @@ window.guardarResultado = async function(idx) {
       tarjeta.style.pointerEvents = 'none'
       tarjeta.querySelector('.ing-resultado__header')
         ?.insertAdjacentHTML('beforeend',
-          '<span style="margin-left:auto;color:#10b981;font-weight:600;font-size:13px">✅ Guardado</span>')
+          '<span class="ing-saved-badge">✅ Guardado</span>')
     }
 
     // Actualizar cache local para futuras comparaciones
@@ -764,7 +723,7 @@ window.guardarImagen = async function(idx, imgPath) {
   }
 
   const origText = btn?.innerHTML
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Guardando...' }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 is-spinning"></i> Guardando...' }
 
   try {
     const token = getToken()
@@ -786,7 +745,7 @@ window.guardarImagen = async function(idx, imgPath) {
       tarjeta.style.pointerEvents = 'none'
       tarjeta.querySelector('.ing-resultado__header')
         ?.insertAdjacentHTML('beforeend',
-          '<span style="margin-left:auto;color:#10b981;font-weight:600;font-size:13px">✅ Guardado</span>')
+          '<span class="ing-saved-badge">✅ Guardado</span>')
     }
     showAlert(`✅ Logo guardado como: ${data.nombre_archivo}`, 'success', 6000)
 

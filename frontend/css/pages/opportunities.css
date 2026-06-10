@@ -1,0 +1,260 @@
+/* ── Tabs ─────────────────────────────────────── */
+.opp-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--color-border, #e8ecf4);
+  margin-bottom: 1.5rem;
+}
+.opp-tab {
+  padding: .55rem 1.2rem;
+  font-size: .875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--color-text-muted, #888);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-family: inherit;
+  transition: color .15s;
+}
+.opp-tab.active { color: var(--color-primary, #155FCF); border-bottom-color: var(--color-primary, #155FCF); }
+
+/* ── Métricas Dashboard ───────────────────────── */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.metric-box {
+  background: #fff;
+  border: 1px solid #e8ecf4;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+}
+.metric-box__val  { font-size: 1.75rem; font-weight: 600; color: #155FCF; }
+.metric-box__lbl  { font-size: .78rem; color: #888; margin-top: 2px; }
+.metric-box__delta{ font-size: .75rem; margin-top: 5px; }
+.delta-up { color: #0F6E56; } .delta-dn { color: #c0392b; }
+
+/* ── Dashboard 2 cols ─────────────────────────── */
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+
+/* Embudo */
+.funnel-row  { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.funnel-lbl  { font-size: .78rem; color: #666; width: 105px; text-align: right; flex-shrink: 0; }
+.funnel-bg   { flex: 1; height: 22px; background: #f0f4fa; border-radius: 4px; overflow: hidden; }
+.funnel-fill { height: 100%; border-radius: 4px; display: flex; align-items: center;
+               padding-left: 8px; font-size: .7rem; color: #fff; font-weight: 600; }
+
+/* Próximos hitos */
+.upcoming-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: .65rem; background: #f7f9fd; border-radius: 8px; margin-bottom: 7px;
+}
+.upcoming-date {
+  width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.upcoming-date .mes { font-size: .6rem; font-weight: 600; line-height: 1; }
+.upcoming-date .dia { font-size: 1rem; font-weight: 700; line-height: 1.1; }
+.upcoming-item .txt p { margin: 0; font-size: .82rem; font-weight: 500; }
+.upcoming-item .txt small { font-size: .74rem; color: #888; }
+
+/* ── Kanban ───────────────────────────────────── */
+.kanban-wrap { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; }
+.kanban-col  {
+  flex: 0 0 190px; background: #f5f7fb;
+  border-radius: 10px; padding: 10px; min-height: 420px;
+}
+.kanban-col-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: .75rem; font-weight: 600; color: #555; margin-bottom: 10px;
+}
+.kanban-col-hdr .cnt {
+  background: #fff; border: 1px solid #dde2ee;
+  border-radius: 20px; padding: 1px 7px; font-size: .7rem; color: #888;
+}
+.deal-card {
+  background: #fff; border: 1px solid #e0e5f0; border-radius: 8px;
+  padding: 10px 11px; margin-bottom: 7px; cursor: pointer;
+  transition: box-shadow .15s;
+}
+.deal-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.deal-card.sel { border-left: 3px solid #155FCF; }
+.deal-card .dc-nombre { font-size: .84rem; font-weight: 600; margin-bottom: 3px; }
+.deal-card .dc-meta   { font-size: .74rem; color: #888; }
+.deal-card .dc-uf     { font-size: .74rem; color: #155FCF; font-weight: 500; margin-top: 2px; }
+.prob-pill {
+  display: inline-block; font-size: .68rem;
+  padding: 2px 8px; border-radius: 20px; margin-top: 5px; font-weight: 500;
+}
+.p-alta  { background: #E1F5EE; color: #0F6E56; }
+.p-media { background: #FAEEDA; color: #854F0B; }
+.p-baja  { background: #FCEBEB; color: #A32D2D; }
+.p-verde { background: #E1F5EE; color: #085041; }
+.p-rojo  { background: #FCEBEB; color: #A32D2D; }
+.kanban-add {
+  width: 100%; background: none; border: 1.5px dashed #cdd3e2;
+  border-radius: 8px; padding: 7px; font-size: .76rem; color: #aaa;
+  cursor: pointer; margin-top: 4px; font-family: inherit;
+  transition: border-color .15s, color .15s;
+}
+.kanban-add:hover { border-color: #155FCF; color: #155FCF; }
+
+/* Panel detalle deal */
+.deal-detail {
+  margin-top: 1rem; background: #f5f7fb;
+  border-radius: 10px; padding: 1rem 1.2rem; display: none;
+}
+.deal-detail.show { display: block; }
+.deal-detail h3   { font-size: .9rem; font-weight: 600; margin-bottom: .8rem; }
+.detail-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: .4rem .8rem; margin-bottom: .8rem;
+}
+.di-lbl { font-size: .72rem; color: #888; }
+.di-val { font-size: .82rem; font-weight: 500; }
+.deal-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: .8rem; }
+
+/* ── Gantt ────────────────────────────────────── */
+.gantt-controls {
+  display: flex; align-items: flex-end; gap: 1rem;
+  margin-bottom: 1rem; flex-wrap: wrap;
+}
+.gantt-controls select { padding: 6px 10px; font-size: .85rem; font-family: inherit; }
+.gantt-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.gantt-legend-item { display: flex; align-items: center; gap: 5px; font-size: .74rem; color: #666; }
+.gl-box { width: 14px; height: 9px; border-radius: 2px; }
+
+.gantt-wrap { overflow-x: auto; }
+.gantt-tbl  { border-collapse: collapse; font-size: .77rem; min-width: 680px; width: 100%; }
+.gantt-tbl th {
+  background: #f5f7fb; font-weight: 500; color: #666; font-size: .71rem;
+  padding: 5px 6px; border: 1px solid #e8ecf4; text-align: center; white-space: nowrap;
+}
+.gantt-tbl th.hoy-col { background: #FCEBEB; color: #c0392b; }
+.gantt-tbl td { border: 1px solid #f0f3f9; padding: 0; height: 36px; vertical-align: middle; }
+.gantt-tbl td.hito-lbl {
+  padding: 4px 8px; background: #fff; white-space: nowrap;
+  min-width: 165px; max-width: 165px;
+}
+.hito-lbl .hl-name { font-size: .77rem; font-weight: 500; }
+.hito-lbl .hl-sub  { font-size: .69rem; color: #999; }
+.gantt-cell { background: #f9fafc; position: relative; }
+.gantt-bar  {
+  position: absolute; top: 8px; height: 18px; border-radius: 4px;
+  display: flex; align-items: center; padding: 0 6px;
+  font-size: .66rem; color: #fff; white-space: nowrap; overflow: hidden;
+}
+.bar-done    { background: #85B7EB; }
+.bar-pending { background: #FAC775; border: 1.5px dashed #854F0B; color: #633806; }
+.bar-planned { background: #B5D4F4; border: 1.5px dashed #185FA5; color: #0C447C; }
+.bar-success { background: #1D9E75; }
+
+/* ── Botones extra ────────────────────────────── */
+.btn--teal { background: #8EE3C8; color: #085041; border-color: #8EE3C8; }
+.btn--teal:hover { background: #5DCAA5; }
+.btn--danger-soft { background: #FCEBEB; color: #A32D2D; border: 1px solid #F7C1C1; }
+
+.empty-state { text-align: center; padding: 2rem; color: #aaa; font-size: .85rem; }
+
+@media (max-width: 900px) {
+  .metrics-row { grid-template-columns: repeat(2,1fr); }
+  .dash-grid   { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: repeat(2,1fr); }
+}
+
+.opp-card-section {
+  padding: 0 1rem 1rem;
+}
+
+.opp-tab-panel--hidden,
+.opp-add-milestone--hidden {
+  display: none;
+}
+
+.gantt-control-label {
+  color: #555;
+  display: block;
+  font-size: .8rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.gl-box--done {
+  background: #85B7EB;
+}
+
+.gl-box--pending {
+  background: #FAC775;
+  border: 1px dashed #854F0B;
+}
+
+.gl-box--planned {
+  background: #B5D4F4;
+  border: 1px dashed #185FA5;
+}
+
+.gl-box--success {
+  background: #1D9E75;
+}
+
+.gantt-today-key {
+  background: #c0392b;
+  height: 13px;
+  margin-right: 5px;
+  width: 2px;
+}
+
+.opp-form-group--full {
+  grid-column: 1 / -1;
+}
+
+.empty-state--compact {
+  font-size: .74rem;
+  padding: .8rem;
+}
+
+.empty-state--sm {
+  padding: 1rem;
+}
+
+.empty-state--lg {
+  padding: 2rem;
+}
+
+.opp-icon--xs {
+  font-size: 11px;
+}
+
+.prob-pill--spaced {
+  margin-left: 8px;
+}
+
+.deal-note {
+  color: #666;
+  font-size: .8rem;
+  margin-bottom: .8rem;
+}
+
+.gantt-cell--timeline {
+  position: relative;
+}
+
+.gantt-today-line {
+  background: #c0392b;
+  bottom: 0;
+  opacity: .5;
+  position: absolute;
+  top: 0;
+  width: 1.5px;
+  z-index: 2;
+}
+
+.gantt-heading--label {
+  min-width: 165px;
+  text-align: left;
+}
+

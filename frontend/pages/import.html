@@ -12,112 +12,7 @@
   <link rel="stylesheet" href="../css/animations.css">
   <link rel="stylesheet" href="../css/layout.css">
   <link rel="stylesheet" href="../css/components.css">
-  <style>
-    .import-dropzone {
-      border: 2px dashed var(--cp-border);
-      border-radius: 12px;
-      padding: 48px 24px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color .2s, background .2s;
-      background: var(--cp-bg-soft);
-    }
-    .import-dropzone--over,
-    .import-dropzone:hover {
-      border-color: var(--cp-blue-main);
-      background: var(--cp-info-bg);
-    }
-    .import-dropzone__icon {
-      font-size: 48px;
-      color: var(--cp-blue-main);
-      margin-bottom: 12px;
-    }
-    .import-dropzone__title {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--cp-text-main);
-      margin-bottom: 4px;
-    }
-    .import-dropzone__sub {
-      font-size: 13px;
-      color: var(--cp-text-muted);
-      margin-bottom: 20px;
-    }
-    .import-file-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      background: var(--cp-info-bg);
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
-    .import-sample {
-      background: var(--cp-bg-soft);
-      border-radius: 8px;
-      padding: 12px 16px;
-    }
-    .import-sample-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 4px 0;
-      font-size: 13px;
-      border-bottom: 1px solid var(--cp-border);
-    }
-    .import-sample-row:last-child { border-bottom: none; }
-    .import-sample-name { color: var(--cp-text-main); font-weight: 500; }
-    .import-sample-price { color: var(--cp-blue-main); font-weight: 600; }
-    .import-progress-wrap {
-      margin-top: 16px;
-    }
-    .import-progress-track {
-      height: 8px;
-      background: var(--cp-border);
-      border-radius: 99px;
-      overflow: hidden;
-      margin-bottom: 6px;
-    }
-    .import-progress-fill {
-      height: 100%;
-      background: var(--cp-blue-main);
-      border-radius: 99px;
-      width: 0%;
-      transition: width .3s;
-    }
-    .import-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
-      justify-content: flex-end;
-    }
-    .import-steps {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 8px;
-    }
-    .import-step {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-    }
-    .import-step__num {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--cp-blue-main);
-      color: white;
-      font-size: 12px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-    .import-step__text { font-size: 13px; color: var(--cp-text-muted); line-height: 1.5; }
-    .import-step__text strong { color: var(--cp-text-main); }
-  </style>
+  <link rel="stylesheet" href="../css/pages/import.css">
 </head>
 <body>
 <div id="alert-container" class="alert-container"></div>
@@ -174,7 +69,7 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+      <div class="import-layout">
 
         <!-- Panel principal de importación -->
         <div class="card page-enter page-enter--d1">
@@ -194,19 +89,18 @@
                 <i class="ti ti-folder-open btn__icon"></i>
                 Seleccionar archivo
               </button>
-              <input type="file" id="import-file-input" accept=".xlsx,.xls" style="display:none">
+              <input type="file" id="import-file-input" class="import-file-input" accept=".xlsx,.xls">
             </div>
 
             <!-- Preview del archivo -->
-            <div id="import-preview" style="display:none;margin-top:16px"></div>
+            <div id="import-preview" class="import-preview"></div>
 
             <!-- Barra de progreso -->
-            <div id="import-progress" style="display:none" class="import-progress-wrap">
+            <div id="import-progress" class="import-progress-wrap import-progress-wrap--hidden">
               <div class="import-progress-track">
                 <div class="import-progress-fill" id="import-progress-bar"></div>
               </div>
-              <div style="font-size:12px;color:var(--cp-text-muted);text-align:center"
-                id="import-progress-txt">0 / 0</div>
+              <div class="import-progress-text" id="import-progress-txt">0 / 0</div>
             </div>
 
             <!-- Botones de acción -->
@@ -253,8 +147,8 @@
               </div>
             </div>
 
-            <div style="margin-top:20px;padding:12px;background:var(--cp-info-bg);border-radius:8px;font-size:12px;color:var(--cp-text-muted)">
-              <i class="ti ti-info-circle" style="color:var(--cp-blue-main)"></i>
+            <div class="import-note">
+              <i class="ti ti-info-circle import-note__icon"></i>
               El archivo debe tener una hoja con columnas <strong>Servicio</strong>, <strong>Descripción</strong> y <strong>Valor Ref. (UF)</strong>. Los precios con rango (ej: 50–150) se promedian automáticamente.
             </div>
           </div>

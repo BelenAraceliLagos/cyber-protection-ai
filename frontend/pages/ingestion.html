@@ -12,80 +12,7 @@
   <link rel="stylesheet" href="../css/animations.css">
   <link rel="stylesheet" href="../css/layout.css">
   <link rel="stylesheet" href="../css/components.css">
-  <style>
-    .ing-drop {
-      border: 2px dashed var(--cp-border);
-      border-radius: 14px; padding: 40px 24px;
-      text-align: center; cursor: pointer;
-      transition: border-color .2s, background .2s;
-      background: var(--cp-bg-soft);
-    }
-    .ing-drop--over, .ing-drop:hover { border-color: var(--cp-blue-main); background: var(--cp-info-bg); }
-    .ing-drop__icon { font-size: 44px; color: var(--cp-blue-main); margin-bottom: 10px; }
-    .ing-drop__title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-    .ing-drop__sub   { font-size: 13px; color: var(--cp-text-muted); margin-bottom: 18px; }
-    .ing-formatos { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-    .ing-fmt { padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600;
-               background: var(--cp-bg-soft); border: 1px solid var(--cp-border); color: var(--cp-text-muted); }
-    .ing-queue { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
-    .ing-file  { display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-                 border-radius: 10px; border: 1px solid var(--cp-border); background: var(--cp-bg); }
-    .ing-file__icon   { font-size: 22px; color: var(--cp-blue-main); flex-shrink: 0; }
-    .ing-file__name   { font-size: 13px; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ing-file__size   { font-size: 11px; color: var(--cp-text-muted); }
-    .ing-file__remove { background: none; border: none; cursor: pointer; color: var(--cp-text-muted); font-size: 16px; padding: 0; }
-    .ing-file__remove:hover { color: #ef4444; }
-    .ing-resultado { border: 1px solid var(--cp-border); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
-    .ing-resultado__header { display: flex; align-items: center; gap: 10px; padding: 12px 16px;
-                             background: var(--cp-bg-soft); border-bottom: 1px solid var(--cp-border); flex-wrap: wrap; }
-    .ing-resultado__title  { font-weight: 600; font-size: 14px; flex: 1; }
-    .ing-resultado__body   { padding: 16px; }
-    .campo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width: 600px) { .campo-grid { grid-template-columns: 1fr; } }
-    .campo-grupo { display: flex; flex-direction: column; gap: 4px; }
-    .campo-label { font-size: 11px; font-weight: 600; color: var(--cp-text-muted); }
-    .campo-input { padding: 8px 10px; border: 1px solid var(--cp-border); border-radius: 8px;
-                   font-family: inherit; font-size: 13px; background: var(--cp-bg);
-                   color: var(--cp-text-main); outline: none; transition: border-color .2s;
-                   width: 100%; box-sizing: border-box; }
-    .campo-input:focus { border-color: var(--cp-blue-main); }
-    .srv-lista { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
-    .srv-item  { display: flex; align-items: center; gap: 10px; padding: 8px 12px;
-                 background: var(--cp-bg-soft); border-radius: 8px; }
-    .srv-item input[type=checkbox] { accent-color: var(--cp-blue-main); width: 15px; height: 15px; flex-shrink:0; }
-    .srv-item__nombre { font-size: 13px; font-weight: 500; flex: 1; }
-    .srv-item__precio { font-size: 12px; color: var(--cp-blue-main); font-weight: 600; }
-    .badge-ia { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
-                border-radius: 99px; font-size: 11px; font-weight: 600;
-                background: linear-gradient(135deg,#6366f1,#8b5cf6); color: white; }
-
-    /* Panel instrucciones mejorado */
-    .how-step {
-      display: flex; gap: 12px; align-items: flex-start;
-      padding: 12px; border-radius: 10px;
-      background: var(--cp-bg-soft);
-      border: 1px solid var(--cp-border);
-      transition: border-color .2s;
-    }
-    .how-step:hover { border-color: var(--cp-blue-main); }
-    .how-step__num {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: var(--cp-blue-main); color: white;
-      font-size: 12px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .how-step__icon { font-size: 18px; color: var(--cp-blue-main); flex-shrink: 0; margin-top: 4px; }
-    .how-step__title { font-size: 13px; font-weight: 600; color: var(--cp-text-main); margin-bottom: 3px; }
-    .how-step__desc  { font-size: 12px; color: var(--cp-text-muted); line-height: 1.5; }
-    .tip-box {
-      padding: 10px 12px; border-radius: 8px; font-size: 12px;
-      display: flex; gap: 8px; align-items: flex-start; margin-top: 10px;
-    }
-    .tip-box--info   { background: var(--cp-info-bg); color: var(--cp-text-muted); }
-    .tip-box--warn   { background: #fff8e1; color: #92400e; }
-    .tip-box i { flex-shrink: 0; font-size: 15px; margin-top: 1px; }
-  </style>
+  <link rel="stylesheet" href="../css/pages/ingestion.css">
 </head>
 <body>
 <div id="alert-container" class="alert-container"></div>
@@ -145,10 +72,10 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
+      <div class="ing-layout">
 
         <!-- ── Panel principal ── -->
-        <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="ing-stack">
 
           <div class="card page-enter page-enter--d1">
             <div class="card__header">
@@ -164,7 +91,7 @@
                   <i class="ti ti-folder-open btn__icon"></i>Seleccionar archivos
                 </button>
                 <input type="file" id="ing-file-input" multiple
-                  accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.jpg,.jpeg,.png,.gif,.webp" style="display:none">
+                  accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.jpg,.jpeg,.png,.gif,.webp" class="ing-file-input">
                 <div class="ing-formatos">
                   <span class="ing-fmt"><i class="ti ti-file-type-pdf"></i> PDF</span>
                   <span class="ing-fmt"><i class="ti ti-file-type-docx"></i> Word</span>
@@ -176,7 +103,7 @@
 
               <div class="ing-queue" id="ing-queue"></div>
 
-              <div style="display:flex;justify-content:flex-end;margin-top:16px">
+              <div class="ing-actions">
                 <button class="btn btn--primary" id="ing-analizar-btn" disabled>
                   <i class="ti ti-robot btn__icon"></i>Analizar con IA
                 </button>
@@ -185,9 +112,9 @@
           </div>
 
           <!-- Resultados -->
-          <div id="ing-resultados" style="display:none">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-              <h2 style="font-size:16px;font-weight:600">Datos extraídos — revisa y confirma</h2>
+          <div id="ing-resultados" class="ing-results ing-results--hidden">
+            <div class="ing-results__header">
+              <h2 class="ing-results__title">Datos extraídos — revisa y confirma</h2>
               <button class="btn btn--primary btn--sm" id="ing-guardar-todos-btn">
                 <i class="ti ti-device-floppy btn__icon"></i>Guardar todo
               </button>
@@ -203,13 +130,13 @@
             <div class="card__header">
               <div class="card__title">¿Cómo funciona?</div>
             </div>
-            <div class="card__body" style="display:flex;flex-direction:column;gap:10px">
+            <div class="card__body ing-instructions-body">
 
               <div class="how-step">
                 <div class="how-step__num">1</div>
                 <div>
                   <div class="how-step__title">
-                    <i class="ti ti-files" style="margin-right:4px;color:var(--cp-blue-main)"></i>
+                    <i class="ti ti-files how-step__title-icon"></i>
                     Selecciona archivos
                   </div>
                   <div class="how-step__desc">
@@ -222,7 +149,7 @@
                 <div class="how-step__num">2</div>
                 <div>
                   <div class="how-step__title">
-                    <i class="ti ti-robot" style="margin-right:4px;color:var(--cp-blue-main)"></i>
+                    <i class="ti ti-robot how-step__title-icon"></i>
                     La IA analiza
                   </div>
                   <div class="how-step__desc">
@@ -235,7 +162,7 @@
                 <div class="how-step__num">3</div>
                 <div>
                   <div class="how-step__title">
-                    <i class="ti ti-edit" style="margin-right:4px;color:var(--cp-blue-main)"></i>
+                    <i class="ti ti-edit how-step__title-icon"></i>
                     Revisa y edita
                   </div>
                   <div class="how-step__desc">
@@ -248,7 +175,7 @@
                 <div class="how-step__num">4</div>
                 <div>
                   <div class="how-step__title">
-                    <i class="ti ti-database" style="margin-right:4px;color:var(--cp-blue-main)"></i>
+                    <i class="ti ti-database how-step__title-icon"></i>
                     Se guarda en BD
                   </div>
                   <div class="how-step__desc">
@@ -258,15 +185,15 @@
               </div>
 
               <div class="tip-box tip-box--info">
-                <i class="ti ti-info-circle" style="color:var(--cp-blue-main)"></i>
+                <i class="ti ti-info-circle tip-box__icon"></i>
                 <span>Los logos PNG/JPG se detectan automáticamente. Si están dentro de un PDF, también se extraen para que los selecciones.</span>
               </div>
 
               <div class="tip-box tip-box--warn">
-                <i class="ti ti-alert-triangle" style="color:#f59e0b"></i>
+                <i class="ti ti-alert-triangle tip-box__icon tip-box__icon--warn"></i>
                 <span>
                   Requiere Ollama corriendo:<br>
-                  <code style="font-size:11px;background:#fde68a;padding:1px 4px;border-radius:4px">ollama serve</code>
+                  <code class="tip-box__code">ollama serve</code>
                 </span>
               </div>
 
