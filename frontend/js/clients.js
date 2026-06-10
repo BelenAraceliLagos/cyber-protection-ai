@@ -55,15 +55,13 @@ function renderTable(clients) {
   tbody.innerHTML = clients.map(c => `
     <tr>
       <td>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--cp-info-bg);
-            display:flex;align-items:center;justify-content:center;
-            font-size:11px;font-weight:600;color:var(--cp-blue-main);flex-shrink:0">
+        <div class="entity-cell">
+          <div class="entity-cell__avatar">
             ${getInitials(c.company_name)}
           </div>
           <div>
-            <div style="font-weight:500;color:var(--cp-blue-main)">${c.company_name}</div>
-            <div style="font-size:11px;color:var(--cp-text-muted)">${c.email}</div>
+            <div class="entity-cell__title">${c.company_name}</div>
+            <div class="entity-cell__meta">${c.email}</div>
           </div>
         </div>
       </td>
@@ -71,7 +69,7 @@ function renderTable(clients) {
       <td>${c.industry || '—'}</td>
       <td>${c.phone || '—'}</td>
       <td>
-        <div style="display:flex;gap:6px">
+        <div class="table-actions">
           <button class="btn btn--sm btn--secondary" onclick="editClient(${c.id})" aria-label="Editar">
             <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
           </button>

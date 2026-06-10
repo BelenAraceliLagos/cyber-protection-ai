@@ -1,0 +1,11 @@
+
+
+.clients-search {
+  flex: 1;
+  max-width: 320px;
+}
+
+.clients-table-wrapper {
+  border: none;
+  border-radius: 0;
+}

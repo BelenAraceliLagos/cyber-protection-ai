@@ -62,13 +62,13 @@ function renderTable(services) {
   tbody.innerHTML = services.map(s => `
     <tr>
       <td>
-        <div style="font-weight:500;color:var(--cp-blue-main)">${s.name}</div>
-        <div style="font-size:11px;color:var(--cp-text-muted);margin-top:2px">
+        <div class="entity-cell__title">${s.name}</div>
+        <div class="entity-cell__meta">
           ${s.description || '—'}
         </div>
       </td>
       <td>
-        <span style="font-weight:600;color:var(--cp-blue-main)">
+        <span class="entity-cell__title">
           ${s.base_price > 0 ? s.base_price.toFixed(1) + ' UF' : 'A convenir'}
         </span>
       </td>
@@ -78,7 +78,7 @@ function renderTable(services) {
         </span>
       </td>
       <td>
-        <div style="display:flex;gap:6px">
+        <div class="table-actions">
           <button class="btn btn--sm btn--secondary"
             onclick="editService(${s.id})" aria-label="Editar">
             <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
