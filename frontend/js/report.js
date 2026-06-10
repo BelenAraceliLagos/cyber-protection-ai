@@ -1,7 +1,7 @@
 'use strict'
 
 import { clientsAPI, servicesAPI, proposalsAPI } from './api.js'
-import { showAlert, showSpinner, hideSpinner, requireAuth } from './utils.js'
+import { showAlert, showSpinner, hideSpinner, requireAuth, escapeHtml, escapeAttr } from './utils.js'
 
 // ── Categorías y keywords de servicios ────────────────────────────────
 const CATEGORIAS_ORDEN = [
@@ -58,7 +58,7 @@ async function cargarClientes() {
     if (!sel) return
     sel.innerHTML = '<option value="">— Selecciona —</option>' +
       clientes.map(c =>
-        `<option value="${c.id}">${c.company_name} · ${c.contact_name}</option>`
+        `<option value="${Number(c.id) || 0}">${escapeHtml(c.company_name || '')} · ${escapeHtml(c.contact_name || '')}</option>`
       ).join('')
   } catch (e) { showAlert('Error cargando clientes', 'error') }
 }
@@ -100,7 +100,7 @@ function renderCatalogo() {
     bloque.className = 'r-categoria'
     bloque.innerHTML = `
       <div class="r-categoria__header" onclick="rToggleCat(this)">
-        <span class="r-categoria__nombre">${cat}</span>
+        <span class="r-categoria__nombre">${escapeHtml(cat)}</span>
         <span class="badge badge--info badge--xs">${srvs.length}</span>
         <button class="r-categoria__sel-all btn btn--xs btn--secondary"
           onclick="event.stopPropagation();rSelAll('${cat.replace(/'/g,"\\'")}')">
@@ -109,17 +109,20 @@ function renderCatalogo() {
         <i class="ti ti-chevron-down"></i>
       </div>
       <div class="r-categoria__body">
-        ${srvs.map(s => `
-          <label class="r-servicio" data-cat="${cat.replace(/"/g,'&quot;')}">
+        ${srvs.map(s => {
+          const serviceId = Number(s.id) || 0
+          return `
+          <label class="r-servicio" data-cat="${escapeAttr(cat)}">
             <input type="checkbox" class="r-servicio__check"
-              value="${s.id}" onchange="rCheck(${s.id}, this.checked)">
+              value="${serviceId}" onchange="rCheck(${serviceId}, this.checked)">
             <div>
-              <div class="r-servicio__nombre">${s.name}</div>
+              <div class="r-servicio__nombre">${escapeHtml(s.name || '')}</div>
               ${s.description
-                ? `<div class="r-servicio__desc">${s.description.split('|')[0].trim().slice(0,80)}...</div>`
+                ? `<div class="r-servicio__desc">${escapeHtml(s.description.split('|')[0].trim().slice(0,80))}...</div>`
                 : ''}
             </div>
-          </label>`).join('')}
+          </label>`
+        }).join('')}
       </div>`
     cont.appendChild(bloque)
   }

@@ -1,6 +1,6 @@
 'use strict'
 
-import { showAlert, requireAuth } from './utils.js'
+import { showAlert, requireAuth, escapeHtml, escapeAttr } from './utils.js'
 
 const BASE_URL = 'http://localhost:8000'
 
@@ -141,7 +141,7 @@ function renderCola() {
   cola.innerHTML = archivosSeleccionados.map((f, i) => `
     <div class="ing-file">
       <i class="ti ${icoExt(f.name)} ing-file__icon"></i>
-      <span class="ing-file__name" title="${f.name}">${f.name}</span>
+      <span class="ing-file__name" title="${escapeAttr(f.name)}">${escapeHtml(f.name)}</span>
       <span class="ing-file__size">${(f.size/1024).toFixed(1)} KB</span>
       <button class="ing-file__remove" onclick="window.removeFile(${i})"><i class="ti ti-x"></i></button>
     </div>`).join('')
@@ -552,14 +552,13 @@ function renderTarjeta(container, res, idx) {
             <div class="ing-logo-grid" id="logos-${idx}">
               ${res.logos_extra.map((lpath, li) => `
                 <div class="logo-opcion ing-logo-option" id="logo-opcion-${idx}-${li}"
-                  onclick="window.seleccionarLogo(${idx}, ${li}, '${escH(lpath)}')"
->
+                  data-result-idx="${idx}" data-logo-idx="${li}" data-logo-path="${escapeAttr(lpath)}">
                   <img src="${BASE_URL}/ingestion/logo-preview?path=${encodeURIComponent(lpath)}"
                     class="ing-logo-option__img"
                     onerror="this.parentElement.style.opacity='0.3'">
                   <span class="ing-logo-option__label">Logo ${li+1}</span>
                 </div>`).join('')}
-              <div class="ing-logo-option ing-logo-option--empty" onclick="window.seleccionarLogo(${idx}, -1, '')">
+              <div class="ing-logo-option ing-logo-option--empty" data-result-idx="${idx}" data-logo-idx="-1" data-logo-path="">
                 <i class="ti ti-x"></i>Ninguno
               </div>
             </div>
@@ -610,14 +609,24 @@ function renderTarjeta(container, res, idx) {
             onclick="window.descartarResultado(${idx})">Descartar</button>
           <button class="btn btn--primary btn--sm"
             onclick="window.guardarResultado(${idx})"
-            data-srvs='${escA(srvsJson)}'
-            data-logo="${escH(res.logo_path||'')}">
+            data-srvs='${escapeAttr(srvsJson)}'
+            data-logo="${escapeAttr(res.logo_path||'')}">
             <i class="ti ti-device-floppy btn__icon"></i>Guardar en BD
           </button>
         </div>`}
     </div>`
 
   container.appendChild(div)
+
+  div.querySelectorAll('[data-logo-idx]').forEach(option => {
+    option.addEventListener('click', () => {
+      window.seleccionarLogo(
+        Number(option.dataset.resultIdx),
+        Number(option.dataset.logoIdx),
+        option.dataset.logoPath || ''
+      )
+    })
+  })
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -769,8 +778,8 @@ function bindGuardarTodos() {
 
 // ── Helpers escape ────────────────────────────────────────────────────
 function escH(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  return escapeHtml(s)
 }
 function escA(s) {
-  return String(s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;')
+  return escapeAttr(s)
 }

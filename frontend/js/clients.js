@@ -5,7 +5,7 @@ import {
   showAlert, showSpinner, hideSpinner,
   renderSkeletonRows, animateTableRows,
   renderEmptyState, openModal, closeModal,
-  formatDate, getInitials, debounce, requireAuth
+  formatDate, getInitials, debounce, requireAuth, escapeHtml, escapeAttr
 } from './utils.js'
 
 let allClients = []
@@ -52,33 +52,47 @@ function renderTable(clients) {
     return
   }
 
-  tbody.innerHTML = clients.map(c => `
-    <tr>
-      <td>
-        <div class="entity-cell">
-          <div class="entity-cell__avatar">
-            ${getInitials(c.company_name)}
+  tbody.innerHTML = clients.map(c => {
+    const id = Number(c.id) || 0
+    const companyName = c.company_name || ''
+    const email = c.email || '—'
+    const contactName = c.contact_name || '—'
+
+    return `
+      <tr>
+        <td>
+          <div class="entity-cell">
+            <div class="entity-cell__avatar">
+              ${escapeHtml(getInitials(companyName))}
+            </div>
+            <div>
+              <div class="entity-cell__title">${escapeHtml(companyName)}</div>
+              <div class="entity-cell__meta">${escapeHtml(email)}</div>
+            </div>
           </div>
-          <div>
-            <div class="entity-cell__title">${c.company_name}</div>
-            <div class="entity-cell__meta">${c.email}</div>
+        </td>
+        <td>${escapeHtml(contactName)}</td>
+        <td>${escapeHtml(c.industry || '—')}</td>
+        <td>${escapeHtml(c.phone || '—')}</td>
+        <td>
+          <div class="table-actions">
+            <button class="btn btn--sm btn--secondary" data-client-edit="${id}" aria-label="Editar">
+              <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
+            </button>
+            <button class="btn btn--sm btn--danger" data-client-delete="${id}" data-client-name="${escapeAttr(companyName)}">
+              <i class="ti ti-trash btn__icon" aria-hidden="true"></i>
+            </button>
           </div>
-        </div>
-      </td>
-      <td>${c.contact_name}</td>
-      <td>${c.industry || '—'}</td>
-      <td>${c.phone || '—'}</td>
-      <td>
-        <div class="table-actions">
-          <button class="btn btn--sm btn--secondary" onclick="editClient(${c.id})" aria-label="Editar">
-            <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
-          </button>
-          <button class="btn btn--sm btn--danger" onclick="deleteClient(${c.id}, '${c.company_name.replace(/'/g,"\\'")}')">
-            <i class="ti ti-trash btn__icon" aria-hidden="true"></i>
-          </button>
-        </div>
-      </td>
-    </tr>`).join('')
+        </td>
+      </tr>`
+  }).join('')
+
+  tbody.querySelectorAll('[data-client-edit]').forEach(btn => {
+    btn.addEventListener('click', () => editClient(Number(btn.dataset.clientEdit)))
+  })
+  tbody.querySelectorAll('[data-client-delete]').forEach(btn => {
+    btn.addEventListener('click', () => deleteClient(Number(btn.dataset.clientDelete), btn.dataset.clientName || ''))
+  })
 
   animateTableRows(tbody)
 }

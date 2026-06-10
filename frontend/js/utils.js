@@ -36,6 +36,21 @@ export function formatCLP(amount) {
   }).format(amount)
 }
 
+/* ── SAFE HTML ── */
+export function escapeHtml(value = '') {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[char]))
+}
+
+export function escapeAttr(value = '') {
+  return escapeHtml(value)
+}
+
 /* ── ALERTS ── */
 let alertContainer = null
 
@@ -64,7 +79,7 @@ export function showAlert(message, type = 'success', duration = 4000) {
   el.className = `alert alert--${type}`
   el.innerHTML = `
     <i class="ti ${icons[type] || icons.info} alert__icon" aria-hidden="true"></i>
-    <span class="alert__text">${message}</span>
+    <span class="alert__text">${escapeHtml(message)}</span>
     <span class="alert__close" aria-label="Cerrar"><i class="ti ti-x"></i></span>
   `
 
@@ -141,8 +156,8 @@ export function renderEmptyState(container, title, desc, iconClass = 'ti-folder-
       <div class="empty-state__icon">
         <i class="ti ${iconClass}" aria-hidden="true"></i>
       </div>
-      <p class="empty-state__title">${title}</p>
-      <p class="empty-state__desc">${desc}</p>
+      <p class="empty-state__title">${escapeHtml(title)}</p>
+      <p class="empty-state__desc">${escapeHtml(desc)}</p>
     </div>`
 }
 

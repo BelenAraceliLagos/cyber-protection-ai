@@ -5,7 +5,7 @@ import {
   showAlert, showSpinner, hideSpinner,
   renderSkeletonRows, animateTableRows,
   renderEmptyState, openModal, closeModal,
-  debounce, requireAuth
+  debounce, requireAuth, escapeHtml, escapeAttr
 } from './utils.js'
 
 let allServices = []
@@ -59,37 +59,50 @@ function renderTable(services) {
     return
   }
 
-  tbody.innerHTML = services.map(s => `
-    <tr>
-      <td>
-        <div class="entity-cell__title">${s.name}</div>
-        <div class="entity-cell__meta">
-          ${s.description || '—'}
-        </div>
-      </td>
-      <td>
-        <span class="entity-cell__title">
-          ${s.base_price > 0 ? s.base_price.toFixed(1) + ' UF' : 'A convenir'}
-        </span>
-      </td>
-      <td>
-        <span class="badge ${s.active ? 'badge--success' : 'badge--neutral'}">
-          ${s.active ? 'Activo' : 'Inactivo'}
-        </span>
-      </td>
-      <td>
-        <div class="table-actions">
-          <button class="btn btn--sm btn--secondary"
-            onclick="editService(${s.id})" aria-label="Editar">
-            <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
-          </button>
-          <button class="btn btn--sm btn--danger"
-            onclick="deleteService(${s.id}, '${s.name.replace(/'/g, "\\'")}')">
-            <i class="ti ti-trash btn__icon" aria-hidden="true"></i>
-          </button>
-        </div>
-      </td>
-    </tr>`).join('')
+  tbody.innerHTML = services.map(s => {
+    const id = Number(s.id) || 0
+    const name = s.name || ''
+    const price = Number(s.base_price) > 0 ? `${Number(s.base_price).toFixed(1)} UF` : 'A convenir'
+
+    return `
+      <tr>
+        <td>
+          <div class="entity-cell__title">${escapeHtml(name)}</div>
+          <div class="entity-cell__meta">
+            ${escapeHtml(s.description || '—')}
+          </div>
+        </td>
+        <td>
+          <span class="entity-cell__title">
+            ${escapeHtml(price)}
+          </span>
+        </td>
+        <td>
+          <span class="badge ${s.active ? 'badge--success' : 'badge--neutral'}">
+            ${s.active ? 'Activo' : 'Inactivo'}
+          </span>
+        </td>
+        <td>
+          <div class="table-actions">
+            <button class="btn btn--sm btn--secondary"
+              data-service-edit="${id}" aria-label="Editar">
+              <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
+            </button>
+            <button class="btn btn--sm btn--danger"
+              data-service-delete="${id}" data-service-name="${escapeAttr(name)}">
+              <i class="ti ti-trash btn__icon" aria-hidden="true"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`
+  }).join('')
+
+  tbody.querySelectorAll('[data-service-edit]').forEach(btn => {
+    btn.addEventListener('click', () => editService(Number(btn.dataset.serviceEdit)))
+  })
+  tbody.querySelectorAll('[data-service-delete]').forEach(btn => {
+    btn.addEventListener('click', () => deleteService(Number(btn.dataset.serviceDelete), btn.dataset.serviceName || ''))
+  })
 
   animateTableRows(tbody)
 }
