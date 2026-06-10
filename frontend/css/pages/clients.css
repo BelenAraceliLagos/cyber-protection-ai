@@ -9,3 +9,19 @@
   border: none;
   border-radius: 0;
 }
+.client-form-section {
+  border-bottom: 1px solid var(--cp-border);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-md);
+}
+
+.client-form-section__title {
+  color: var(--cp-blue-main);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+}
+
+.client-form-section:last-of-type {
+  border-bottom: 0;
+}

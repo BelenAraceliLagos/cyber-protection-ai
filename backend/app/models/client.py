@@ -9,17 +9,35 @@ class Client(Base):
 
     company_name = Column(String, nullable=False)
 
+    rut = Column(String, unique=True, index=True)
+
+    business_name = Column(String)
+
+    address = Column(String)
+
+    city = Column(String)
+
+    region = Column(String)
+
+    country = Column(String, default="Chile")
+
+    website = Column(String)
+
     contact_name = Column(String, nullable=False)
 
     email = Column(String, nullable=False)
 
     phone = Column(String)
 
+    contact_position = Column(String)
+
+    contact_phone = Column(String)
+
     industry = Column(String)
 
     notes = Column(Text)
-    
+
     quotations = relationship(
-    "Quotation",
-    back_populates="client"
-)
+        "Quotation",
+        back_populates="client"
+    )

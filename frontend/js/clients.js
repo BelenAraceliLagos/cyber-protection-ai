@@ -57,6 +57,8 @@ function renderTable(clients) {
     const companyName = c.company_name || ''
     const email = c.email || '—'
     const contactName = c.contact_name || '—'
+    const companyMeta = c.rut ? `RUT ${c.rut} · ${email}` : email
+    const contactMeta = c.contact_position ? `${contactName} · ${c.contact_position}` : contactName
 
     return `
       <tr>
@@ -67,11 +69,11 @@ function renderTable(clients) {
             </div>
             <div>
               <div class="entity-cell__title">${escapeHtml(companyName)}</div>
-              <div class="entity-cell__meta">${escapeHtml(email)}</div>
+              <div class="entity-cell__meta">${escapeHtml(companyMeta)}</div>
             </div>
           </div>
         </td>
-        <td>${escapeHtml(contactName)}</td>
+        <td>${escapeHtml(contactMeta)}</td>
         <td>${escapeHtml(c.industry || '—')}</td>
         <td>${escapeHtml(c.phone || '—')}</td>
         <td>
@@ -105,9 +107,15 @@ function bindSearch() {
     const q = input.value.toLowerCase().trim()
     const filtered = q
       ? allClients.filter(c =>
-          c.company_name.toLowerCase().includes(q) ||
-          c.contact_name.toLowerCase().includes(q) ||
-          (c.industry || '').toLowerCase().includes(q))
+          (c.company_name || '').toLowerCase().includes(q) ||
+          (c.business_name || '').toLowerCase().includes(q) ||
+          (c.rut || '').toLowerCase().includes(q) ||
+          (c.contact_name || '').toLowerCase().includes(q) ||
+          (c.contact_position || '').toLowerCase().includes(q) ||
+          (c.email || '').toLowerCase().includes(q) ||
+          (c.industry || '').toLowerCase().includes(q) ||
+          (c.city || '').toLowerCase().includes(q) ||
+          (c.region || '').toLowerCase().includes(q))
       : allClients
     renderTable(filtered)
   }, 250))
@@ -121,12 +129,21 @@ function bindForm() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
     const data = {
-      company_name:  document.getElementById('f-company').value.trim(),
-      contact_name:  document.getElementById('f-contact').value.trim(),
-      email:         document.getElementById('f-email').value.trim(),
-      phone:         document.getElementById('f-phone').value.trim() || null,
-      industry:      document.getElementById('f-industry').value.trim() || null,
-      notes:         document.getElementById('f-notes').value.trim() || null,
+      company_name:      document.getElementById('f-company').value.trim(),
+      rut:               document.getElementById('f-rut').value.trim() || null,
+      business_name:     document.getElementById('f-business-name').value.trim() || null,
+      address:           document.getElementById('f-address').value.trim() || null,
+      city:              document.getElementById('f-city').value.trim() || null,
+      region:            document.getElementById('f-region').value.trim() || null,
+      country:           document.getElementById('f-country').value.trim() || 'Chile',
+      website:           document.getElementById('f-website').value.trim() || null,
+      contact_name:      document.getElementById('f-contact').value.trim(),
+      email:             document.getElementById('f-email').value.trim(),
+      phone:             document.getElementById('f-phone').value.trim() || null,
+      contact_position:  document.getElementById('f-contact-position').value.trim() || null,
+      contact_phone:     document.getElementById('f-contact-phone').value.trim() || null,
+      industry:          document.getElementById('f-industry').value.trim() || null,
+      notes:             document.getElementById('f-notes').value.trim() || null,
     }
 
     if (!data.company_name || !data.contact_name || !data.email) {
@@ -162,6 +179,8 @@ function bindModalClose() {
       closeModal(el.dataset.closeModal)
       editingId = null
       document.getElementById('client-form')?.reset()
+      const country = document.getElementById('f-country')
+      if (country) country.value = 'Chile'
       document.getElementById('modal-title').textContent = 'Nuevo cliente'
     })
   })
@@ -173,12 +192,21 @@ window.editClient = function(id) {
 
   editingId = id
   document.getElementById('modal-title').textContent = 'Editar cliente'
-  document.getElementById('f-company').value  = client.company_name
-  document.getElementById('f-contact').value  = client.contact_name
-  document.getElementById('f-email').value    = client.email
-  document.getElementById('f-phone').value    = client.phone || ''
-  document.getElementById('f-industry').value = client.industry || ''
-  document.getElementById('f-notes').value    = client.notes || ''
+  document.getElementById('f-company').value          = client.company_name || ''
+  document.getElementById('f-rut').value              = client.rut || ''
+  document.getElementById('f-business-name').value    = client.business_name || ''
+  document.getElementById('f-address').value          = client.address || ''
+  document.getElementById('f-city').value             = client.city || ''
+  document.getElementById('f-region').value           = client.region || ''
+  document.getElementById('f-country').value          = client.country || 'Chile'
+  document.getElementById('f-website').value          = client.website || ''
+  document.getElementById('f-contact').value          = client.contact_name || ''
+  document.getElementById('f-contact-position').value = client.contact_position || ''
+  document.getElementById('f-email').value            = client.email || ''
+  document.getElementById('f-phone').value            = client.phone || ''
+  document.getElementById('f-contact-phone').value    = client.contact_phone || ''
+  document.getElementById('f-industry').value         = client.industry || ''
+  document.getElementById('f-notes').value            = client.notes || ''
   openModal('client-modal')
 }
 
@@ -197,6 +225,8 @@ window.deleteClient = async function(id, name) {
 window.openNewClientModal = function() {
   editingId = null
   document.getElementById('client-form')?.reset()
+  const country = document.getElementById('f-country')
+  if (country) country.value = 'Chile'
   const title = document.getElementById('modal-title')
   if (title) title.textContent = 'Nuevo cliente'
   openModal('client-modal')
