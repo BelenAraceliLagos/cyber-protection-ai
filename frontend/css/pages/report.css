@@ -196,13 +196,28 @@ textarea.form__input { resize: vertical; min-height: 72px; }
 }
 
 .report-ai-toggle {
-  align-items: center;
+  align-items: flex-start;
   color: var(--cp-text-muted);
   cursor: pointer;
   display: flex;
   font-size: 12px;
   gap: 8px;
+  line-height: 1.4;
+  max-width: 100%;
   padding: 8px 0;
+}
+
+.report-ai-toggle__input {
+  flex: 0 0 auto;
+  height: auto;
+  margin-top: 1px;
+  width: auto;
+}
+
+.report-ai-toggle__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .report-progress-title {
