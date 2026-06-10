@@ -130,7 +130,19 @@ export function initProfileModal() {
 
   function close() { closeModal('profile-modal') }
 
-  avatarBtn?.addEventListener('click', open)
+  if (avatarBtn) {
+    avatarBtn.setAttribute('role', 'button')
+    avatarBtn.setAttribute('tabindex', '0')
+    avatarBtn.setAttribute('aria-label', 'Editar perfil')
+    avatarBtn.setAttribute('title', 'Editar perfil')
+    avatarBtn.addEventListener('click', open)
+    avatarBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        open()
+      }
+    })
+  }
   closeBtn?.addEventListener('click', close)
   cancelBtn?.addEventListener('click', close)
   modal?.addEventListener('click', (e) => { if (e.target === modal) close() })

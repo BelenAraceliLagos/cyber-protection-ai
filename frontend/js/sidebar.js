@@ -1,5 +1,7 @@
 'use strict'
 
+import { removeToken } from './api.js'
+
 const COLLAPSED_KEY = 'cp_sidebar_collapsed'
 
 export function initSidebar() {
@@ -69,8 +71,38 @@ export function initSidebar() {
     if (isDesktop()) closeMobile()
   })
 
+  ensureSidebarLogout()
+  bindLogout()
   injectAdminItems()
   highlightActiveItem()
+}
+
+
+function ensureSidebarLogout() {
+  const userBlock = document.querySelector('.sidebar__user')
+  if (!userBlock || userBlock.querySelector('.sidebar__logout')) return
+
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'sidebar__logout sidebar__label'
+  button.id = 'logout-btn-sidebar'
+  button.setAttribute('aria-label', 'Cerrar sesion')
+  button.setAttribute('title', 'Cerrar sesion')
+  button.dataset.logout = 'true'
+  button.innerHTML = '<i class="ti ti-logout" aria-hidden="true"></i>'
+  userBlock.appendChild(button)
+}
+
+function bindLogout() {
+  const buttons = document.querySelectorAll('[data-logout], #logout-btn-sidebar, #logout-btn-mobile, #logout-btn-desktop, #logout-btn')
+  buttons.forEach(button => {
+    if (button.dataset.logoutBound === 'true') return
+    button.dataset.logoutBound = 'true'
+    button.addEventListener('click', () => {
+      removeToken()
+      window.location.href = '/pages/login.html'
+    })
+  })
 }
 
 function injectAdminItems() {

@@ -61,11 +61,6 @@
   <div class="main">
     <header class="main__topbar">
       <span class="main__topbar-title">Oportunidades</span>
-      <div class="main__topbar-actions">
-        <button class="topbar__icon-btn" id="logout-btn-desktop" aria-label="Cerrar sesión">
-          <i class="ti ti-logout" aria-hidden="true"></i>
-        </button>
-      </div>
     </header>
 
     <main class="main__content">
@@ -302,11 +297,6 @@
   loadUserInfo()
   initSidebar()
   initProfileModal()
-
-  document.getElementById('logout-btn-desktop')?.addEventListener('click', () => {
-    sessionStorage.removeItem('cp_token')
-    window.location.href = '/pages/login.html'
-  })
 </script>
 <script src="../js/opportunities.js" type="module"></script>
 
