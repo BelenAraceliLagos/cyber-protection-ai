@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -19,7 +20,11 @@ def create_client(
 
     db.add(new_client)
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Ya existe un cliente con ese RUT")
 
     db.refresh(new_client)
 
@@ -65,14 +70,15 @@ def update_client(
             detail="Client not found"
         )
 
-    client.company_name = client_data.company_name
-    client.contact_name = client_data.contact_name
-    client.email = client_data.email
-    client.phone = client_data.phone
-    client.industry = client_data.industry
-    client.notes = client_data.notes
+    for field, value in client_data.model_dump().items():
+        setattr(client, field, value)
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Ya existe un cliente con ese RUT")
+
     db.refresh(client)
 
     return client

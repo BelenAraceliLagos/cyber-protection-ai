@@ -116,41 +116,111 @@
     </div>
     <div class="modal__body">
       <form id="client-form" novalidate>
-        <div class="form__row form__row--2">
-          <div class="form__group">
-            <label for="f-company">Empresa <span aria-hidden="true">*</span></label>
-            <input type="text" id="f-company" placeholder="Nombre de la empresa" required>
+        <section class="client-form-section" aria-labelledby="client-company-section">
+          <h3 class="client-form-section__title" id="client-company-section">Datos empresa</h3>
+          <div class="form__row form__row--2">
+            <div class="form__group">
+              <label for="f-company">Nombre comercial <span aria-hidden="true">*</span></label>
+              <input type="text" id="f-company" placeholder="Nombre de la empresa" required>
+            </div>
+            <div class="form__group">
+              <label for="f-rut">RUT empresa</label>
+              <input type="text" id="f-rut" placeholder="76.123.456-7" inputmode="text">
+            </div>
+          </div>
+          <div class="form__row form__row--2">
+            <div class="form__group">
+              <label for="f-business-name">Razón social</label>
+              <input type="text" id="f-business-name" placeholder="Empresa SpA">
+            </div>
+            <div class="form__group">
+              <label for="f-website">Sitio web</label>
+              <input type="url" id="f-website" placeholder="https://empresa.cl">
+            </div>
+          </div>
+          <div class="form__row form__row--2">
+            <div class="form__group">
+              <label for="f-address">Dirección</label>
+              <input type="text" id="f-address" placeholder="Av. Apoquindo 1234">
+            </div>
+            <div class="form__group">
+              <label for="f-city">Comuna / ciudad</label>
+              <input type="text" id="f-city" placeholder="Las Condes">
+            </div>
+          </div>
+          <div class="form__row form__row--2">
+            <div class="form__group">
+              <label for="f-region">Región</label>
+              <select id="f-region">
+                <option value="">Seleccionar...</option>
+                <option>Arica y Parinacota</option>
+                <option>Tarapacá</option>
+                <option>Antofagasta</option>
+                <option>Atacama</option>
+                <option>Coquimbo</option>
+                <option>Valparaíso</option>
+                <option>Metropolitana de Santiago</option>
+                <option>O'Higgins</option>
+                <option>Maule</option>
+                <option>Ñuble</option>
+                <option>Biobío</option>
+                <option>La Araucanía</option>
+                <option>Los Ríos</option>
+                <option>Los Lagos</option>
+                <option>Aysén</option>
+                <option>Magallanes</option>
+              </select>
+            </div>
+            <div class="form__group">
+              <label for="f-country">País</label>
+              <input type="text" id="f-country" value="Chile" placeholder="Chile">
+            </div>
           </div>
           <div class="form__group">
-            <label for="f-contact">Contacto <span aria-hidden="true">*</span></label>
-            <input type="text" id="f-contact" placeholder="Nombre del contacto" required>
+            <label for="f-industry">Industria</label>
+            <select id="f-industry">
+              <option value="">Seleccionar...</option>
+              <option>Construcción</option>
+              <option>Salud</option>
+              <option>Retail</option>
+              <option>Finanzas</option>
+              <option>Educación</option>
+              <option>Tecnología</option>
+              <option>Manufactura</option>
+              <option>Gobierno</option>
+              <option>Otro</option>
+            </select>
           </div>
-        </div>
-        <div class="form__row form__row--2">
+        </section>
+
+        <section class="client-form-section" aria-labelledby="client-contact-section">
+          <h3 class="client-form-section__title" id="client-contact-section">Datos contacto</h3>
+          <div class="form__row form__row--2">
+            <div class="form__group">
+              <label for="f-contact">Contacto <span aria-hidden="true">*</span></label>
+              <input type="text" id="f-contact" placeholder="Nombre del contacto" required>
+            </div>
+            <div class="form__group">
+              <label for="f-contact-position">Cargo</label>
+              <input type="text" id="f-contact-position" placeholder="Gerente de TI">
+            </div>
+          </div>
+          <div class="form__row form__row--2">
+            <div class="form__group">
+              <label for="f-email">Correo <span aria-hidden="true">*</span></label>
+              <input type="email" id="f-email" placeholder="correo@empresa.cl" required>
+            </div>
+            <div class="form__group">
+              <label for="f-phone">Teléfono principal</label>
+              <input type="tel" id="f-phone" placeholder="+56 2 ... / +56 9 ...">
+            </div>
+          </div>
           <div class="form__group">
-            <label for="f-email">Correo <span aria-hidden="true">*</span></label>
-            <input type="email" id="f-email" placeholder="correo@empresa.cl" required>
+            <label for="f-contact-phone">Teléfono directo contacto</label>
+            <input type="tel" id="f-contact-phone" placeholder="+56 9 ...">
           </div>
-          <div class="form__group">
-            <label for="f-phone">Teléfono</label>
-            <input type="tel" id="f-phone" placeholder="+56 9 ...">
-          </div>
-        </div>
-        <div class="form__group">
-          <label for="f-industry">Industria</label>
-          <select id="f-industry">
-            <option value="">Seleccionar...</option>
-            <option>Construcción</option>
-            <option>Salud</option>
-            <option>Retail</option>
-            <option>Finanzas</option>
-            <option>Educación</option>
-            <option>Tecnología</option>
-            <option>Manufactura</option>
-            <option>Gobierno</option>
-            <option>Otro</option>
-          </select>
-        </div>
+        </section>
+
         <div class="form__group">
           <label for="f-notes">Notas</label>
           <textarea id="f-notes" placeholder="Contexto del cliente, oportunidad, observaciones..."></textarea>
