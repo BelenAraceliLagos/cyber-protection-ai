@@ -290,6 +290,21 @@
   font-weight: 600;
   color: var(--cp-cyan);
   flex-shrink: 0;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  transition: background .2s, color .2s, transform .2s;
+}
+
+.sidebar__avatar:hover,
+.sidebar__avatar:focus-visible {
+  background: rgba(34, 211, 238, .22);
+  color: var(--cp-white);
+}
+
+.sidebar__avatar:focus-visible {
+  outline: 2px solid var(--cp-cyan);
+  outline-offset: 2px;
 }
 
 .sidebar__user-info {
@@ -314,6 +329,9 @@
 
 .sidebar__logout {
   margin-left: auto;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
   width: 30px;
   height: 30px;
   border-radius: var(--radius-md);

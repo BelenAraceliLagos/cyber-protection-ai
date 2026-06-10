@@ -33,7 +33,7 @@
       <span class="topbar__brand">Cyber-Protection</span>
     </div>
     <div class="topbar__actions">
-      <button class="topbar__icon-btn" id="logout-btn-mobile" aria-label="Cerrar sesion">
+      <button class="topbar__icon-btn" id="logout-btn-mobile" data-logout="true" aria-label="Cerrar sesion">
         <i class="ti ti-logout" aria-hidden="true"></i>
       </button>
     </div>
@@ -86,7 +86,7 @@
         <div class="sidebar__username" id="sidebar-username">Cargando...</div>
         <div class="sidebar__role" id="sidebar-role">-</div>
       </div>
-      <button class="sidebar__logout sidebar__label" id="logout-btn-sidebar" aria-label="Cerrar sesion" title="Cerrar sesion">
+      <button class="sidebar__logout sidebar__label" id="logout-btn-sidebar" data-logout="true" aria-label="Cerrar sesion" title="Cerrar sesion">
         <i class="ti ti-logout" aria-hidden="true"></i>
       </button>
     </div>
@@ -192,13 +192,6 @@
   const currentUser = await loadUserInfo()
   initSidebar()
   initProfileModal()
-
-  function logout() {
-    sessionStorage.removeItem('cp_token')
-    window.location.href = '/pages/login.html'
-  }
-  document.getElementById('logout-btn-mobile')?.addEventListener('click', logout)
-  document.getElementById('logout-btn-sidebar')?.addEventListener('click', logout)
 
   const name = currentUser?.name || currentUser?.email || ''
   if (name) {
