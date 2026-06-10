@@ -1,7 +1,7 @@
 'use strict'
 
 import { servicesAPI } from './api.js'
-import { showAlert, showSpinner, hideSpinner } from './utils.js'
+import { showAlert, showSpinner, hideSpinner, escapeHtml } from './utils.js'
 
 // ── Parsear precio "50–150" → promedio, "N/D" → 0 ────────────────────
 function parsePrice(raw) {
@@ -173,7 +173,7 @@ export function initImportServices() {
       <div class="import-file-info">
         <i class="ti ti-loader import-file-info__icon"></i>
         <div>
-          <div class="import-file-info__title">${file.name}</div>
+          <div class="import-file-info__title">${escapeHtml(file.name)}</div>
           <div class="import-file-info__meta">Analizando y verificando duplicados...</div>
         </div>
       </div>`
@@ -196,7 +196,7 @@ export function initImportServices() {
         <div class="import-file-info">
           <i class="ti ti-file-spreadsheet import-file-info__icon"></i>
           <div>
-            <div class="import-file-info__title">${file.name}</div>
+            <div class="import-file-info__title">${escapeHtml(file.name)}</div>
             <div class="import-file-info__meta">
               ${todosLosServicios.length} servicios en el archivo
             </div>
@@ -225,7 +225,7 @@ export function initImportServices() {
             </div>
             ${serviciosNuevos.slice(0, 3).map(s => `
               <div class="import-sample-row">
-                <span class="import-sample-name">${s.name}</span>
+                <span class="import-sample-name">${escapeHtml(s.name)}</span>
                 <span class="import-sample-price">
                   ${s.base_price > 0 ? s.base_price + ' UF' : 'A convenir'}
                 </span>
@@ -242,7 +242,7 @@ export function initImportServices() {
             <div class="import-duplicates__list">
               ${serviciosDuplicados.map(n => `
                 <div class="import-duplicates__item">
-                  <i class="ti ti-x import-duplicates__icon"></i>${n}
+                  <i class="ti ti-x import-duplicates__icon"></i>${escapeHtml(n)}
                 </div>`).join('')}
             </div>
           </details>` : ''}

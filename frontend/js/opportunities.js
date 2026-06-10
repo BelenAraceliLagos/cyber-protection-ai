@@ -1,5 +1,7 @@
 'use strict'
 
+import { escapeHtml } from './utils.js'
+
 /**
  * opportunities.js — Módulo de Oportunidades de Venta
  * Patrón ES6 igual al resto del proyecto (clients.js, services.js, etc.)
@@ -59,7 +61,7 @@ async function loadClientes() {
     state.clientes = await apiFetch('/clients/') || []
     const sel = document.getElementById('f-cliente')
     if (sel) sel.innerHTML = state.clientes.map(c =>
-      `<option value="${c.id}">${c.company_name}</option>`
+      `<option value="${Number(c.id) || 0}">${escapeHtml(c.company_name || '')}</option>`
     ).join('')
   } catch (e) { console.error('Error cargando clientes', e) }
 }
@@ -165,8 +167,8 @@ function renderUpcoming() {
           <span class="dia">${fecha.getDate()}</span>
         </div>
         <div class="txt">
-          <p>${hito.titulo}</p>
-          <small>${opp.titulo || opp.cliente_nombre} · ${TIPO_LABEL[hito.tipo] || hito.tipo}</small>
+          <p>${escapeHtml(hito.titulo || '')}</p>
+          <small>${escapeHtml(opp.titulo || opp.cliente_nombre || '')} · ${escapeHtml(TIPO_LABEL[hito.tipo] || hito.tipo || '')}</small>
         </div>
       </div>`
   }).join('')
@@ -195,7 +197,8 @@ function renderKanban() {
 }
 
 function dealCard(opp) {
-  const prob = opp.probabilidad || 0
+  const oppId = Number(opp.id) || 0
+  const prob = Number(opp.probabilidad) || 0
   let pill = prob >= 70 ? 'p-alta' : prob >= 45 ? 'p-media' : 'p-baja'
   if (opp.etapa === 'ganado')  pill = 'p-verde'
   if (opp.etapa === 'perdido') pill = 'p-rojo'
@@ -204,13 +207,13 @@ function dealCard(opp) {
     .filter(h => !h.completado && h.fecha_inicio)
     .sort((a,b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))[0]
   const hitoTxt = prox
-    ? `<i class="ti ti-calendar opp-icon--xs"></i> ${TIPO_LABEL[prox.tipo]} — ${fmtDate(prox.fecha_inicio)}`
+    ? `<i class="ti ti-calendar opp-icon--xs"></i> ${escapeHtml(TIPO_LABEL[prox.tipo] || prox.tipo || '')} — ${fmtDate(prox.fecha_inicio)}`
     : 'Sin hito agendado'
   return `
-    <div class="deal-card${isSel ? ' sel' : ''}" onclick="selectDeal(${opp.id})">
-      <div class="dc-nombre">${opp.titulo || opp.cliente_nombre}</div>
+    <div class="deal-card${isSel ? ' sel' : ''}" onclick="selectDeal(${oppId})">
+      <div class="dc-nombre">${escapeHtml(opp.titulo || opp.cliente_nombre || '')}</div>
       <div class="dc-meta">${hitoTxt}</div>
-      ${opp.valor_uf > 0 ? `<div class="dc-uf"><i class="ti ti-currency-dollar opp-icon--xs"></i> ${opp.valor_uf} UF/mes</div>` : ''}
+      ${Number(opp.valor_uf) > 0 ? `<div class="dc-uf"><i class="ti ti-currency-dollar opp-icon--xs"></i> ${escapeHtml(opp.valor_uf)} UF/mes</div>` : ''}
       <span class="prob-pill ${pill}">${prob}%</span>
     </div>`
 }
@@ -223,6 +226,7 @@ window.selectDeal = function(id) {
 }
 
 function renderDealDetail(opp) {
+  const oppId = Number(opp.id) || 0
   const panel = document.getElementById('deal-detail-panel')
   if (!panel) return
   panel.classList.add('show')
@@ -230,29 +234,29 @@ function renderDealDetail(opp) {
   const pillClass = `p-${opp.etapa === 'ganado' ? 'verde' : opp.etapa === 'perdido' ? 'rojo' : 'media'}`
   panel.innerHTML = `
     <h3>
-      ${opp.titulo}
-      <span class="prob-pill prob-pill--spaced ${pillClass}">${ETAPA_LABEL[opp.etapa] || opp.etapa}</span>
+      ${escapeHtml(opp.titulo || '')}
+      <span class="prob-pill prob-pill--spaced ${pillClass}">${escapeHtml(ETAPA_LABEL[opp.etapa] || opp.etapa || '')}</span>
     </h3>
     <div class="detail-grid">
-      <div><div class="di-lbl">Cliente</div><div class="di-val">${opp.cliente_nombre || '—'}</div></div>
-      <div><div class="di-lbl">Valor</div><div class="di-val">${opp.valor_uf || 0} UF/mes</div></div>
-      <div><div class="di-lbl">Probabilidad</div><div class="di-val">${opp.probabilidad}%</div></div>
-      <div><div class="di-lbl">Contacto</div><div class="di-val">${cli?.contact_name || '—'}</div></div>
-      <div><div class="di-lbl">Email</div><div class="di-val">${cli?.email || '—'}</div></div>
-      <div><div class="di-lbl">Industria</div><div class="di-val">${cli?.industry || '—'}</div></div>
+      <div><div class="di-lbl">Cliente</div><div class="di-val">${escapeHtml(opp.cliente_nombre || '—')}</div></div>
+      <div><div class="di-lbl">Valor</div><div class="di-val">${escapeHtml(opp.valor_uf || 0)} UF/mes</div></div>
+      <div><div class="di-lbl">Probabilidad</div><div class="di-val">${escapeHtml(opp.probabilidad || 0)}%</div></div>
+      <div><div class="di-lbl">Contacto</div><div class="di-val">${escapeHtml(cli?.contact_name || '—')}</div></div>
+      <div><div class="di-lbl">Email</div><div class="di-val">${escapeHtml(cli?.email || '—')}</div></div>
+      <div><div class="di-lbl">Industria</div><div class="di-val">${escapeHtml(cli?.industry || '—')}</div></div>
     </div>
-    ${opp.notas ? `<p class="deal-note">${opp.notas}</p>` : ''}
+    ${opp.notas ? `<p class="deal-note">${escapeHtml(opp.notas)}</p>` : ''}
     <div class="deal-actions">
-      <button class="btn btn--secondary btn--sm" onclick="openEditOppModal(${opp.id})">
+      <button class="btn btn--secondary btn--sm" onclick="openEditOppModal(${oppId})">
         <i class="ti ti-edit btn__icon" aria-hidden="true"></i> Editar
       </button>
-      <button class="btn btn--sm btn--teal" onclick="generatePDF(${opp.id})">
+      <button class="btn btn--sm btn--teal" onclick="generatePDF(${oppId})">
         <i class="ti ti-robot btn__icon" aria-hidden="true"></i> Generar PDF con IA
       </button>
-      <button class="btn btn--secondary btn--sm" onclick="goToGantt(${opp.id})">
+      <button class="btn btn--secondary btn--sm" onclick="goToGantt(${oppId})">
         <i class="ti ti-timeline btn__icon" aria-hidden="true"></i> Ver Gantt
       </button>
-      <button class="btn btn--sm btn--danger-soft" onclick="deleteOpp(${opp.id})">
+      <button class="btn btn--sm btn--danger-soft" onclick="deleteOpp(${oppId})">
         <i class="ti ti-trash btn__icon" aria-hidden="true"></i> Eliminar
       </button>
     </div>`
@@ -266,7 +270,7 @@ function populateGanttSelect() {
   if (!sel) return
   const prev = sel.value
   sel.innerHTML = '<option value="">— Selecciona una oportunidad —</option>' +
-    state.allOpps.map(o => `<option value="${o.id}">${o.titulo || o.cliente_nombre}</option>`).join('')
+    state.allOpps.map(o => `<option value="${Number(o.id) || 0}">${escapeHtml(o.titulo || o.cliente_nombre || '')}</option>`).join('')
   if (prev) { sel.value = prev; renderGantt() }
 }
 
@@ -335,12 +339,12 @@ window.renderGantt = function() {
     return `
       <tr>
         <td class="hito-lbl">
-          <div class="hl-name">${h.titulo}</div>
-          <div class="hl-sub">${TIPO_LABEL[h.tipo] || h.tipo} · ${statusTxt}</div>
+          <div class="hl-name">${escapeHtml(h.titulo || '')}</div>
+          <div class="hl-sub">${escapeHtml(TIPO_LABEL[h.tipo] || h.tipo || '')} · ${statusTxt}</div>
         </td>
         <td class="gantt-cell gantt-cell--timeline" colspan="${weeks.length}" style="min-width:${weeks.length*44}px">
           <div class="gantt-today-line" style="left:${todayPct}%"></div>
-          ${h.fecha_inicio ? `<div class="gantt-bar ${barClass}" style="${barStyle}">${h.titulo.substring(0,18)}</div>` : ''}
+          ${h.fecha_inicio ? `<div class="gantt-bar ${barClass}" style="${barStyle}">${escapeHtml((h.titulo || '').substring(0,18))}</div>` : ''}
         </td>
       </tr>`
   }).join('')

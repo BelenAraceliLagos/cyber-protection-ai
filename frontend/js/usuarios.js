@@ -5,22 +5,12 @@ import {
   showAlert, showSpinner, hideSpinner,
   renderSkeletonRows, animateTableRows,
   renderEmptyState, openModal, closeModal,
-  getInitials, debounce, requireAuth
+  getInitials, debounce, requireAuth, escapeHtml
 } from './utils.js'
 
 let allUsers = []
 let editingId = null
 let currentUserId = null
-
-function escapeHtml(value = '') {
-  return String(value).replace(/[&<>"]|'/g, char => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  }[char]))
-}
 
 function roleLabel(role) {
   return role === 'admin' ? 'Administrador' : 'Comercial'
