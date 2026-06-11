@@ -1,6 +1,6 @@
 'use strict'
 
-const BASE_URL = 'http://localhost:8000'
+const BASE_URL = 'http://localhost:8080'
 
 function getToken() {
   return sessionStorage.getItem('cp_token')

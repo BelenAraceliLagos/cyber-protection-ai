@@ -88,7 +88,7 @@ Copia el hash generado (empieza con `$2b$12$...`) y ejecuta en pgAdmin:
 ```sql
 -- Paso 1: Insertar usuario
 INSERT INTO users (name, email, hashed_password, role)
-VALUES ('admin@cyberprotection.cl', 'PEGA_EL_HASH_AQUI', true);
+VALUES ('admin@cyberprotection.cl', '$2b$12$y6CdCGiFCUDZh3RSRubgE.i9cRehruUa02h599Hzwmt8ZspCcmjUG', true);
 
 -- Paso 2: Ver el id asignado
 SELECT id FROM users WHERE email = 'admin@cyberprotection.cl';

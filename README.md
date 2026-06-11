@@ -13,31 +13,28 @@ y cotizaciones de servicios de ciberseguridad utilizando IA local.
 ## Migraciones de base de datos
 
 El proyecto usa Alembic para versionar cambios de estructura en PostgreSQL.
-No se debe modificar el esquema desde `start.sh` ni depender de `create_all`
-al iniciar el backend.
+No se debe modificar el esquema desde `start.sh` ni depender de `create_all` al iniciar el backend.
 
-Si vas a crear una base nueva desde cero:
-
-```bash
-cd backend
-../.venv/bin/python -m alembic upgrade head
-```
-
-Si restauraste el dump compartido por el equipo, la base ya trae la estructura
-y los datos. En ese caso solo marca la base como alineada con la version actual:
+Para aplicar migraciones:
 
 ```bash
 cd backend
-../.venv/bin/python -m alembic stamp head --purge
+alembic upgrade head
 ```
 
-Para ver la version aplicada:
+Si ya tienes una base local creada antes de Alembic, primero marca el baseline y luego aplica los cambios pendientes:
 
 ```bash
 cd backend
-../.venv/bin/python -m alembic current
+alembic stamp 001_initial_schema
+alembic upgrade head
 ```
 
-Cada cambio futuro en tablas, columnas, enums o relaciones debe agregarse como
-una nueva migracion de Alembic. Los archivos `.dump` y `.sql` no deben subirse
-al repositorio.
+Si vas a crear una base nueva desde cero, usa solo:
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+Cada cambio futuro en tablas o columnas debe agregarse como una nueva migracion de Alembic.

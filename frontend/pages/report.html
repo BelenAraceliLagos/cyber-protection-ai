@@ -105,7 +105,9 @@
               <div class="form__group">
                 <label class="form__label">Título del informe</label>
                 <input type="text" id="r-titulo" class="form__input"
-                  placeholder="Ej: Resiliencia Digital 2025">
+                  value="Propuesta de Servicios de Ciberseguridad"
+                  readonly
+                  style="background:#f0f4ff;color:#155FCF;font-weight:600;cursor:default;">
               </div>
               <div class="form__group report-form-group--flush">
                 <label class="form__label">
@@ -152,53 +154,37 @@
                 <span id="r-contador">Ningún servicio seleccionado</span>
               </div>
 
-              <!-- Secciones del informe -->
-              <div class="form__label report-section-title">Secciones a generar con IA</div>
-              <div class="ia-secciones">
-                <label class="ia-seccion">
-                  <input type="checkbox" id="sec-intro" checked>
-                  <div>
-                    <div class="ia-seccion__label">📝 Introducción personalizada</div>
-                    <div class="ia-seccion__desc">Presentación adaptada al cliente y su industria</div>
-                  </div>
-                </label>
-                <label class="ia-seccion">
-                  <input type="checkbox" id="sec-riesgo" checked>
-                  <div>
-                    <div class="ia-seccion__label">⚠️ Análisis de riesgo</div>
-                    <div class="ia-seccion__desc">Amenazas relevantes para su sector en Chile</div>
-                  </div>
-                </label>
-                <label class="ia-seccion">
-                  <input type="checkbox" id="sec-justif" checked>
-                  <div>
-                    <div class="ia-seccion__label">🎯 Justificación de servicios</div>
-                    <div class="ia-seccion__desc">Por qué estos servicios son los correctos</div>
-                  </div>
-                </label>
-                <label class="ia-seccion">
-                  <input type="checkbox" id="sec-valor" checked>
-                  <div>
-                    <div class="ia-seccion__label">💼 Valor estratégico</div>
-                    <div class="ia-seccion__desc">Retorno e impacto para el negocio</div>
-                  </div>
-                </label>
-                <label class="ia-seccion">
-                  <input type="checkbox" id="sec-conclusion" checked>
-                  <div>
-                    <div class="ia-seccion__label">✍️ Conclusión y cierre</div>
-                    <div class="ia-seccion__desc">Llamada a la acción y próximos pasos</div>
-                  </div>
-                </label>
+              <!-- Secciones IA — chips compactos -->
+              <div class="form__label report-section-title">Secciones IA</div>
+              <div class="ia-chips">
+                <label class="ia-chip"><input type="checkbox" id="sec-intro" checked><span>📝 Introducción</span></label>
+                <label class="ia-chip"><input type="checkbox" id="sec-riesgo" checked><span>⚠️ Riesgo</span></label>
+                <label class="ia-chip"><input type="checkbox" id="sec-justif" checked><span>🎯 Justificación</span></label>
+                <label class="ia-chip"><input type="checkbox" id="sec-valor" checked><span>💼 Valor</span></label>
+                <label class="ia-chip"><input type="checkbox" id="sec-conclusion" checked><span>✍️ Cierre</span></label>
               </div>
 
-              <!-- Modo sin IA -->
-              <label class="report-ai-toggle">
-                <input class="report-ai-toggle__input" type="checkbox" id="r-sin-ia">
-                <span class="report-ai-toggle__text">
-                  Generar sin IA (textos genéricos — no requiere Ollama)
-                </span>
-              </label>
+              <!-- Logo del cliente -->
+              <div class="logo-upload-section">
+                <div class="form__label">Logo del cliente <span class="logo-upload-hint">(opcional — se incluye en portada PDF)</span></div>
+                <div class="logo-drop-area" id="logo-drop-area">
+                  <div class="logo-empty-state" id="logo-empty">
+                    <i class="ti ti-photo-up"></i>
+                    <span>Arrastra aquí o</span>
+                    <label class="btn btn--xs btn--secondary logo-select-btn">
+                      Seleccionar imagen
+                      <input type="file" id="r-logo-input" accept="image/png,image/jpeg,image/jpg,image/svg+xml" style="display:none">
+                    </label>
+                    <span class="logo-hint-format">PNG, JPG o SVG · máx 2MB</span>
+                  </div>
+                  <div class="logo-preview-state" id="logo-preview" style="display:none">
+                    <img id="logo-img-preview" src="" alt="Logo cliente">
+                    <button class="logo-remove-btn" id="logo-remove" title="Quitar logo">
+                      <i class="ti ti-x"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               <!-- Progreso de generación -->
               <div class="ia-progress" id="r-progress">

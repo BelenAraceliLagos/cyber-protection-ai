@@ -42,12 +42,14 @@ let clientes      = []
 let servicios     = []
 let seleccionados = new Set()
 let clienteSel    = null
+let logoBase64    = null   // logo del cliente para la portada PDF
 
 // ── Init ──────────────────────────────────────────────────────────────
 export async function initReport() {
   if (!requireAuth()) return
   await Promise.all([cargarClientes(), cargarServicios()])
   bindCliente()
+  bindLogo()
   bindGenerar()
 }
 
@@ -173,6 +175,60 @@ function resetSteps() {
 }
 
 // ── Generar ───────────────────────────────────────────────────────────
+// ── Logo del cliente ────────────────────────────────────────────────
+function bindLogo() {
+  const input     = document.getElementById('r-logo-input')
+  const dropArea  = document.getElementById('logo-drop-area')
+  const emptyEl   = document.getElementById('logo-empty')
+  const previewEl = document.getElementById('logo-preview')
+  const imgEl     = document.getElementById('logo-img-preview')
+  const removeBtn = document.getElementById('logo-remove')
+  if (!input) return
+
+  function loadFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      showAlert('Solo se aceptan imágenes PNG, JPG o SVG.', 'warning')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showAlert('El logo no debe superar 2MB.', 'warning')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      logoBase64 = e.target.result
+      imgEl.src  = logoBase64
+      emptyEl.style.display   = 'none'
+      previewEl.style.display = 'flex'
+      dropArea.style.borderStyle = 'solid'
+      dropArea.style.borderColor = 'var(--cp-blue-main)'
+    }
+    reader.readAsDataURL(file)
+  }
+
+  input.addEventListener('change', () => { if (input.files[0]) loadFile(input.files[0]) })
+
+  removeBtn?.addEventListener('click', () => {
+    logoBase64 = null
+    input.value = ''
+    imgEl.src   = ''
+    emptyEl.style.display   = 'flex'
+    previewEl.style.display = 'none'
+    dropArea.style.borderStyle = 'dashed'
+    dropArea.style.borderColor = ''
+  })
+
+  // Drag & drop
+  dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.classList.add('drag-over') })
+  dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'))
+  dropArea.addEventListener('drop', (e) => {
+    e.preventDefault()
+    dropArea.classList.remove('drag-over')
+    const file = e.dataTransfer.files[0]
+    if (file) loadFile(file)
+  })
+}
+
 function bindGenerar() {
   const btn  = document.getElementById('r-generar-btn')
   const sinIA = document.getElementById('r-sin-ia')
@@ -221,7 +277,8 @@ function bindGenerar() {
         service_ids:     Array.from(seleccionados),
         titulo_proyecto: titulo,
         antecedente:     contexto,
-        usar_ia:         usarIA,
+        usar_ia:         true,
+        logo_base64:     logoBase64 || null,
       })
 
       if (!resp.ok) {

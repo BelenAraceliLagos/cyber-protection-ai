@@ -1,530 +1,778 @@
 """
-generate_proposal.py — Generador PDF fiel al diseño corporativo Cyber-Protection.
-Reescrito con coordenadas pixel-perfect extraídas del PDF base UNAB con pdfplumber.
+generate_proposal.py — Generador PDF con WeasyPrint.
+Coordenadas pixel-perfect extraídas de propuesta_real.pdf con pdfplumber.
 
-PORTADA (pág. 1):
-  - Fondo azul #155FCF completo
-  - Rect blanco: x=-24.3, y_bottom=-22.4, w=500.4, h=745.8
-  - Círculo verde menta: cx=449.7, cy_rl=153.8, radio=174.2
-  - Texto lateral vertical "CYBER-PROTECTION.CL": x=530, centro y=442
-  - Logo CP: x=59.5, y_rl=19.3, w=219.1, h=81
-  - Logo cliente: x=416.9, y_rl=710.6, w=129.8, h=109.5
-  - "Elaborado para:" texto sobre logo cliente
+MEDIDAS EXACTAS (595.5 x 842.25 pts = A4):
+─────────────────────────────────────────────────────────────────────
+PORTADA (pág 1):
+  Título:       x=59.5, y_top=118.3, font=38.5pt, bold, color=#155FCF
+  "Preparado":  x=59.5, y=336.5,  font=17pt, bold
+  Cliente:      x=59.5, y=387.5,  font=17pt, bold
+  Objetivo:     x=59.5, y=464.0,  font=17pt, bold
+  "Elaborado":  x=349.5, y=691.3, font=12pt, bold
+  Zona texto:   x=59.5 → ~480, y=118 → ~650
 
-INTERIORES (págs. 2-8):
-  - Fondo verde menta #8EE3C8
-  - Foto lateral: x=0, y=0, w=91, h=842.3
-  - Bloque blanco contenido: x=91.1, y_rl=239.0, w=475.7, h=603.3
-  - Bloque blanco logo sup-der: x=275.4, y_rl=0, w=320.3, h=187.7
-  - Logo CP: x=301.6, y_rl=44.5, w=267.8, h=98.3
+INTERIORES estándar (págs 2,4,5,6,8):
+  H1:           x=123.6, y_top≈261, font=26pt, bold, color=#155FCF
+  Body:         x=125.5, y_start≈351, font=10.5pt, regular, justify
+  Zona texto:   x=123.6 → 535.7, y=261 → ~720
+  Firma:        centrada, y≈677-710
+
+INTERIORES con banner (págs 3,7):
+  Banner-título: zona verde centrada en x≈297-396, y≈150-176
+  Body:          x=107.9 → 578.5, y_start≈337
+
+MAPA mm para CSS (1pt = 0.353mm, página = 210x297mm):
+  Portada content: left=21mm, top=41.8mm, width=150mm
+  Interior content estándar: left=43.6mm, top=92.2mm, width=145mm
+  Interior content con banner: left=38mm, top=52mm, width=155mm (banner arriba)
+─────────────────────────────────────────────────────────────────────
 """
 
-import os, json, math
+import os
+import json
+import base64
 import requests as _requests
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY, TA_RIGHT
-from reportlab.platypus import (
-    BaseDocTemplate, PageTemplate, Frame,
-    Paragraph, Spacer, Table, TableStyle,
-    PageBreak, HRFlowable, KeepTogether, NextPageTemplate, Flowable
-)
-from PIL import Image as PILImage
-
-# ── Fuentes estándar PDF (siempre disponibles) ─────────────────────────────
-F_REG  = 'Helvetica'
-F_BOLD = 'Helvetica-Bold'
-F_IT   = 'Helvetica-Oblique'
-
-# ── Colores exactos del PDF base ───────────────────────────────────────────
-AZUL   = colors.HexColor("#155FCF")   # fondo portada + texto azul
-VERDE  = colors.HexColor("#8EE3C8")   # fondo páginas interiores
-BLANCO = colors.white
-GRIS   = colors.HexColor("#333333")
-
-# ── Dimensiones de página A4 ───────────────────────────────────────────────
-PAGE_W, PAGE_H = A4                    # 595.28 x 841.89
+from pathlib import Path
 
 # ── Rutas assets ───────────────────────────────────────────────────────────
-BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
-ASSETS_DIR = os.path.normpath(os.path.join(BASE_DIR, '..', '..', 'assets'))
-LOGO_CP    = os.path.join(ASSETS_DIR, 'logo_cyberprotection.png')
-FOTO_EDIF  = os.path.join(ASSETS_DIR, 'foto_edificio.jpg')
+BASE_DIR   = Path(__file__).resolve().parent
+ASSETS_DIR = (BASE_DIR / ".." / ".." / "assets").resolve()
 
-# ── Imágenes base (pdf_base.pdf renderizado a PNG) ─────────────────────────
-# Copiar pdf_base.pdf a assets/ y ejecutar:
-#   python -c "from pdf2image import convert_from_path; pages=convert_from_path('assets/pdf_base.pdf',dpi=300); pages[0].save('assets/base_portada.png'); pages[1].save('assets/base_interior.png')"
-BASE_PORTADA  = os.path.join(ASSETS_DIR, 'base_portada.png')
-BASE_INTERIOR = os.path.join(ASSETS_DIR, 'base_interior.png')
-# Fallback: si las imágenes base no existen, usar el modo original (ReportLab dibujado)
-USE_BASE_IMG  = os.path.exists(BASE_PORTADA) and os.path.exists(BASE_INTERIOR)
+BASE_PORTADA  = ASSETS_DIR / "base_portada.png"
+BASE_INTERIOR = ASSETS_DIR / "base_interior.png"
 
-# ── Frame interior: desde x=124 (texto empieza ahí en original) ───────────
-FRAME_X     = 124        # margen izquierdo del texto en páginas interiores
-FRAME_W     = 566.8 - FRAME_X   # ≈ 442.8 pts
-FRAME_Y     = 245        # margen inferior (sobre el bloque logo)
-FRAME_H     = PAGE_H - 245 - 260  # ≈ 357 (entre bloque contenido superior e inferior)
-
-# ── Frame portada ─────────────────────────────────────────────────────────
-PORT_X  = 59.5           # alineado con logo CP y texto
-PORT_Y  = 180            # por encima del logo CP
-PORT_W  = 410            # hasta aprox x=470 (bloque blanco termina en 476)
-PORT_H  = PAGE_H - PORT_Y - 200
+# ── Colores corporativos ───────────────────────────────────────────────────
+AZUL  = "#155FCF"
+VERDE = "#8EE3C8"
+GRIS  = "#4a4a4a"
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# CANVAS BACKGROUNDS — dibujados ANTES que el contenido del frame
-# ══════════════════════════════════════════════════════════════════════════════
+def _img_b64(path: Path) -> str:
+    with open(path, "rb") as f:
+        data = base64.b64encode(f.read()).decode()
+    ext = path.suffix.lower().replace(".", "")
+    mime = "jpeg" if ext in ("jpg", "jpeg") else "png"
+    return f"data:image/{mime};base64,{data}"
 
-def _portada_bg(c, doc):
-    """Fondo de portada: imagen base si existe, sino dibujado con ReportLab."""
-    c.saveState()
-    if USE_BASE_IMG:
-        # Imagen base limpia — el texto se superpone encima
-        c.drawImage(BASE_PORTADA, 0, 0, width=PAGE_W, height=PAGE_H,
-                    preserveAspectRatio=False, mask='auto')
-    else:
-        # Fallback: modo dibujado original
-        c.setFillColor(AZUL)
-        c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
-        c.setFillColor(BLANCO)
-        c.rect(-12, 150, 500.44, PAGE_H + 22.46, fill=1, stroke=0)
-        c.setFillColor(VERDE)
-        c.setFont(F_BOLD, 15)
-        c.saveState()
-        c.translate(526.858, (PAGE_H / 2) + 150)
-        c.rotate(-90)
-        c.drawCentredString(0, 0, "C  Y  B  E  R  -  P  R  O  T  E  C  T  I  O  N  .  C  L")
-        c.restoreState()
-        c.setFillColor(VERDE)
-        c.circle(449.71, 153.80, 174.28, fill=1, stroke=0)
-        if os.path.exists(LOGO_CP):
+
+def _img_uri(source: str) -> str:
+    """Retorna data-URI desde un path de archivo o desde un data-URI existente."""
+    if not source:
+        return ""
+    if source.startswith("data:"):
+        # Ya es data-URI — lo retorna tal cual
+        # SVG como data-URI: WeasyPrint requiere que sea base64, no texto plano
+        if "image/svg" in source and ";base64," not in source:
+            # Convertir SVG text URI a base64
             try:
-                c.drawImage(LOGO_CP, 59.55, PAGE_H - 823.04,
-                            width=219.08, height=81.03,
-                            preserveAspectRatio=True, mask='auto')
+                svg_text = source.split(",", 1)[1]
+                import urllib.parse
+                svg_decoded = urllib.parse.unquote(svg_text)
+                b64 = base64.b64encode(svg_decoded.encode()).decode()
+                return f"data:image/svg+xml;base64,{b64}"
             except Exception:
                 pass
-    c.restoreState()
+        return source
+    try:
+        path = Path(source)
+        with open(path, "rb") as f:
+            raw = f.read()
+        ext  = path.suffix.lower().replace(".", "")
+        mime = {"svg": "image/svg+xml", "jpg": "image/jpeg",
+                "jpeg": "image/jpeg", "png": "image/png"}.get(ext, "image/png")
+        b64  = base64.b64encode(raw).decode()
+        return f"data:{mime};base64,{b64}"
+    except Exception:
+        return ""
 
-def _interior_bg(c, doc):
-    """Fondo interior: imagen base si existe, sino dibujado con ReportLab."""
-    c.saveState()
-    if USE_BASE_IMG:
-        # Imagen base limpia — se replica identica en cada pagina extra
-        c.drawImage(BASE_INTERIOR, 0, 0, width=PAGE_W, height=PAGE_H,
-                    preserveAspectRatio=False, mask='auto')
-    else:
-        # Fallback: modo dibujado original
-        c.setFillColor(VERDE)
-        c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
-        if os.path.exists(FOTO_EDIF):
-            try:
-                c.drawImage(FOTO_EDIF, -20.08, -18.40,
-                            width=295.79, height=860.86,
-                            preserveAspectRatio=False, mask='auto')
-            except Exception:
-                pass
-        c.setFillColor(BLANCO)
-        c.rect(91.12, PAGE_H - 603.30, 475.68, 603.23, fill=1, stroke=0)
-        c.rect(275.42, 0, 320.31, 187.64, fill=1, stroke=0)
-        if os.path.exists(LOGO_CP):
-            try:
-                c.drawImage(LOGO_CP, 301.55, 44.50,
-                            width=267.85, height=98.29,
-                            preserveAspectRatio=True, mask='auto')
-            except Exception:
-                pass
-    c.restoreState()
 
-def _on_page(c, doc):
-    if doc.page == 1:
-        _portada_bg(c, doc)
-    else:
-        _interior_bg(c, doc)
+def _css_base() -> str:
+    portada_uri  = _img_b64(BASE_PORTADA)  if BASE_PORTADA.exists()  else ""
+    interior_uri = _img_b64(BASE_INTERIOR) if BASE_INTERIOR.exists() else ""
+    return f"""
+/* ── Tipografía corporativa ──────────────────────────────────────────────
+   Century Gothic  → logotipo CP (en imagen base, no en HTML)
+   Segoe UI        → TODO el texto del documento
+   Times New Roman → exclusivamente la cita entrecomillada (Introducción)
+──────────────────────────────────────────────────────────────────────── */
+@page portada {{
+    size: 210mm 297mm;
+    margin: 0;
+    background-image: url('{portada_uri}');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+}}
+@page interior {{
+    size: 210mm 297mm;
+    margin: 0;
+    background-image: url('{interior_uri}');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+}}
+* {{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}}
+body {{
+    font-family: 'Segoe UI', 'Segoe UI Variable', 'Trebuchet MS', Arial, Helvetica, sans-serif;
+    color: {AZUL};
+    font-size: 10.5pt;
+}}
+
+/* ═══════════════════════════════════════════
+   PORTADA — position:absolute está bien aquí
+   porque la portada es siempre 1 página fija
+═══════════════════════════════════════════ */
+.page-portada {{
+    page: portada;
+    width: 210mm;
+    height: 297mm;
+    position: relative;
+    page-break-after: always;
+}}
+.portada-content {{
+    position: absolute;
+    left:  21mm;
+    top:   41.8mm;
+    width: 148mm;
+}}
+
+/* Portada título: Segoe UI Bold, 38.5pt */
+.portada-titulo {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     38.5pt;
+    font-weight:   700;
+    color:         {AZUL};
+    line-height:   1.12;
+    margin-bottom: 12mm;
+}}
+/* "Preparado para:" y=336.5pt → 118.8mm desde arriba
+   Distancia desde top del content: 336.5-118.3=218.2pt = 77mm */
+/* Portada etiquetas: Segoe UI Bold */
+.portada-prep-label {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     12pt;
+    font-weight:   700;
+    color:         {AZUL};
+    margin-top:    77mm;
+    margin-bottom: 2mm;
+}}
+.portada-cliente-nombre {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     14pt;
+    font-weight:   700;
+    color:         {AZUL};
+    margin-bottom: 8mm;
+    line-height:   1.3;
+}}
+.portada-objetivo {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     12pt;
+    font-weight:   700;
+    color:         {AZUL};
+    line-height:   1.4;
+}}
+/* Logo cliente — centrado en círculo verde menta
+   Centro círculo: x=163.4mm, y=250.4mm, radio≈56mm */
+.portada-elaborado {{
+    position:        absolute;
+    left:            123mm;
+    top:             228mm;
+    width:           80mm;
+    font-family:     'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:       10pt;
+    font-weight:     700;
+    color:           {AZUL};
+    text-align:      center;
+    display:         flex;
+    flex-direction:  column;
+    align-items:     center;
+    justify-content: center;
+    gap:             3mm;
+}}
+
+/* ═══════════════════════════════════════════
+   PÁGINAS INTERIORES
+   Cada .page-interior = 1 página con fondo base_interior.png
+   El contenido fluye dentro del área blanca medida:
+     left=43.6mm, top=86mm, width=148mm
+   WeasyPrint crea páginas adicionales automáticamente
+   cuando el div desborda (no hay height fijo).
+═══════════════════════════════════════════ */
+.page-interior {{
+    page: interior;
+    position: relative;
+    width:  210mm;
+    height: 297mm;
+    page-break-after: always;
+}}
+.page-interior:last-child {{
+    page-break-after: avoid;
+}}
+.interior-content {{
+    position: absolute;
+    left:    43.6mm;
+    top:     86mm;
+    width:   148mm;
+}}
+
+/* ═══════════════════════════════════════════
+   PÁGINAS CON BANNER — bloques absolutamente independientes
+   
+   Alcance (pág 3):
+     banner:  left=38mm, top=50mm  (y real=52.9mm)
+     body:    left=38mm, top=119mm (y real=119mm — DEBAJO de la foto)
+   
+   Centro de Costos (pág 7):
+     banner:  left=38mm, top=73mm  (y real=75.7mm)
+     body:    left=38mm, top=99mm  (y real=98.9mm)
+═══════════════════════════════════════════ */
+
+/* Posición del banner (bloque verde con título) */
+/* Banner título — posicionado absolutamente con dimensiones exactas */
+.banner-titulo {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    background:    {VERDE};
+    color:         {AZUL};
+    font-size:     26pt;
+    font-weight:   700;
+    padding:       3mm 8mm;
+    display:       block;
+    width:         160mm;
+    line-height:   1.1;
+    position:      absolute;
+    left:          32mm;
+    top:           45mm;
+}}
+.banner-titulo.banner-alcance-pos {{
+    top: 45mm;
+}}
+.banner-titulo.banner-costos-pos {{
+    top: 64mm;
+}}
+
+/* Body independiente del banner — posicionado exactamente donde empieza el texto real */
+.banner-body-alcance {{
+    position: absolute;
+    left:     38mm;
+    top:      119mm;
+    width:    152mm;
+}}
+.banner-body-costos {{
+    position: absolute;
+    left:     38mm;
+    top:      91mm;
+    width:    158mm;
+}}
+
+/* ═══════════════════════════════════════════
+   TIPOGRAFÍA INTERIOR — Segoe UI en toda la jerarquía
+═══════════════════════════════════════════ */
+
+/* H1 — Títulos principales de sección (Introducción, Alcance, etc.)
+   Fuente: Segoe UI Bold, 26pt */
+h1 {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     26pt;
+    font-weight:   700;
+    color:         {AZUL};
+    margin-bottom: 3mm;
+    line-height:   1.15;
+}}
+
+/* H2 — Subtítulos de sección (Valor Estratégico, etc.)
+   Fuente: Segoe UI Bold, 14pt */
+h2 {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     14pt;
+    font-weight:   700;
+    color:         {AZUL};
+    margin-top:    5mm;
+    margin-bottom: 2mm;
+    line-height:   1.25;
+}}
+
+/* H3 — Subtítulos secundarios (Antecedente Crítico, numerados 1. 2. 3.)
+   Fuente: Segoe UI Bold, 11pt */
+h3 {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     11pt;
+    font-weight:   700;
+    color:         {AZUL};
+    margin-top:    3mm;
+    margin-bottom: 1.5mm;
+}}
+
+.hr {{
+    border:         none;
+    border-top:     0.8pt solid {AZUL};
+    margin-bottom:  3mm;
+    margin-top:     0.5mm;
+}}
+
+/* Body — párrafos de cuerpo general
+   Fuente: Segoe UI Regular, 10.5pt, justificado */
+p {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     10.5pt;
+    font-weight:   400;
+    color:         {AZUL};
+    line-height:   1.55;
+    text-align:    justify;
+    margin-bottom: 3mm;
+}}
+
+/* Cita entrecomillada — ÚNICA excepción tipográfica
+   Fuente: Times New Roman Bold Italic, 10.5pt
+   Según análisis: "cambia de familia tipográfica a una fuente con serifa
+   utilizada específicamente para denotar declaración textual o misión literal" */
+.cita {{
+    font-family:   'Times New Roman', 'Times', Georgia, serif;
+    font-size:     10.5pt;
+    font-weight:   700;
+    font-style:    italic;
+    color:         {AZUL};
+    text-align:    justify;
+    line-height:   1.6;
+    margin-bottom: 3mm;
+    margin-top:    2mm;
+}}
+
+/* Viñetas — Segoe UI Regular, concepto inicial en Bold (via HTML <strong>) */
+ul {{
+    padding-left:  5mm;
+    margin-bottom: 3mm;
+}}
+ul li {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     10.5pt;
+    font-weight:   400;
+    color:         {AZUL};
+    line-height:   1.55;
+    margin-bottom: 1mm;
+    text-align:    justify;
+}}
+ul li strong {{
+    font-weight: 700;
+}}
+
+/* ═══════════════════════════════════════════
+   FIRMA — Segoe UI, centrada
+═══════════════════════════════════════════ */
+.firma-bloque {{
+    margin-top:    18mm;
+    text-align:    center;
+    padding-top:   0;
+    width:         60mm;
+    margin-left:   auto;
+    margin-right:  auto;
+}}
+/* Nombre firma: Segoe UI Bold */
+.firma-nombre {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     10.5pt;
+    font-weight:   700;
+    color:         {AZUL};
+    line-height:   1.5;
+}}
+/* Cargo firma: Segoe UI Regular */
+.firma-cargo {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     10.5pt;
+    font-weight:   400;
+    color:         {AZUL};
+    line-height:   1.5;
+}}
+
+/* ═══════════════════════════════════════════
+   LISTA DE SERVICIOS — formato compacto
+   Igual que propuesta_real: categoría en H2, servicios en lista
+   con nombre en bold seguido de descripción corta inline
+═══════════════════════════════════════════ */
+.srv-lista {{
+    padding-left:  5mm;
+    margin-top:    1mm;
+    margin-bottom: 4mm;
+}}
+.srv-lista li {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     10pt;
+    font-weight:   400;
+    color:         {AZUL};
+    line-height:   1.5;
+    margin-bottom: 1.5mm;
+    text-align:    justify;
+}}
+.srv-lista li strong {{
+    font-weight: 700;
+}}
+
+/* ═══════════════════════════════════════════
+   TABLA COSTOS
+═══════════════════════════════════════════ */
+.tabla-costos {{
+    width:           100%;
+    border-collapse: collapse;
+    margin-bottom:   4mm;
+    border:          0.5pt solid #CCCCCC;
+}}
+/* Tabla costos: th=Segoe UI Bold, td=Segoe UI Regular */
+.tabla-costos th {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    background:    {AZUL};
+    color:         white;
+    font-size:     10pt;
+    font-weight:   700;
+    padding:       2.5mm 3mm;
+    text-align:    left;
+    border:        0.5pt solid #CCCCCC;
+}}
+.tabla-costos th.right {{ text-align: center; }}
+.tabla-costos td {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     9pt;
+    font-weight:   400;
+    color:         {AZUL};
+    padding:       2mm 3mm;
+    border:        0.5pt solid #CCCCCC;
+}}
+.tabla-costos td.right {{ text-align: center; }}
+.tabla-costos tr.cat-row td {{
+    background:  #EBF3FF;
+    font-weight: bold;
+    font-size:   9.5pt;
+}}
+.tabla-costos tr.srv-row:nth-child(odd) td  {{ background: white; }}
+.tabla-costos tr.srv-row:nth-child(even) td {{ background: #F5F9FF; }}
+.tabla-costos tr.total-row td {{
+    background:  {AZUL};
+    color:       white;
+    font-weight: bold;
+    font-size:   10pt;
+    padding:     3mm;
+}}
+.tabla-costos tr.total-row td.right {{ text-align: center; }}
+
+/* ═══════════════════════════════════════════
+   TABLA MATRIZ DE VALOR
+═══════════════════════════════════════════ */
+.tabla-matriz {{
+    width:           100%;
+    border-collapse: collapse;
+    margin-bottom:   4mm;
+    margin-top:      2mm;
+    font-size:       9pt;
+    border:          0.5pt solid #CCCCCC;
+}}
+/* Tabla matriz: th=Segoe UI Bold, td=Segoe UI Regular */
+.tabla-matriz th {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    background:    {AZUL};
+    color:         white;
+    padding:       2mm 2.5mm;
+    text-align:    left;
+    font-weight:   700;
+    border:        0.5pt solid #CCCCCC;
+}}
+.tabla-matriz td {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-weight:   400;
+    color:         {AZUL};
+    padding:       2.5mm 2.5mm;
+    border:        0.5pt solid #CCCCCC;
+    vertical-align: top;
+    line-height:   1.4;
+}}
+.tabla-matriz tr:nth-child(even) td {{ background: #EBF3FF; }}
+.tabla-matriz tr:nth-child(odd)  td {{ background: white; }}
+
+/* ═══════════════════════════════════════════
+   CONDICIONES
+═══════════════════════════════════════════ */
+/* Condiciones: Segoe UI Regular; subtítulos en Bold via HTML <strong> */
+.condicion-linea {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     10pt;
+    font-weight:   400;
+    color:         {AZUL};
+    line-height:   1.7;
+}}
+/* Nota pie: Segoe UI Italic */
+.nota-pie {{
+    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-size:     8.5pt;
+    font-weight:   400;
+    font-style:    italic;
+    color:         {AZUL};
+    text-align:    center;
+    margin-top:    3mm;
+}}
+"""
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ESTILOS
+# SECCIONES HTML
 # ══════════════════════════════════════════════════════════════════════════════
 
-def get_styles():
-    return {
-        # — Portada —
-        "titulo_portada": ParagraphStyle("titulo_portada",
-            fontName=F_BOLD, fontSize=38.5, textColor=AZUL,
-            leading=46, spaceAfter=10),
-        "sub_portada": ParagraphStyle("sub_portada",
-            fontName=F_BOLD, fontSize=12, textColor=AZUL,
-            leading=16, spaceAfter=4),
-        "obj_portada": ParagraphStyle("obj_portada",
-            fontName=F_BOLD, fontSize=12, textColor=AZUL,
-            leading=16, spaceAfter=6),
-
-        # — Encabezados interiores —
-        "h1": ParagraphStyle("h1",
-            fontName=F_BOLD, fontSize=26, textColor=AZUL,
-            leading=32, spaceAfter=6, spaceBefore=0),
-        "h2": ParagraphStyle("h2",
-            fontName=F_BOLD, fontSize=16, textColor=AZUL,
-            leading=22, spaceAfter=5, spaceBefore=8),
-        "h3": ParagraphStyle("h3",
-            fontName=F_BOLD, fontSize=13, textColor=AZUL,
-            leading=17, spaceAfter=4, spaceBefore=6),
-
-        # — Cuerpo —
-        "body": ParagraphStyle("body",
-            fontName=F_REG, fontSize=11, textColor=AZUL,
-            leading=16, spaceAfter=7, alignment=TA_JUSTIFY),
-        "body_bold": ParagraphStyle("body_bold",
-            fontName=F_BOLD, fontSize=11, textColor=AZUL,
-            leading=16, spaceAfter=5, alignment=TA_JUSTIFY),
-        "cita": ParagraphStyle("cita",
-            fontName=F_BOLD, fontSize=11, textColor=AZUL,
-            leading=16, spaceAfter=7, alignment=TA_JUSTIFY),
-        "bullet": ParagraphStyle("bullet",
-            fontName=F_REG, fontSize=11, textColor=AZUL,
-            leading=16, spaceAfter=4, leftIndent=14, alignment=TA_JUSTIFY),
-        "subtitulo": ParagraphStyle("subtitulo",
-            fontName=F_REG, fontSize=11, textColor=AZUL,
-            leading=16, spaceAfter=8, alignment=TA_JUSTIFY),
-
-        # — Firma —
-        "firma": ParagraphStyle("firma",
-            fontName=F_REG, fontSize=10, textColor=AZUL,
-            leading=14, alignment=TA_CENTER),
-        "firma_bold": ParagraphStyle("firma_bold",
-            fontName=F_BOLD, fontSize=10, textColor=AZUL,
-            leading=14, alignment=TA_CENTER),
-
-        # — Tabla servicios —
-        "cat_header": ParagraphStyle("cat_header",
-            fontName=F_BOLD, fontSize=12, textColor=BLANCO, leading=16),
-        "srv_nombre": ParagraphStyle("srv_nombre",
-            fontName=F_BOLD, fontSize=10, textColor=AZUL, leading=13, spaceAfter=2),
-        "srv_desc": ParagraphStyle("srv_desc",
-            fontName=F_REG, fontSize=9, textColor=GRIS, leading=12),
-
-        # — Tabla costos y matriz —
-        "th": ParagraphStyle("th",
-            fontName=F_BOLD, fontSize=11, textColor=BLANCO),
-        "td": ParagraphStyle("td",
-            fontName=F_REG, fontSize=10, textColor=AZUL, leading=14),
-        "td_bold": ParagraphStyle("td_bold",
-            fontName=F_BOLD, fontSize=10, textColor=AZUL, leading=14),
-
-        # — Condiciones —
-        "cond": ParagraphStyle("cond",
-            fontName=F_REG, fontSize=11, textColor=AZUL,
-            leading=17, spaceAfter=3),
-        "nota": ParagraphStyle("nota",
-            fontName=F_IT, fontSize=9, textColor=AZUL, alignment=TA_CENTER),
-    }
+def _page_std(contenido_html: str) -> str:
+    """Página interior estándar."""
+    return f'<div class="page-interior"><div class="interior-content">{contenido_html}</div></div>'
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────
-
-def sp(h=8):
-    return Spacer(1, h)
-
-def hr(color=AZUL, grosor=0.8):
-    return HRFlowable(width="100%", thickness=grosor,
-                      color=color, spaceAfter=6, spaceBefore=2)
-
-def bullet_item(texto, st):
-    return Paragraph(f"• {texto}", st["bullet"])
+def _pages(secciones: list) -> str:
+    """Une múltiples secciones cada una en su propia página."""
+    return "".join(_page_std(s) for s in secciones)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# SECCIONES
-# ══════════════════════════════════════════════════════════════════════════════
-
-def sec_portada(data, st):
-    """
-    Portada: el texto flota en el bloque blanco.
-    Logo CP e ícono cliente se dibujan en el canvas (_portada_bg).
-    El frame empieza en y=180 para dejar espacio al logo CP abajo.
-    """
-    titulo = data.get("titulo_portada_servicios") or data.get("titulo_proyecto", "")
-
-    return [
-        sp(5),     # El frame ya posiciona el texto en la zona correcta
-        Paragraph(titulo, st["titulo_portada"]),
-        sp(19),
-        Paragraph("Preparado para:", st["sub_portada"]),
-        Paragraph(data.get("preparado_para", ""), st["sub_portada"]),
-        sp(13),
-        Paragraph(data.get("objetivo", ""), st["obj_portada"]),
-        PageBreak(),
-    ]
+def _page_banner(titulo_banner: str, contenido_html: str) -> str:
+    """Página Alcance: banner a top=50mm, body a top=119mm (bajo la foto)."""
+    return f'''<div class="page-interior">
+  <div class="banner-titulo banner-alcance-pos">{titulo_banner}</div>
+  <div class="banner-body-alcance">
+    {contenido_html}
+  </div>
+</div>'''
 
 
-def sec_introduccion(data, st):
-    elems = [NextPageTemplate('Interior'), sp(2)]
-    elems += [
-        Paragraph("Introducción", st["h1"]),
-        hr(),
-        sp(5),
-        Paragraph(data.get("introduccion", ""), st["body"]),
-        sp(8),
-        Paragraph(f'"{data.get("frase_clave", "")}"', st["cita"]),
-        sp(6),
-        Paragraph(data.get("cierre_intro", ""), st["body"]),
-        sp(20),
-        Paragraph("________________________", st["firma"]),
-        sp(3),
-        Paragraph("Andrés Barrientos Cisternas", st["firma_bold"]),
-        Paragraph("CTO / CYBERPROTECTION.CL", st["firma"]),
-        PageBreak(),
-    ]
-    return elems
+def _page_banner_costos(titulo_banner: str, contenido_html: str) -> str:
+    """Página Centro de Costos: banner a top=73mm, body a top=99mm."""
+    return f'''<div class="page-interior">
+  <div class="banner-titulo banner-costos-pos">{titulo_banner}</div>
+  <div class="banner-body-costos">
+    {contenido_html}
+  </div>
+</div>'''
 
 
-def sec_alcance(data, st, ancho):
-    """Alcance con header de caja tipo banner azul + contenido."""
-    elems = [sp(2)]
+def sec_portada(data: dict) -> str:
+    titulo  = data.get("titulo_portada_servicios") or data.get("titulo_proyecto", "")
+    para    = data.get("preparado_para", "")
+    obj     = data.get("objetivo", "")
+    # Logo del cliente — zona inferior derecha de la portada
+    logo_src = _img_uri(data.get("logo_cliente") or "")
+    logo_html = (
+        f'<div class="portada-elaborado">'
+        f'<div style="font-size:9pt;font-weight:700;color:#155FCF;letter-spacing:0.5pt;">Elaborado para:</div>'
+        f'<img src="{logo_src}" style="max-width:60mm;max-height:34mm;object-fit:contain;">'
+        f'</div>'
+    ) if logo_src else ''
+    return f'''
+<div class="page-portada">
+  <div class="portada-content">
+    <div class="portada-titulo">{titulo}</div>
+    <div class="portada-prep-label">Preparado para:</div>
+    <div class="portada-cliente-nombre">{para}</div>
+    <div class="portada-objetivo">{obj}</div>
+  </div>
+  {logo_html}
+</div>'''
 
-    # Banner "Alcance" — como en el original: caja azul con texto blanco
-    hdr = Table([[Paragraph("Alcance", st["cat_header"])]],
-                colWidths=[ancho])
-    hdr.setStyle(TableStyle([
-        ("BACKGROUND",    (0,0),(-1,-1), AZUL),
-        ("TOPPADDING",    (0,0),(-1,-1), 10),
-        ("BOTTOMPADDING", (0,0),(-1,-1), 10),
-        ("LEFTPADDING",   (0,0),(-1,-1), 12),
-    ]))
-    elems += [hdr, sp(12)]
-    elems.append(Paragraph(data.get("alcance_intro", ""), st["body"]))
-    elems.append(sp(8))
 
+def sec_introduccion(data: dict) -> str:
+    html = f'''
+<h1>Introducción</h1>
+<div class="hr"></div>
+<p>{data.get("introduccion", "")}</p>
+<p class="cita">"{data.get("frase_clave", "")}"</p>
+<p>{data.get("cierre_intro", "")}</p>
+<div class="firma-bloque">
+  <div class="firma-cargo">________________________</div>
+  <div class="firma-nombre">Andrés Barrientos Cisternas</div>
+  <div class="firma-cargo">CTO / CYBERPROTECTION.CL</div>
+</div>'''
+    return _page_std(html)
+
+
+def sec_alcance(data: dict) -> str:
+    html = '<h1>Alcance</h1><div class="hr"></div>'
+    html += f'<p>{data.get("alcance_intro", "")}</p>'
     if data.get("antecedente_titulo"):
-        elems.append(Paragraph(data["antecedente_titulo"], st["h3"]))
+        html += f'<h3>{data["antecedente_titulo"]}</h3>'
         for par in (data.get("antecedente_descripcion") or "").split("\n\n"):
             if par.strip():
-                elems.append(Paragraph(par.strip(), st["body"]))
-    if data.get("antecedente_bullets"):
-        for b in data["antecedente_bullets"]:
-            elems.append(bullet_item(b, st))
-
-    elems.append(PageBreak())
-    return elems
+                html += f"<p>{par.strip()}</p>"
+    for b in (data.get("antecedente_bullets") or []):
+        html += f"<ul><li>{b}</li></ul>"
+    return _page_std(html)
 
 
-def sec_servicios(data, st, agrupado, ancho):
-    """Servicios agrupados por categoría en tabla de 2 columnas."""
-    col_w = ancho / 2
+def _srv_item(srv: dict) -> str:
+    """Genera un <li> compacto para un servicio."""
+    nombre = srv.get("nombre", "")
+    desc = ""
+    if srv.get("descripcion"):
+        desc = srv["descripcion"].split("|")[0].strip()
+    elif srv.get("bullets"):
+        b0 = srv["bullets"][0] if srv["bullets"] else ""
+        desc = b0.replace("Descripción: ", "").strip()
+    # Sin truncado — descripción completa para mejor presentación
+    # (el diseño de lista compacta maneja el espacio adecuadamente)
+    if desc:
+        return f'<li><strong>{nombre}:</strong> {desc}</li>'
+    return f'<li><strong>{nombre}</strong></li>'
 
-    def _bloque_cat(nombre_cat, servicios):
-        blk = []
-        hdr = Table([[Paragraph(f"■  {nombre_cat}", st["cat_header"])]],
-                    colWidths=[ancho])
-        hdr.setStyle(TableStyle([
-            ("BACKGROUND",    (0,0),(-1,-1), AZUL),
-            ("TOPPADDING",    (0,0),(-1,-1), 7),
-            ("BOTTOMPADDING", (0,0),(-1,-1), 7),
-            ("LEFTPADDING",   (0,0),(-1,-1), 10),
-        ]))
-        blk.append(hdr)
-        pares = [servicios[i:i+2] for i in range(0, len(servicios), 2)]
-        for idx, par in enumerate(pares):
-            celdas = []
-            for srv in par:
-                inner = [Paragraph(f"+ {srv['nombre']}", st["srv_nombre"])]
-                if srv.get("descripcion"):
-                    inner.append(Paragraph(
-                        srv["descripcion"].split("|")[0][:100], st["srv_desc"]))
-                celdas.append(inner)
-            if len(par) == 1:
-                celdas.append(Paragraph("", st["srv_desc"]))
-            bg = colors.HexColor("#EBF3FF") if idx % 2 == 0 else BLANCO
-            fila = Table([celdas], colWidths=[col_w, col_w])
-            fila.setStyle(TableStyle([
-                ("BACKGROUND",    (0,0),(-1,-1), bg),
-                ("VALIGN",        (0,0),(-1,-1), "TOP"),
-                ("TOPPADDING",    (0,0),(-1,-1), 8),
-                ("BOTTOMPADDING", (0,0),(-1,-1), 8),
-                ("LEFTPADDING",   (0,0),(-1,-1), 10),
-                ("LINEAFTER",     (0,0),(0,-1), 0.5, colors.HexColor("#CCCCCC")),
-            ]))
-            blk.append(fila)
-        blk.append(sp(8))
-        return KeepTogether(blk) if len(servicios) <= 4 else blk
 
+def sec_servicios(data: dict, agrupado: dict) -> str:
+    """
+    Divide servicios en páginas de máx 8 items para evitar overflow.
+    Cada página tiene su propio div.page-interior.
+    """
+    MAX_POR_PAGINA = 8
     total = sum(len(v) for v in agrupado.values())
-    story = [sp(2)]
-    story += [
-        Paragraph("Servicios Propuestos:", st["h1"]),
-        hr(),
-        Paragraph(
-            f"Suite de {total} servicio{'s' if total != 1 else ''} especializados "
-            f"en {len(agrupado)} área{'s' if len(agrupado) != 1 else ''} de cobertura, "
-            "diseñados para proteger integralmente su organización.",
-            st["subtitulo"]),
-    ]
-    for cat, srvs in agrupado.items():
-        blk = _bloque_cat(cat, srvs)
-        if isinstance(blk, list):
-            story.extend(blk)
-        else:
-            story.append(blk)
 
+    # Construir lista plana de bloques: cada bloque es (titulo_cat, [items_html])
+    bloques = []
+    encabezado = (
+        '<h1>Servicios Propuestos:</h1>'
+        '<div class="hr"></div>'
+        f'<p>Suite de {total} servicio{"s" if total != 1 else ""} especializados '
+        f'en {len(agrupado)} área{"s" if len(agrupado) != 1 else ""} de cobertura, '
+        f'diseñados para proteger integralmente su organización.</p>'
+    )
+
+    paginas = []
+    pagina_actual = encabezado
+    items_en_pagina = 0
+
+    for cat, srvs in agrupado.items():
+        # Añadir header de categoría
+        cat_html = f'<h2>{cat}</h2><ul class="srv-lista">'
+        items_cat = [_srv_item(s) for s in srvs]
+
+        # Si añadir esta categoría completa desborda la página, paginar
+        for i, item in enumerate(items_cat):
+            if items_en_pagina >= MAX_POR_PAGINA:
+                # Cerrar lista si estaba abierta y guardar página
+                pagina_actual += '</ul>'
+                paginas.append(_page_std(pagina_actual))
+                pagina_actual = f'<h2>{cat} </h2><ul class="srv-lista">'
+                items_en_pagina = 0
+            elif i == 0:
+                pagina_actual += cat_html
+            pagina_actual += item
+            items_en_pagina += 1
+
+    # Cerrar última lista y agregar valor estratégico
+    pagina_actual += '</ul>'
     if data.get("valor_estrategico"):
-        story += [sp(6), Paragraph("Valor Estratégico", st["h2"]),
-                  Paragraph(data["valor_estrategico"], st["body"])]
-    story.append(PageBreak())
-    return story
+        pagina_actual += f'<h2>Valor Estratégico</h2><p>{data["valor_estrategico"]}</p>'
+    paginas.append(_page_std(pagina_actual))
+
+    return "".join(paginas)
 
 
-def sec_cumplimiento_matriz(data, st, ancho):
-    elems = [sp(2)]
-    if data.get("cumplimiento"):
-        cum = data["cumplimiento"]
-        elems += [
-            Paragraph('C. Cumplimiento Normativo — "Gobernanza y Ley"', st["h2"]),
-            Paragraph(cum.get("intro", ""), st["body_bold"]),
-        ]
-        for b in cum.get("bullets", []):
-            elems.append(bullet_item(b, st))
-        elems.append(sp(10))
-
-    elems += [
-        Paragraph("Matriz de Valor", st["h1"]),
-        hr(),
-        Paragraph("Áreas que cubre el servicio y aporta a la organización",
-                  st["body_bold"]),
-        sp(8),
-    ]
-    if data.get("matriz_valor"):
-        W1, W2, W3 = ancho * 0.35, ancho * 0.33, ancho * 0.32
-        tbl_data = [[
-            Paragraph("<b>Servicio</b>",         st["td_bold"]),
-            Paragraph("<b>Beneficio Directo</b>", st["td_bold"]),
-            Paragraph("<b>Valor Agregado</b>",    st["td_bold"]),
-        ]]
-        for f in data["matriz_valor"]:
-            tbl_data.append([
-                Paragraph(f.get("servicio", ""),       st["td"]),
-                Paragraph(f.get("beneficio", ""),      st["td"]),
-                Paragraph(f.get("valor_agregado", ""), st["td"]),
-            ])
-        tbl = Table(tbl_data, colWidths=[W1, W2, W3], repeatRows=1)
-        tbl.setStyle(TableStyle([
-            ("BACKGROUND",     (0,0),(-1,0),  AZUL),
-            ("TEXTCOLOR",      (0,0),(-1,0),  BLANCO),
-            ("ROWBACKGROUNDS", (0,1),(-1,-1), [BLANCO, colors.HexColor("#EBF3FF")]),
-            ("GRID",           (0,0),(-1,-1), 0.4, colors.HexColor("#CCCCCC")),
-            ("VALIGN",         (0,0),(-1,-1), "TOP"),
-            ("TOPPADDING",     (0,0),(-1,-1), 8),
-            ("BOTTOMPADDING",  (0,0),(-1,-1), 8),
-            ("LEFTPADDING",    (0,0),(-1,-1), 8),
-        ]))
-        elems.append(tbl)
-    elems.append(PageBreak())
-    return elems
+def sec_cumplimiento(data: dict) -> str:
+    """Página propia: Cumplimiento Normativo."""
+    cum = data.get("cumplimiento", {})
+    html = '<h1>Cumplimiento Normativo</h1><div class="hr"></div>'
+    html += f'<p><strong>{cum.get("intro", "")}</strong></p><ul>'
+    for b in cum.get("bullets", []):
+        html += f"<li>{b}</li>"
+    html += "</ul>"
+    return _page_std(html)
 
 
-def sec_metodologia(data, st):
-    elems = [sp(2)]
-    elems += [Paragraph("4. Metodología de Trabajo", st["h2"]), hr()]
+def sec_matriz(data: dict) -> str:
+    """Matriz de Valor — paginada en bloques de MAX_MATRIZ filas."""
+    MAX_FILAS = 10
+    filas = data.get("matriz_valor", [])
+    if not filas:
+        return _page_std('<h1>Matriz de Valor</h1><div class="hr"></div>')
+
+    TH = '''<table class="tabla-matriz">
+        <tr>
+          <th style="width:33%">Servicio</th>
+          <th style="width:34%">Beneficio Directo</th>
+          <th style="width:33%">Valor Agregado</th>
+        </tr>'''
+
+    paginas = []
+    for i in range(0, len(filas), MAX_FILAS):
+        chunk = filas[i:i + MAX_FILAS]
+        es_primera = (i == 0)
+        titulo = '<h1>Matriz de Valor</h1><div class="hr"></div><p><strong>Áreas que cubre el servicio y aporta a la organización</strong></p>' if es_primera else '<h1>Matriz de Valor </h1><div class="hr"></div>'
+        tabla = TH
+        for f in chunk:
+            tabla += f'''<tr>
+              <td>{f.get("servicio","")}</td>
+              <td>{f.get("beneficio","")}</td>
+              <td>{f.get("valor_agregado","")}</td>
+            </tr>'''
+        tabla += "</table>"
+        paginas.append(_page_std(titulo + tabla))
+
+    return "".join(paginas)
+
+
+def sec_metodologia(data: dict) -> str:
+    html = '<h2>4. Metodología de Trabajo</h2><div class="hr"></div><ul>'
     for b in data.get("metodologia", []):
-        elems.append(bullet_item(b, st))
-    elems += [sp(10), Paragraph("5. Diferenciadores Locales", st["h2"]), hr()]
+        html += f"<li>{b}</li>"
+    html += "</ul>"
+    html += '<h2>5. Diferenciadores Locales</h2><div class="hr"></div><ul>'
     for b in data.get("diferenciadores", []):
-        elems.append(bullet_item(b, st))
-    elems.append(PageBreak())
-    return elems
+        html += f"<li>{b}</li>"
+    html += "</ul>"
+    return _page_std(html)
 
 
-def sec_costos(agrupado, st, ancho, nota=""):
-    C1, C2 = ancho * 0.65, ancho * 0.35
+def sec_costos(agrupado: dict, data: dict) -> str:
+    """Centro de Costos — paginado en bloques de 14 filas (cat+srv)."""
+    MAX_FILAS = 14
+    TH = '''<table class="tabla-costos">
+<tr>
+  <th>Servicio</th>
+  <th class="right">Costo Mensual (UF)</th>
+</tr>'''
+
+    # Construir lista plana de filas con su total acumulado
     total = 0.0
-    elems = [sp(2)]
-    elems += [
-        Paragraph("Centro de Costos:", st["h1"]),
-        hr(),
-        Paragraph(
-            "Valores referenciales por área. "
-            "Costos definitivos a confirmar en reunión de alcance.",
-            st["subtitulo"]),
-    ]
-    # Header tabla
-    hdr = Table([[Paragraph("Servicio", st["th"]),
-                  Paragraph("Costo Mensual (UF)", st["th"])]],
-                colWidths=[C1, C2])
-    hdr.setStyle(TableStyle([
-        ("BACKGROUND",    (0,0),(-1,-1), AZUL),
-        ("TOPPADDING",    (0,0),(-1,-1), 9),
-        ("BOTTOMPADDING", (0,0),(-1,-1), 9),
-        ("LEFTPADDING",   (0,0),(-1,-1), 10),
-        ("ALIGN",         (1,0),(1,-1),  "CENTER"),
-        ("LINEBELOW",     (0,0),(-1,-1), 2, VERDE),
-    ]))
-    elems.append(hdr)
-
+    filas = []  # lista de html strings
     for cat, srvs in agrupado.items():
-        cat_row = Table([[Paragraph(f"■  {cat}", st["td_bold"]),
-                          Paragraph("", st["td"])]],
-                        colWidths=[C1, C2])
-        cat_row.setStyle(TableStyle([
-            ("BACKGROUND",    (0,0),(-1,-1), colors.HexColor("#EBF3FF")),
-            ("TOPPADDING",    (0,0),(-1,-1), 6),
-            ("BOTTOMPADDING", (0,0),(-1,-1), 6),
-            ("LEFTPADDING",   (0,0),(-1,-1), 10),
-            ("LINEBELOW",     (0,0),(-1,-1), 0.8, VERDE),
-        ]))
-        elems.append(cat_row)
-        for i, srv in enumerate(srvs):
+        filas.append(('cat', f'<tr class="cat-row"><td>&#9632; {cat}</td><td></td></tr>'))
+        for srv in srvs:
             precio = srv.get("base_price", 0)
             total += precio if isinstance(precio, (int, float)) else 0
-            precio_str = (f"{precio:.1f}" if isinstance(precio, (int, float)) and precio > 0
-                          else "A convenir")
-            bg = BLANCO if i % 2 == 0 else colors.HexColor("#F5F9FF")
-            row = Table([[Paragraph(f"  {srv['nombre']}", st["td"]),
-                          Paragraph(precio_str, st["td"])]],
-                        colWidths=[C1, C2])
-            row.setStyle(TableStyle([
-                ("BACKGROUND",    (0,0),(-1,-1), bg),
-                ("TOPPADDING",    (0,0),(-1,-1), 6),
-                ("BOTTOMPADDING", (0,0),(-1,-1), 6),
-                ("LEFTPADDING",   (0,0),(-1,-1), 10),
-                ("ALIGN",         (1,0),(1,-1),  "CENTER"),
-                ("LINEBELOW",     (0,0),(-1,-1), 0.3, colors.HexColor("#CCCCCC")),
-            ]))
-            elems.append(row)
+            precio_str = f"{precio:.1f}" if isinstance(precio, (int, float)) and precio > 0 else "A convenir"
+            filas.append(('srv', f'<tr class="srv-row"><td>&nbsp;&nbsp;{srv["nombre"]}</td><td class="right">{precio_str}</td></tr>'))
 
     total_str = f"{total:.1f} UF/mes" if total > 0 else "A convenir"
-    pie = Table([[Paragraph("TOTAL SUITE", st["th"]),
-                  Paragraph(total_str, st["th"])]],
-                colWidths=[C1, C2])
-    pie.setStyle(TableStyle([
-        ("BACKGROUND",    (0,0),(-1,-1), AZUL),
-        ("TOPPADDING",    (0,0),(-1,-1), 10),
-        ("BOTTOMPADDING", (0,0),(-1,-1), 10),
-        ("LEFTPADDING",   (0,0),(-1,-1), 10),
-        ("ALIGN",         (1,0),(1,-1),  "CENTER"),
-        ("LINEABOVE",     (0,0),(-1,-1), 2, VERDE),
-    ]))
-    elems.append(pie)
-    if nota:
-        elems += [sp(8), Paragraph(nota, st["nota"])]
-    elems.append(PageBreak())
-    return elems
+    fila_total = f'''<tr class="total-row"><td>TOTAL SUITE</td><td class="right">{total_str}</td></tr>'''
+
+    paginas = []
+    for i in range(0, len(filas), MAX_FILAS):
+        chunk = filas[i:i + MAX_FILAS]
+        es_primera = (i == 0)
+        es_ultima  = (i + MAX_FILAS >= len(filas))
+
+        titulo = '<h1>Centro de Costos:</h1><div class="hr"></div><p>Valores referenciales por área. Costos definitivos a confirmar en reunión de alcance.</p>' if es_primera else '<h1>Centro de Costos: </h1><div class="hr"></div>'
+        tabla = TH
+        for _, fila_html in chunk:
+            tabla += fila_html
+        if es_ultima:
+            tabla += fila_total
+        tabla += "</table>"
+        if es_ultima and data.get("nota_costos"):
+            tabla += f'<div class="nota-pie">{data["nota_costos"]}</div>'
+        paginas.append(_page_std(titulo + tabla))
+
+    return "".join(paginas)
 
 
-def sec_condiciones(data, st):
-    elems = [sp(2)]
-    elems += [Paragraph("Condiciones Comerciales:", st["h1"]), hr(), sp(5)]
+def sec_condiciones(data: dict) -> str:
+    html = '<h1>Condiciones Comerciales:</h1><div class="hr"></div>'
     for linea in data.get("condiciones", []):
         if linea.strip():
-            elems.append(Paragraph(linea, st["cond"]))
+            html += f'<div class="condicion-linea">{linea}</div>'
         else:
-            elems.append(sp(5))
-    return elems
+            html += "<br>"
+    return _page_std(html)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CATEGORIZACIÓN AUTOMÁTICA
+# CATEGORIZACIÓN
 # ══════════════════════════════════════════════════════════════════════════════
 
 _CATEGORIAS = [
@@ -565,8 +813,7 @@ _KEYWORDS = {
 
 def _cat_keywords(nombre, descripcion=""):
     texto = ((nombre or "") + " " + (descripcion or "")).lower()
-    scores = {c: sum(1 for kw in kws if kw in texto)
-              for c, kws in _KEYWORDS.items()}
+    scores = {c: sum(1 for kw in kws if kw in texto) for c, kws in _KEYWORDS.items()}
     best = max(scores, key=scores.get)
     return best if scores[best] > 0 else _CATEGORIAS[0]
 
@@ -574,12 +821,11 @@ def categorizar_servicios(servicios, usar_ia=True):
     mapeo = None
     if usar_ia:
         try:
-            lista = "\n".join(
-                f'- "{s["nombre"]}": {s.get("descripcion", "")}' for s in servicios)
-            cats = "\n".join(f"  {i+1}. {c}" for i, c in enumerate(_CATEGORIAS))
+            lista = "\n".join(f'- "{s["nombre"]}": {s.get("descripcion","")}' for s in servicios)
+            cats  = "\n".join(f"  {i+1}. {c}" for i, c in enumerate(_CATEGORIAS))
             prompt = (f"Clasifica cada servicio en UNA categoría:\n{cats}\n\n"
                       f"Servicios:\n{lista}\n\n"
-                      "Responde SOLO JSON sin backticks: {nombre: categoría con emoji}")
+                      "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}")
             r = _requests.post(
                 "http://localhost:11434/api/generate",
                 json={"model": "gemma3:4b", "prompt": prompt,
@@ -597,8 +843,7 @@ def categorizar_servicios(servicios, usar_ia=True):
 
     agrupado = {c: [] for c in _CATEGORIAS}
     for srv in servicios:
-        cat = mapeo.get(srv["nombre"],
-                        _cat_keywords(srv["nombre"], srv.get("descripcion","")))
+        cat = mapeo.get(srv["nombre"], _cat_keywords(srv["nombre"], srv.get("descripcion","")))
         agrupado[cat].append(srv)
     return {c: srvs for c, srvs in agrupado.items() if srvs}
 
@@ -608,91 +853,42 @@ def categorizar_servicios(servicios, usar_ia=True):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def generar_propuesta(data: dict, output_path: str, usar_ia: bool = True):
-    """
-    Genera PDF de propuesta con diseño corporativo fiel al original.
+    from weasyprint import HTML, CSS
 
-    Args:
-        data: dict con todos los campos de la propuesta
-        output_path: ruta donde guardar el PDF
-        usar_ia: si True, usa Ollama para categorizar servicios
-    """
+    if not BASE_PORTADA.exists():
+        raise FileNotFoundError(
+            f"No se encontró base_portada.png en {ASSETS_DIR}. "
+            "Copia base_portada.png y base_interior.png a la carpeta assets/.")
+    if not BASE_INTERIOR.exists():
+        raise FileNotFoundError(
+            f"No se encontró base_interior.png en {ASSETS_DIR}.")
+
     servicios_raw = data.get("servicios", [])
     agrupado = categorizar_servicios(servicios_raw, usar_ia=usar_ia)
-    st = get_styles()
+    css_str  = _css_base()
 
-    # ── Frames ────────────────────────────────────────────────────────────────
-    # PORTADA: frame sobre el bloque blanco, desde x=59.5 (alineado con logo CP)
-    # Espacio inferior reservado para logo CP (aprox 120pts desde abajo)
-    # PORTADA: bloque blanco x0=-24.33, y_bottom=-22.46, y_top=723.32
-    # Logo CP en y_rl = PAGE_H-823.04 = 19.21 a 19.21+81.03 = 100.24
-    # Título debe aparecer en top=118 → y_rl = PAGE_H-118 = 724 (tope del frame)
-    # Frame portada — zona blanca del pdf_base
-    # Imagen base analizada: blanco desde x=0 a x=480, y=0 a y=715 (plumb)
-    # Texto empieza debajo del logo CP (aprox y_plumb=120 → y_rl=PAGE_H-120=721)
-    frame_portada = Frame(
-        x1=40,
-        y1=PAGE_H - 660,               # y_rl: texto hasta y_plumb=660 desde arriba
-        width=420,
-        height=520,
-        leftPadding=0, rightPadding=0,
-        topPadding=0, bottomPadding=0,
-        id='portada',
-    )
+    pages_html = [
+        sec_portada(data),
+        sec_introduccion(data),
+        sec_alcance(data),
+        sec_servicios(data, agrupado),
+        sec_cumplimiento(data),
+        sec_matriz(data),
+        sec_metodologia(data),
+        sec_costos(agrupado, data),
+        sec_condiciones(data),
+    ]
 
-    # INTERIOR: frame dentro del bloque blanco de contenido
-    # Molde pág 4 BASE: bloque blanco x0=91.12, y_bottom=238.95, h=603.23
-    # Primer texto en x0=123.6, top=243.8 → y_rl=PAGE_H-243.8=598.45
-    # Frame cubre desde y=245 (sobre borde inf del bloque) hasta y=835 (top del bloque)
-    # height = 835 - 245 = 590 pts → texto fluye sin cortes entre páginas
-    # Frame interior — bloque blanco del pdf_base
-    # Imagen base analizada: blanco desde x=168 a x=575, y=252 a y=842 (plumb)
-    # y_rl_bottom = 40 (margen inferior), y_rl_top = 40+545 = 585
-    ancho_interior = 388
-    frame_interior = Frame(
-        x1=178,
-        y1=40,
-        width=ancho_interior,
-        height=545,
-        leftPadding=0, rightPadding=0,
-        topPadding=0, bottomPadding=0,
-        id='interior',
-    )
+    full_html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>{css_str}</style>
+</head>
+<body>
+{"".join(pages_html)}
+</body>
+</html>"""
 
-    pt_portada  = PageTemplate(id='Portada',  frames=[frame_portada],  onPage=_portada_bg)
-    pt_interior = PageTemplate(id='Interior', frames=[frame_interior], onPage=_interior_bg)
-
-    doc = BaseDocTemplate(
-        output_path,
-        pagesize=A4,
-        pageTemplates=[pt_portada, pt_interior],
-        title=f"Propuesta — {data.get('titulo_proyecto', '')}",
-        author="Cyber-Protection.cl",
-    )
-
-    # Pasar logo cliente al canvas mediante atributo del doc
-    logo_cliente = data.get("logo_cliente")
-    doc._nombre_cliente = data.get("nombre_cliente", data.get("preparado_para", ""))
-    if logo_cliente and os.path.exists(logo_cliente):
-        try:
-            tmp = "/tmp/_logo_cliente_portada.png"
-            img = PILImage.open(logo_cliente)
-            img.save(tmp, format="PNG")
-            doc._logo_cliente = tmp
-        except Exception:
-            doc._logo_cliente = None
-    else:
-        doc._logo_cliente = None
-
-    # ── Story ─────────────────────────────────────────────────────────────────
-    story = []
-    story += sec_portada(data, st)
-    story += sec_introduccion(data, st)
-    story += sec_alcance(data, st, ancho_interior)
-    story += sec_servicios(data, st, agrupado, ancho_interior)
-    story += sec_cumplimiento_matriz(data, st, ancho_interior)
-    story += sec_metodologia(data, st)
-    story += sec_costos(agrupado, st, ancho_interior, data.get("nota_costos", ""))
-    story += sec_condiciones(data, st)
-
-    doc.build(story)
+    HTML(string=full_html).write_pdf(output_path)
     print(f"✅ PDF generado: {output_path}")

@@ -12,8 +12,9 @@ alembic
 python-multipart       # requerido por FastAPI para subida de archivos (UploadFile)
 
 # ── Generación de propuestas PDF ──────────────────────────────────────
-reportlab
-pillow
+weasyprint             # generación PDF desde HTML/CSS (reemplaza reportlab)
+pdf2image              # conversión pdf_base.pdf → PNG (setup inicial, requiere poppler)
+pillow                 # manipulación de imágenes
 requests
 
 # ── Lectura de archivos históricos (módulo de ingesta) ───────────────
