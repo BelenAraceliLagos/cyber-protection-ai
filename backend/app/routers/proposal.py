@@ -1,17 +1,14 @@
 """
 Router de Propuestas — genera PDFs de preventa usando IA local (Ollama).
+Ollama es OBLIGATORIO. Sin IA no se genera ningún documento.
 
 Endpoint principal:
   POST /proposals/generate
-
-Recibe cliente_id + lista de service_ids seleccionados,
-llama a Ollama para generar los textos,
-y devuelve un PDF listo para descargar.
 """
 
 import os
 import uuid
-import tempfile
+import base64
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -25,7 +22,6 @@ from app.models.user import User
 from app.models.client import Client
 from app.models.service import Service
 
-# Importamos los módulos del generador
 from app.services.ollama_service import generar_textos_completos
 from app.services.generate_proposal import generar_propuesta
 
@@ -34,54 +30,19 @@ router = APIRouter(
     tags=["Proposals"]
 )
 
-# ─── Schemas de entrada ────────────────────────────────────────────────
+# ─── Schemas ──────────────────────────────────────────────────────────
 
 class ProposalRequest(BaseModel):
-    cliente_id: int
-    service_ids: List[int]
-    titulo_proyecto: Optional[str] = None
-    antecedente: Optional[str] = ""
-    logo_cliente_path: Optional[str] = None   # ruta local al logo del cliente
-    usar_ia: Optional[bool] = True            # False = textos genéricos sin Ollama
+    cliente_id:        int
+    service_ids:       List[int]
+    titulo_proyecto:   Optional[str] = None
+    antecedente:       Optional[str] = ""
+    logo_cliente_path: Optional[str] = None
+    logo_base64:       Optional[str] = None   # imagen base64 del logo del cliente
 
 class ProposalResponse(BaseModel):
     mensaje: str
     archivo: str
-
-
-# ─── Textos genéricos (fallback sin IA) ───────────────────────────────
-
-def textos_genericos(cliente: Client, servicios: List[Service]) -> dict:
-    nombres = [s.name for s in servicios]
-    nombres_str = ", ".join(nombres)
-    return {
-        "introduccion": (
-            f"Cyber-Protection presenta a {cliente.company_name} una propuesta integral "
-            f"de servicios de ciberseguridad diseñada para proteger sus activos críticos. "
-            f"Nuestra experiencia en {nombres_str} nos permite ofrecer soluciones adaptadas "
-            f"a las necesidades específicas de su organización, garantizando la continuidad "
-            f"operativa y el cumplimiento normativo."
-        ),
-        "frase_clave": (
-            f"Queremos brindarle tranquilidad y seguridad a {cliente.company_name}. "
-            f"Nuestro enfoque combina tecnología de vanguardia con experiencia local "
-            f"para construir una defensa robusta y sostenible."
-        ),
-        "alcance_intro": (
-            f"La propuesta para {cliente.company_name} abarca los servicios de {nombres_str}, "
-            f"estableciendo un ecosistema de resiliencia basado en tres pilares: "
-            f"Respuesta, Asesoría Estratégica y Cumplimiento Normativo."
-        ),
-        "valor_estrategico": (
-            f"Invertir en ciberseguridad no es un costo, es una ventaja competitiva. "
-            f"Para {cliente.company_name}, nuestra propuesta representa la diferencia "
-            f"entre la exposición al riesgo y la continuidad operativa garantizada."
-        ),
-        "cierre_intro": (
-            "Al hacerlo, fortalecemos la confianza en su organización "
-            "y aseguramos la continuidad de sus operaciones."
-        ),
-    }
 
 
 # ─── Construcción del dict de datos para el generador PDF ─────────────
@@ -94,71 +55,72 @@ def construir_data_propuesta(
     logo_cliente_path: Optional[str]
 ) -> dict:
 
-    nombres_servicios = [s.name for s in servicios]
-
-    # Servicios formateados para el PDF
+    # Servicios para el PDF — descripción completa, sin truncar
     servicios_pdf = []
     for s in servicios:
         servicios_pdf.append({
-            "nombre": s.name,
-            "bullets": [
-                f"Descripción: {s.description}" if s.description
-                else "Servicio especializado en ciberseguridad corporativa.",
-                f"Valor mensual referencial: {s.base_price:.0f} UF.",
-            ]
+            "nombre":      s.name,
+            "descripcion": s.description or "",
+            "base_price":  s.base_price,
         })
 
-    # Costos para la tabla
-    costos_pdf = []
-    for s in servicios:
-        costos_pdf.append({
-            "servicio": s.name,
-            "costo": f"{s.base_price:.1f} UF"
-        })
-
-    # Matriz de valor genérica por servicio
-    matriz_pdf = []
+    # Matriz de valor por servicio
     beneficios_map = {
-        "Incident Response": ("Continuidad Operativa", "Respuesta inmediata ante incidentes."),
-        "Asesoría": ("Reducción de Vulnerabilidades", "Fortalece la postura de seguridad."),
-        "Cumplimiento": ("Mitigación de Riesgos Legales", "Evita multas y sanciones."),
-        "Pentesting": ("Detección Proactiva", "Identifica vulnerabilidades antes que los atacantes."),
-        "Monitoreo": ("Visibilidad Continua", "Alertas en tiempo real ante amenazas."),
+        "incident":      ("Continuidad Operativa",        "Respuesta inmediata ante incidentes críticos."),
+        "response":      ("Continuidad Operativa",        "Contención y erradicación de amenazas activas."),
+        "asesor":        ("Reducción de Vulnerabilidades", "Fortalece la postura de seguridad estratégica."),
+        "cumplimiento":  ("Mitigación de Riesgos Legales", "Evita multas y sanciones regulatorias."),
+        "pentest":       ("Detección Proactiva",           "Identifica vulnerabilidades antes que los atacantes."),
+        "monitoreo":     ("Visibilidad Continua",          "Alertas en tiempo real ante amenazas emergentes."),
+        "mdr":           ("Detección Avanzada",            "Cobertura 24/7 con inteligencia artificial."),
+        "forense":       ("Preservación de Evidencia",     "Análisis forense para respuesta legal y técnica."),
+        "endpoint":      ("Protección de Dispositivos",    "Prevención en cada punto final de la organización."),
+        "identidad":     ("Control de Accesos",            "Elimina cuentas comprometidas y accesos residuales."),
+        "vulnerabilidad":("Remediación Proactiva",         "Cierra brechas antes de que sean explotadas."),
+        "phishing":      ("Cultura de Seguridad",          "Reduce el factor humano como vector de ataque."),
+        "tabletop":      ("Preparación Organizacional",    "Valida protocolos de respuesta bajo condiciones reales."),
+        "cloud":         ("Seguridad en la Nube",          "Configuración segura de entornos cloud críticos."),
+        "inteligencia":  ("Anticipación de Amenazas",      "Información táctica sobre actores y vectores activos."),
     }
+
+    matriz_pdf = []
     for s in servicios:
-        beneficio, valor = "Protección Integral", "Mejora la resiliencia organizacional."
-        for key, (b, v) in beneficios_map.items():
-            if key.lower() in s.name.lower():
+        nombre_lower = s.name.lower()
+        beneficio = "Protección Integral"
+        valor     = "Mejora la resiliencia organizacional."
+        for kw, (b, v) in beneficios_map.items():
+            if kw in nombre_lower:
                 beneficio, valor = b, v
                 break
         matriz_pdf.append({
-            "servicio": s.name,
-            "beneficio": beneficio,
+            "servicio":       s.name,
+            "beneficio":      beneficio,
             "valor_agregado": valor,
         })
 
     return {
-        "titulo_proyecto": titulo_proyecto,
-        "preparado_para": f"{cliente.contact_name} — {cliente.company_name}",
+        "titulo_proyecto":   titulo_proyecto,
+        "preparado_para":    f"{cliente.contact_name} — {cliente.company_name}",
         "objetivo": (
-            f"Fortalecer la ciberseguridad de {cliente.company_name} "
-            f"mediante soluciones especializadas y cumplimiento normativo."
+            f"Fortalecer la postura de ciberseguridad de {cliente.company_name} "
+            f"mediante servicios especializados, cumplimiento normativo y "
+            f"respuesta efectiva ante amenazas."
         ),
         "logo_cliente": logo_cliente_path,
 
-        # Textos generados por IA (o genéricos)
-        "introduccion":     textos["introduccion"],
-        "frase_clave":      textos["frase_clave"],
-        "alcance_intro":    textos["alcance_intro"],
-        "valor_estrategico": textos["valor_estrategico"],
-        "cierre_intro":     textos["cierre_intro"],
+        # Textos generados por IA
+        "introduccion":             textos["introduccion"],
+        "frase_clave":              textos["frase_clave"],
+        "alcance_intro":            textos["alcance_intro"],
+        "valor_estrategico":        textos["valor_estrategico"],
+        "cierre_intro":             textos["cierre_intro"],
 
-        "antecedente_titulo": None,
-        "antecedente_descripcion": "",
-        "antecedente_bullets": [],
+        "antecedente_titulo":       textos.get("antecedente_titulo"),
+        "antecedente_descripcion":  textos.get("antecedente_descripcion", ""),
+        "antecedente_bullets":      textos.get("antecedente_bullets", []),
 
         "subtitulo_servicios": f"Servicios Seleccionados para {cliente.company_name}",
-        "servicios": servicios_pdf,
+        "servicios":           servicios_pdf,
 
         "cumplimiento": {
             "intro": "Alineación con el marco legal chileno y estándares internacionales.",
@@ -176,11 +138,10 @@ def construir_data_propuesta(
             "Monitoreo y Reporte: Entrega de informes ejecutivos periódicos sobre el estado de seguridad.",
         ],
         "diferenciadores": [
-            f"Conocimiento de la industria {cliente.industry or 'del cliente'}: Soluciones adaptadas al contexto real.",
+            f"Conocimiento de {cliente.industry or 'la industria del cliente'}: Soluciones adaptadas al contexto real.",
             "Alineación con el CSIRT Nacional: Coordinación con organismos de ciberseguridad de Chile.",
         ],
 
-        "costos": costos_pdf,
         "nota_costos": (
             "Valores referenciales. Costos definitivos a confirmar tras reunión de alcance."
         ),
@@ -214,11 +175,8 @@ def generate_proposal(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Genera una propuesta PDF personalizada para un cliente.
-
-    - Consulta el cliente y los servicios seleccionados en la BD
-    - Opcionalmente usa Ollama/Gemma para generar los textos
-    - Devuelve el PDF como descarga directa
+    Genera una propuesta PDF con IA local (Ollama). Obligatorio.
+    Si Ollama no está disponible retorna error 503.
     """
 
     # 1. Validar cliente
@@ -234,34 +192,43 @@ def generate_proposal(
         raise HTTPException(status_code=404, detail="No se encontraron los servicios indicados")
 
     # 3. Título del proyecto
-    titulo = request.titulo_proyecto or f"Propuesta {cliente.company_name}"
+    titulo = request.titulo_proyecto or "Propuesta de Servicios de Ciberseguridad"
 
-    # 4. Generar textos (IA o genéricos)
-    if request.usar_ia:
-        try:
-            textos = generar_textos_completos(
-                empresa_cliente=cliente.company_name,
-                industria=cliente.industry or "tecnología",
-                servicios=[s.name for s in servicios],
-                antecedente=request.antecedente or ""
-            )
-        except RuntimeError as e:
-            # Si Ollama no está disponible, usar textos genéricos
-            print(f"⚠️  Ollama no disponible: {e}. Usando textos genéricos.")
-            textos = textos_genericos(cliente, servicios)
-    else:
-        textos = textos_genericos(cliente, servicios)
+    # 4. Generar textos con IA — SIN fallback genérico
+    try:
+        textos = generar_textos_completos(
+            empresa_cliente=cliente.company_name,
+            industria=cliente.industry or "tecnología",
+            servicios=[s.name for s in servicios],
+            antecedente=request.antecedente or "",
+            contacto=cliente.contact_name or ""
+        )
+    except RuntimeError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Ollama no disponible: {str(e)}. Inicia Ollama con 'ollama serve' antes de generar."
+        )
 
-    # 5. Construir el dict de datos
+    # 5. Resolver logo — se pasa el data URI directamente (más robusto que archivo temp)
+    logo_uri = None
+    if request.logo_base64:
+        # El frontend ya envía un data URI completo: "data:image/...;base64,..."
+        logo_uri = request.logo_base64
+        print(f"  Logo recibido: {logo_uri[:50]}...")
+    elif request.logo_cliente_path:
+        # Fallback: path local (no usado normalmente)
+        logo_uri = request.logo_cliente_path
+
+    # 6. Construir el dict de datos
     data = construir_data_propuesta(
         cliente=cliente,
         servicios=servicios,
         textos=textos,
         titulo_proyecto=titulo,
-        logo_cliente_path=request.logo_cliente_path
+        logo_cliente_path=logo_uri
     )
 
-    # 6. Generar el PDF en carpeta temporal
+    # 7. Generar el PDF
     nombre_archivo = f"propuesta_{cliente.company_name.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.pdf"
     output_dir = os.path.join(os.path.dirname(__file__), "..", "..", "propuestas_generadas")
     os.makedirs(output_dir, exist_ok=True)
@@ -272,7 +239,8 @@ def generate_proposal(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generando PDF: {str(e)}")
 
-    # 7. Devolver el PDF como descarga
+
+    # 8. Devolver el PDF como descarga
     return FileResponse(
         path=output_path,
         media_type="application/pdf",
@@ -284,14 +252,11 @@ def generate_proposal(
 @router.get("/preview/{cliente_id}")
 def preview_proposal_data(
     cliente_id: int,
-    service_ids: str,   # "1,2,3" separado por comas
+    service_ids: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Devuelve en JSON los datos que se usarían para generar la propuesta,
-    sin crear el PDF. Útil para previsualizar antes de generar.
-    """
+    """Devuelve en JSON los datos del cliente y servicios sin crear el PDF."""
     cliente = db.query(Client).filter(Client.id == cliente_id).first()
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
@@ -301,10 +266,10 @@ def preview_proposal_data(
 
     return {
         "cliente": {
-            "id": cliente.id,
-            "empresa": cliente.company_name,
-            "contacto": cliente.contact_name,
-            "email": cliente.email,
+            "id":        cliente.id,
+            "empresa":   cliente.company_name,
+            "contacto":  cliente.contact_name,
+            "email":     cliente.email,
             "industria": cliente.industry,
         },
         "servicios": [

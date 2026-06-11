@@ -10,7 +10,7 @@ import requests
 from typing import List
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL      = "mistral"
+MODEL      = "gemma3:4b"
 
 INSTRUCCION_TONO = """
 Instrucciones de redacción (SIEMPRE respetar):
@@ -54,8 +54,10 @@ def _ollama(prompt: str, tokens: int = 300) -> str:
 
 
 def generar_introduccion(empresa, industria, servicios, antecedente=""):
-    srvs = ", ".join(servicios[:6])
-    ctx  = f"Contexto importante: {antecedente}" if antecedente else ""
+    # Usar hasta 8 servicios para dar contexto real sin sobrecargar el prompt
+    srvs = ", ".join(servicios[:8])
+    n    = len(servicios)
+    ctx  = f"Contexto importante del cliente: {antecedente}" if antecedente else ""
     prompt = f"""{INSTRUCCION_TONO}
 
 Escribe el párrafo de introducción de una propuesta comercial de ciberseguridad.
@@ -63,18 +65,19 @@ Escribe el párrafo de introducción de una propuesta comercial de cibersegurida
 Datos:
 - Empresa cliente: {empresa}
 - Industria: {industria}
-- Servicios ofrecidos: {srvs}
+- Cantidad de servicios propuestos: {n}
+- Servicios principales: {srvs}
 {ctx}
 
 El párrafo debe:
-- Presentar a Cyber-Protection como el aliado estratégico del cliente
-- Mencionar el contexto de amenazas relevante para su industria (sin exagerar)
-- Indicar brevemente qué se propone sin detallar cada servicio
-- Entre 90 y 130 palabras
-- Comenzar directo con el texto, sin encabezado
+- Presentar a Cyber-Protection como aliado estratégico especializado en {industria}
+- Mencionar el contexto de amenazas específico de su industria en Chile
+- Referirse brevemente a los servicios propuestos como un conjunto cohesionado
+- Entre 100 y 140 palabras
+- Comenzar directo con el texto, sin encabezado ni títulos
 
 Solo escribe el párrafo."""
-    return _ollama(prompt, 250)
+    return _ollama(prompt, 280)
 
 
 def generar_analisis_riesgo(empresa, industria, antecedente=""):
@@ -176,14 +179,16 @@ def generar_textos_completos(
 ) -> dict:
     """
     Genera todas las secciones con IA en secuencia.
+    servicios: lista de nombres de servicios tal como están en la BD.
     Retorna dict compatible con generar_propuesta().
     """
-    print(f"\n🤖 Generando informe con Ollama para: {empresa_cliente}")
+    print(f"\n🤖 Generando informe con Ollama (gemma3:4b) para: {empresa_cliente}")
+    print(f"   Servicios ({len(servicios)}): {', '.join(servicios[:4])}{'...' if len(servicios) > 4 else ''}")
 
     print("  [1/6] Introducción...")
     introduccion = generar_introduccion(empresa_cliente, industria, servicios, antecedente)
 
-    print("  [2/6] Análisis de riesgo...")
+    print("  [2/6] Análisis de riesgo / alcance...")
     analisis = generar_analisis_riesgo(empresa_cliente, industria, antecedente)
 
     print("  [3/6] Justificación de servicios...")
@@ -192,22 +197,22 @@ def generar_textos_completos(
     print("  [4/6] Valor estratégico...")
     valor = generar_valor_estrategico(empresa_cliente, industria, servicios)
 
-    print("  [5/6] Conclusión...")
+    print("  [5/6] Conclusión / cierre...")
     conclusion = generar_conclusion(empresa_cliente, contacto or "equipo directivo", servicios)
 
     print("  [6/6] Frase clave...")
     frase = generar_frase_clave(empresa_cliente, industria)
 
-    print(f"  ✅ Listo\n")
+    print(f"  ✅ Textos generados correctamente\n")
 
     return {
-        "introduccion":             introduccion,
-        "frase_clave":              frase,
-        "alcance_intro":            analisis,
-        "valor_estrategico":        valor,
-        "cierre_intro":             conclusion,
-        "justificacion_servicios":  justificacion,
-        "antecedente_titulo":       "Análisis de Riesgo" if antecedente else None,
-        "antecedente_descripcion":  antecedente or "",
-        "antecedente_bullets":      [],
+        "introduccion":            introduccion,
+        "frase_clave":             frase,
+        "alcance_intro":           analisis,
+        "valor_estrategico":       valor,
+        "cierre_intro":            conclusion,
+        "justificacion_servicios": justificacion,
+        "antecedente_titulo":      "Antecedente del Cliente" if antecedente else None,
+        "antecedente_descripcion": antecedente or "",
+        "antecedente_bullets":     [],
     }
