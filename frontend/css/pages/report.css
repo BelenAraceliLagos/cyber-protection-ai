@@ -252,3 +252,101 @@ textarea.form__input { resize: vertical; min-height: 72px; }
   margin-bottom: 16px;
   padding: 10px 14px;
 }
+
+/* ── Chips compactos de secciones IA ─────────────────────────────── */
+.ia-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.ia-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: var(--cp-bg-soft);
+  border: 1px solid var(--cp-border);
+  border-radius: 20px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--cp-text-main);
+  transition: background .15s, border-color .15s;
+}
+.ia-chip:has(input:checked) {
+  background: var(--cp-info-bg);
+  border-color: var(--cp-blue-main);
+  color: var(--cp-blue-main);
+}
+.ia-chip input { display: none; }
+
+/* ── Logo uploader ───────────────────────────────────────────────── */
+.logo-upload-section {
+  margin-top: 14px;
+}
+.logo-upload-hint {
+  color: var(--cp-text-muted);
+  font-weight: 400;
+  font-size: 11px;
+}
+.logo-drop-area {
+  border: 2px dashed var(--cp-border);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  transition: border-color .2s, background .2s;
+  background: var(--cp-bg-soft);
+  cursor: default;
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.logo-drop-area.drag-over {
+  border-color: var(--cp-blue-main);
+  background: var(--cp-info-bg);
+}
+.logo-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--cp-text-muted);
+  font-size: 12px;
+}
+.logo-empty-state i { font-size: 26px; }
+.logo-select-btn { cursor: pointer; }
+.logo-hint-format { font-size: 10px; color: var(--cp-text-muted); }
+.logo-preview-state {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.logo-preview-state img {
+  max-height: 72px;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+}
+.logo-remove-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+}
+.logo-remove-btn:hover { background: #dc2626; }

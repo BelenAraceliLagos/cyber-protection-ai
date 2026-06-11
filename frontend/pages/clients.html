@@ -125,7 +125,19 @@
             </div>
             <div class="form__group">
               <label for="f-rut">RUT empresa</label>
-              <input type="text" id="f-rut" placeholder="76.123.456-7" inputmode="text">
+              <input type="text" id="f-rut" placeholder="Ej: 761234567" inputmode="text" maxlength="12" autocomplete="off">
+              <span class="form__hint" id="f-rut-hint">
+                <i class="ti ti-info-circle"></i>
+                Ingresa sin puntos ni guión — el formato se aplica automáticamente.
+              </span>
+              <span class="form__hint form__hint--preview" id="f-rut-preview" style="display:none">
+                <i class="ti ti-check" style="color:#16a34a"></i>
+                <span id="f-rut-preview-text" style="color:#16a34a;font-weight:600"></span>
+              </span>
+              <span class="form__hint form__hint--error" id="f-rut-error" style="display:none">
+                <i class="ti ti-alert-circle" style="color:#dc2626"></i>
+                <span id="f-rut-error-text" style="color:#dc2626"></span>
+              </span>
             </div>
           </div>
           <div class="form__row form__row--2">

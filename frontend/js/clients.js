@@ -17,6 +17,7 @@ export async function initClients() {
   bindSearch()
   bindForm()
   bindModalClose()
+  bindRutInput()
 }
 
 async function loadClients() {
@@ -121,6 +122,87 @@ function bindSearch() {
   }, 250))
 }
 
+
+// ── RUT helpers ────────────────────────────────────────────────────────
+function cleanRut(v) { return v.replace(/[.\-]/g, '').toUpperCase().trim() }
+
+function calcDv(body) {
+  let sum = 0, mul = 2
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum += parseInt(body[i]) * mul
+    mul = mul === 7 ? 2 : mul + 1
+  }
+  const r = 11 - (sum % 11)
+  return r === 11 ? '0' : r === 10 ? 'K' : String(r)
+}
+
+function formatRut(raw) {
+  const clean = cleanRut(raw)
+  if (clean.length < 2) return null
+  const body = clean.slice(0, -1)
+  const dv   = clean.slice(-1)
+  if (!/^[0-9]+$/.test(body)) return null
+  // Agregar puntos cada 3 dígitos desde la derecha
+  let formatted = ''
+  for (let i = 0; i < body.length; i++) {
+    const pos = body.length - 1 - i
+    formatted = body[pos] + formatted
+    if (i > 0 && i % 3 === 2 && pos > 0) formatted = '.' + formatted
+  }
+  return formatted + '-' + dv
+}
+
+function isValidRut(raw) {
+  const clean = cleanRut(raw)
+  if (clean.length < 2) return false
+  const body = clean.slice(0, -1)
+  const dv   = clean.slice(-1)
+  if (!/^[0-9]+$/.test(body)) return false
+  return calcDv(body) === dv
+}
+
+function bindRutInput() {
+  const input    = document.getElementById('f-rut')
+  const hint     = document.getElementById('f-rut-hint')
+  const preview  = document.getElementById('f-rut-preview')
+  const previewT = document.getElementById('f-rut-preview-text')
+  const errEl    = document.getElementById('f-rut-error')
+  const errText  = document.getElementById('f-rut-error-text')
+  if (!input) return
+
+  input.addEventListener('input', () => {
+    const val = input.value.trim()
+    if (!val) {
+      hint.style.display    = ''
+      preview.style.display = 'none'
+      errEl.style.display   = 'none'
+      input.style.borderColor = ''
+      return
+    }
+    const clean = cleanRut(val)
+    if (clean.length >= 7) {
+      if (isValidRut(clean)) {
+        const formatted = formatRut(clean)
+        hint.style.display    = 'none'
+        preview.style.display = ''
+        previewT.textContent  = 'RUT válido: ' + formatted
+        errEl.style.display   = 'none'
+        input.style.borderColor = '#16a34a'
+      } else {
+        hint.style.display    = 'none'
+        preview.style.display = 'none'
+        errEl.style.display   = ''
+        errText.textContent   = 'Dígito verificador incorrecto. Revisa el RUT.'
+        input.style.borderColor = '#dc2626'
+      }
+    } else {
+      hint.style.display    = ''
+      preview.style.display = 'none'
+      errEl.style.display   = 'none'
+      input.style.borderColor = ''
+    }
+  })
+}
 function bindForm() {
   const form = document.getElementById('client-form')
   const btn  = document.getElementById('client-submit')
@@ -229,5 +311,13 @@ window.openNewClientModal = function() {
   if (country) country.value = 'Chile'
   const title = document.getElementById('modal-title')
   if (title) title.textContent = 'Nuevo cliente'
+  // Reset RUT hints
+  const rutInput = document.getElementById('f-rut')
+  if (rutInput) {
+    rutInput.style.borderColor = ''
+    document.getElementById('f-rut-hint').style.display    = ''
+    document.getElementById('f-rut-preview').style.display = 'none'
+    document.getElementById('f-rut-error').style.display   = 'none'
+  }
   openModal('client-modal')
 }
