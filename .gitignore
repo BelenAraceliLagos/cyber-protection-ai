@@ -24,6 +24,8 @@ __pycache__/
 uploads_tmp/
 propuestas_generadas/
 *.log
+*.dump
+*.sql
 
 # macOS
 .DS_Store

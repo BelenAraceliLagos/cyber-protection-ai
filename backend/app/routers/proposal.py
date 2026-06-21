@@ -1,6 +1,7 @@
 """
 Router de Propuestas — genera PDFs de preventa usando IA local (Ollama).
 Ollama es OBLIGATORIO. Sin IA no se genera ningún documento.
+Ollama es OBLIGATORIO. Sin IA no se genera ningún documento.
 
 Endpoint principal:
   POST /proposals/generate
@@ -8,6 +9,7 @@ Endpoint principal:
 
 import os
 import uuid
+import base64
 import base64
 from typing import List, Optional
 
@@ -31,6 +33,7 @@ router = APIRouter(
     tags=["Proposals"]
 )
 
+# ─── Schemas ──────────────────────────────────────────────────────────
 # ─── Schemas ──────────────────────────────────────────────────────────
 
 class ProposalRequest(BaseModel):
@@ -67,7 +70,23 @@ def construir_data_propuesta(
         })
 
     # Matriz de valor por servicio
+    # Matriz de valor por servicio
     beneficios_map = {
+        "incident":      ("Continuidad Operativa",        "Respuesta inmediata ante incidentes críticos."),
+        "response":      ("Continuidad Operativa",        "Contención y erradicación de amenazas activas."),
+        "asesor":        ("Reducción de Vulnerabilidades", "Fortalece la postura de seguridad estratégica."),
+        "cumplimiento":  ("Mitigación de Riesgos Legales", "Evita multas y sanciones regulatorias."),
+        "pentest":       ("Detección Proactiva",           "Identifica vulnerabilidades antes que los atacantes."),
+        "monitoreo":     ("Visibilidad Continua",          "Alertas en tiempo real ante amenazas emergentes."),
+        "mdr":           ("Detección Avanzada",            "Cobertura 24/7 con inteligencia artificial."),
+        "forense":       ("Preservación de Evidencia",     "Análisis forense para respuesta legal y técnica."),
+        "endpoint":      ("Protección de Dispositivos",    "Prevención en cada punto final de la organización."),
+        "identidad":     ("Control de Accesos",            "Elimina cuentas comprometidas y accesos residuales."),
+        "vulnerabilidad":("Remediación Proactiva",         "Cierra brechas antes de que sean explotadas."),
+        "phishing":      ("Cultura de Seguridad",          "Reduce el factor humano como vector de ataque."),
+        "tabletop":      ("Preparación Organizacional",    "Valida protocolos de respuesta bajo condiciones reales."),
+        "cloud":         ("Seguridad en la Nube",          "Configuración segura de entornos cloud críticos."),
+        "inteligencia":  ("Anticipación de Amenazas",      "Información táctica sobre actores y vectores activos."),
         "incident":      ("Continuidad Operativa",        "Respuesta inmediata ante incidentes críticos."),
         "response":      ("Continuidad Operativa",        "Contención y erradicación de amenazas activas."),
         "asesor":        ("Reducción de Vulnerabilidades", "Fortalece la postura de seguridad estratégica."),
@@ -86,7 +105,14 @@ def construir_data_propuesta(
     }
 
     matriz_pdf = []
+
+    matriz_pdf = []
     for s in servicios:
+        nombre_lower = s.name.lower()
+        beneficio = "Protección Integral"
+        valor     = "Mejora la resiliencia organizacional."
+        for kw, (b, v) in beneficios_map.items():
+            if kw in nombre_lower:
         nombre_lower = s.name.lower()
         beneficio = "Protección Integral"
         valor     = "Mejora la resiliencia organizacional."
@@ -97,6 +123,8 @@ def construir_data_propuesta(
         matriz_pdf.append({
             "servicio":       s.name,
             "beneficio":      beneficio,
+            "servicio":       s.name,
+            "beneficio":      beneficio,
             "valor_agregado": valor,
         })
 
@@ -105,6 +133,9 @@ def construir_data_propuesta(
         "preparado_para":    f"{cliente.contact_name} — {cliente.company_name}",
         "industria":         cliente.industry or "tecnología",
         "objetivo": (
+            f"Fortalecer la postura de ciberseguridad de {cliente.company_name} "
+            f"mediante servicios especializados, cumplimiento normativo y "
+            f"respuesta efectiva ante amenazas."
             f"Fortalecer la postura de ciberseguridad de {cliente.company_name} "
             f"mediante servicios especializados, cumplimiento normativo y "
             f"respuesta efectiva ante amenazas."
@@ -134,8 +165,12 @@ def construir_data_propuesta(
         "antecedente_titulo":       textos.get("antecedente_titulo"),
         "antecedente_descripcion":  textos.get("antecedente_descripcion", ""),
         "antecedente_bullets":      textos.get("antecedente_bullets", []),
+        "antecedente_titulo":       textos.get("antecedente_titulo"),
+        "antecedente_descripcion":  textos.get("antecedente_descripcion", ""),
+        "antecedente_bullets":      textos.get("antecedente_bullets", []),
 
         "subtitulo_servicios": f"Servicios Seleccionados para {cliente.company_name}",
+        "servicios":           servicios_pdf,
         "servicios":           servicios_pdf,
 
         "cumplimiento": {
@@ -154,6 +189,7 @@ def construir_data_propuesta(
             "Monitoreo y Reporte: Entrega de informes ejecutivos periódicos sobre el estado de seguridad.",
         ],
         "diferenciadores": [
+            f"Conocimiento de {cliente.industry or 'la industria del cliente'}: Soluciones adaptadas al contexto real.",
             f"Conocimiento de {cliente.industry or 'la industria del cliente'}: Soluciones adaptadas al contexto real.",
             "Alineación con el CSIRT Nacional: Coordinación con organismos de ciberseguridad de Chile.",
         ],
@@ -196,6 +232,8 @@ def generate_proposal(
     """
     Genera una propuesta PDF con IA local (Ollama). Obligatorio.
     Si Ollama no está disponible retorna error 503.
+    Genera una propuesta PDF con IA local (Ollama). Obligatorio.
+    Si Ollama no está disponible retorna error 503.
     """
 
     # 1. Validar cliente
@@ -222,6 +260,7 @@ def generate_proposal(
         raise HTTPException(status_code=404, detail="No se encontraron los servicios indicados")
 
     # 3. Título del proyecto
+    titulo = request.titulo_proyecto or "Propuesta de Servicios de Ciberseguridad"
     titulo = request.titulo_proyecto or "Propuesta de Servicios de Ciberseguridad"
 
     # 4. Generar textos con IA — SIN fallback genérico
@@ -260,6 +299,7 @@ def generate_proposal(
     )
 
     # 7. Generar el PDF
+    # 7. Generar el PDF
     nombre_archivo = f"propuesta_{cliente.company_name.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.pdf"
     output_dir = os.path.join(os.path.dirname(__file__), "..", "..", "propuestas_generadas")
     os.makedirs(output_dir, exist_ok=True)
@@ -293,9 +333,11 @@ def generate_proposal(
 def preview_proposal_data(
     cliente_id: int,
     service_ids: str,
+    service_ids: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    """Devuelve en JSON los datos del cliente y servicios sin crear el PDF."""
     """Devuelve en JSON los datos del cliente y servicios sin crear el PDF."""
     cliente = db.query(Client).filter(Client.id == cliente_id).first()
     if not cliente:
@@ -306,6 +348,10 @@ def preview_proposal_data(
 
     return {
         "cliente": {
+            "id":        cliente.id,
+            "empresa":   cliente.company_name,
+            "contacto":  cliente.contact_name,
+            "email":     cliente.email,
             "id":        cliente.id,
             "empresa":   cliente.company_name,
             "contacto":  cliente.contact_name,

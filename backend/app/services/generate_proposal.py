@@ -27,12 +27,44 @@ MAPA mm para CSS (1pt = 0.353mm, página = 210x297mm):
   Interior content estándar: left=43.6mm, top=92.2mm, width=145mm
   Interior content con banner: left=38mm, top=52mm, width=155mm (banner arriba)
 ─────────────────────────────────────────────────────────────────────
+generate_proposal.py — Generador PDF con WeasyPrint.
+Coordenadas pixel-perfect extraídas de propuesta_real.pdf con pdfplumber.
+
+MEDIDAS EXACTAS (595.5 x 842.25 pts = A4):
+─────────────────────────────────────────────────────────────────────
+PORTADA (pág 1):
+  Título:       x=59.5, y_top=118.3, font=38.5pt, bold, color=#155FCF
+  "Preparado":  x=59.5, y=336.5,  font=17pt, bold
+  Cliente:      x=59.5, y=387.5,  font=17pt, bold
+  Objetivo:     x=59.5, y=464.0,  font=17pt, bold
+  "Elaborado":  x=349.5, y=691.3, font=12pt, bold
+  Zona texto:   x=59.5 → ~480, y=118 → ~650
+
+INTERIORES estándar (págs 2,4,5,6,8):
+  H1:           x=123.6, y_top≈261, font=26pt, bold, color=#155FCF
+  Body:         x=125.5, y_start≈351, font=10.5pt, regular, justify
+  Zona texto:   x=123.6 → 535.7, y=261 → ~720
+  Firma:        centrada, y≈677-710
+
+INTERIORES con banner (págs 3,7):
+  Banner-título: zona verde centrada en x≈297-396, y≈150-176
+  Body:          x=107.9 → 578.5, y_start≈337
+
+MAPA mm para CSS (1pt = 0.353mm, página = 210x297mm):
+  Portada content: left=21mm, top=41.8mm, width=150mm
+  Interior content estándar: left=43.6mm, top=92.2mm, width=145mm
+  Interior content con banner: left=38mm, top=52mm, width=155mm (banner arriba)
+─────────────────────────────────────────────────────────────────────
 """
 
 import os
 import json
 import base64
+import os
+import json
+import base64
 import requests as _requests
+from pathlib import Path
 from pathlib import Path
 
 # ── Rutas assets ───────────────────────────────────────────────────────────
@@ -674,6 +706,7 @@ ul li strong {{
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SECCIONES HTML
+# SECCIONES HTML
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _page_std(contenido_html: str) -> str:
@@ -805,6 +838,7 @@ def sec_alcance(data: dict) -> str:
     html = '<h1>Alcance</h1><div class="hr"></div>'
     html += f'<p>{data.get("alcance_intro", "")}</p>'
     if data.get("antecedente_titulo"):
+        html += f'<h3>{data["antecedente_titulo"]}</h3>'
         html += f'<h3>{data["antecedente_titulo"]}</h3>'
         for par in (data.get("antecedente_descripcion") or "").split("\n\n"):
             if par.strip():
@@ -1188,15 +1222,64 @@ def sec_matriz(data: dict) -> str:
         paginas.append(_page_std(titulo + tabla))
 
     return "".join(paginas)
+def sec_cumplimiento(data: dict) -> str:
+    """Página propia: Cumplimiento Normativo."""
+    cum = data.get("cumplimiento", {})
+    html = '<h1>Cumplimiento Normativo</h1><div class="hr"></div>'
+    html += f'<p><strong>{cum.get("intro", "")}</strong></p><ul>'
+    for b in cum.get("bullets", []):
+        html += f"<li>{b}</li>"
+    html += "</ul>"
+    return _page_std(html)
 
 
+def sec_matriz(data: dict) -> str:
+    """Matriz de Valor — paginada en bloques de MAX_MATRIZ filas."""
+    MAX_FILAS = 10
+    filas = data.get("matriz_valor", [])
+    if not filas:
+        return _page_std('<h1>Matriz de Valor</h1><div class="hr"></div>')
+
+    TH = '''<table class="tabla-matriz">
+        <tr>
+          <th style="width:33%">Servicio</th>
+          <th style="width:34%">Beneficio Directo</th>
+          <th style="width:33%">Valor Agregado</th>
+        </tr>'''
+
+    paginas = []
+    for i in range(0, len(filas), MAX_FILAS):
+        chunk = filas[i:i + MAX_FILAS]
+        es_primera = (i == 0)
+        titulo = '<h1>Matriz de Valor</h1><div class="hr"></div><p><strong>Áreas que cubre el servicio y aporta a la organización</strong></p>' if es_primera else '<h1>Matriz de Valor </h1><div class="hr"></div>'
+        tabla = TH
+        for f in chunk:
+            tabla += f'''<tr>
+              <td>{f.get("servicio","")}</td>
+              <td>{f.get("beneficio","")}</td>
+              <td>{f.get("valor_agregado","")}</td>
+            </tr>'''
+        tabla += "</table>"
+        paginas.append(_page_std(titulo + tabla))
+
+    return "".join(paginas)
+
+
+def sec_metodologia(data: dict) -> str:
+    html = '<h2>4. Metodología de Trabajo</h2><div class="hr"></div><ul>'
 def sec_metodologia(data: dict) -> str:
     html = '<h2>4. Metodología de Trabajo</h2><div class="hr"></div><ul>'
     for b in data.get("metodologia", []):
         html += f"<li>{b}</li>"
     html += "</ul>"
     html += '<h2>5. Diferenciadores Locales</h2><div class="hr"></div><ul>'
+        html += f"<li>{b}</li>"
+    html += "</ul>"
+    html += '<h2>5. Diferenciadores Locales</h2><div class="hr"></div><ul>'
     for b in data.get("diferenciadores", []):
+        html += f"<li>{b}</li>"
+    html += "</ul>"
+    return _page_std(html)
         html += f"<li>{b}</li>"
     html += "</ul>"
     return _page_std(html)
@@ -1218,8 +1301,12 @@ def sec_costos(agrupado: dict, data: dict) -> tuple:
     for cat, srvs in agrupado.items():
         filas.append(('cat', f'<tr class="cat-row"><td>&#9632; {cat}</td><td></td></tr>'))
         for srv in srvs:
+        filas.append(('cat', f'<tr class="cat-row"><td>&#9632; {cat}</td><td></td></tr>'))
+        for srv in srvs:
             precio = srv.get("base_price", 0)
             total += precio if isinstance(precio, (int, float)) else 0
+            precio_str = f"{precio:.1f}" if isinstance(precio, (int, float)) and precio > 0 else "A convenir"
+            filas.append(('srv', f'<tr class="srv-row"><td>&nbsp;&nbsp;{srv["nombre"]}</td><td class="right">{precio_str}</td></tr>'))
             precio_str = f"{precio:.1f}" if isinstance(precio, (int, float)) and precio > 0 else "A convenir"
             filas.append(('srv', f'<tr class="srv-row"><td>&nbsp;&nbsp;{srv["nombre"]}</td><td class="right">{precio_str}</td></tr>'))
 
@@ -1303,12 +1390,16 @@ def sec_condiciones(data: dict) -> str:
     for linea in data.get("conditions", []):
         if linea.strip():
             html += f'<div class="condicion-linea">{linea}</div>'
+            html += f'<div class="condicion-linea">{linea}</div>'
         else:
+            html += "<br>"
+    return _page_std(html)
             html += "<br>"
     return _page_std(html)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# CATEGORIZACIÓN
 # CATEGORIZACIÓN
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -1353,6 +1444,7 @@ def _cat_keywords(nombre, descripcion=""):
         descripcion = descripcion.get("intro", "") or ""
     texto = ((nombre or "") + " " + (descripcion or "")).lower()
     scores = {c: sum(1 for kw in kws if kw in texto) for c, kws in _KEYWORDS.items()}
+    scores = {c: sum(1 for kw in kws if kw in texto) for c, kws in _KEYWORDS.items()}
     best = max(scores, key=scores.get)
     return best if scores[best] > 0 else _CATEGORIAS[0]
 
@@ -1362,8 +1454,11 @@ def categorizar_servicios(servicios, usar_ia=True):
         try:
             lista = "\n".join(f'- "{s["nombre"]}": {s.get("descripcion","")}' for s in servicios)
             cats  = "\n".join(f"  {i+1}. {c}" for i, c in enumerate(_CATEGORIAS))
+            lista = "\n".join(f'- "{s["nombre"]}": {s.get("descripcion","")}' for s in servicios)
+            cats  = "\n".join(f"  {i+1}. {c}" for i, c in enumerate(_CATEGORIAS))
             prompt = (f"Clasifica cada servicio en UNA categoría:\n{cats}\n\n"
                       f"Servicios:\n{lista}\n\n"
+                      "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}")
                       "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}")
             r = _requests.post(
                 "http://localhost:11434/api/generate",
@@ -1382,6 +1477,7 @@ def categorizar_servicios(servicios, usar_ia=True):
 
     agrupado = {c: [] for c in _CATEGORIAS}
     for srv in servicios:
+        cat = mapeo.get(srv["nombre"], _cat_keywords(srv["nombre"], srv.get("descripcion","")))
         cat = mapeo.get(srv["nombre"], _cat_keywords(srv["nombre"], srv.get("descripcion","")))
         agrupado[cat].append(srv)
     return {c: srvs for c, srvs in agrupado.items() if srvs}
