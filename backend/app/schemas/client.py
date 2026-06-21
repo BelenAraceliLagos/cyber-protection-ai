@@ -25,6 +25,18 @@ def is_valid_chilean_rut(value: str) -> bool:
     return check_digit == expected
 
 
+def format_rut(cleaned: str) -> str:
+    """Formatea un RUT limpio (sin puntos ni guión) a XX.XXX.XXX-D."""
+    body = cleaned[:-1]
+    dv   = cleaned[-1]
+    formatted_body = ""
+    for i, ch in enumerate(reversed(body)):
+        if i > 0 and i % 3 == 0:
+            formatted_body = "." + formatted_body
+        formatted_body = ch + formatted_body
+    return f"{formatted_body}-{dv}"
+
+
 class ClientCreate(BaseModel):
     company_name: str
     rut: Optional[str] = None
@@ -47,10 +59,18 @@ class ClientCreate(BaseModel):
     def validate_rut(cls, value: Optional[str]) -> Optional[str]:
         if value is None or not value.strip():
             return None
-        if not is_valid_chilean_rut(value):
-            raise ValueError("RUT de empresa inválido")
-        rut = clean_rut(value)
-        return f"{rut[:-1]}-{rut[-1]}"
+        # Acepta cualquier formato: con/sin puntos, con/sin guión
+        # Ej: 76123456-7 | 76.123.456-7 | 761234567 | 76.1234567
+        cleaned = clean_rut(value)
+        if not cleaned:
+            return None
+        if not is_valid_chilean_rut(cleaned):
+            raise ValueError(
+                "RUT inválido. Verifica el dígito verificador. "
+                "Puedes ingresarlo sin puntos ni guión (ej: 761234567)"
+            )
+        # Guardar siempre en formato estándar XX.XXX.XXX-D
+        return format_rut(cleaned)
 
     @field_validator("country")
     @classmethod

@@ -8,6 +8,7 @@ class QuotationItemCreate(BaseModel):
 
 class QuotationCreate(BaseModel):
     client_id: int
+    company_id: int
     items: List[QuotationItemCreate]
 
 class QuotationItemResponse(BaseModel):
@@ -22,6 +23,7 @@ class QuotationItemResponse(BaseModel):
 class QuotationResponse(BaseModel):
     id: int
     client_id: int
+    company_id: int
     status: str
     subtotal: float
     tax: float

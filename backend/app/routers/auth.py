@@ -66,7 +66,7 @@ def login(
     db_user = db.query(User).filter(
         User.email == user.email
     ).first()
-
+    
     if not db_user:
         raise HTTPException(
             status_code=401,

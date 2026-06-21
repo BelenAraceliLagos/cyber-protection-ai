@@ -66,12 +66,12 @@ ACCESS_TOKEN_EXPIRE_MINUTES=480
 ### 1.5 Arrancar el servidor
 
 ```powershell
-uvicorn app.main:app --reload --port 8080
+uvicorn app.main:app --reload --port 8000
 ```
 
 Deberías ver:
 ```
-INFO: Uvicorn running on http://127.0.0.1:8080
+INFO: Uvicorn running on http://127.0.0.1:8000
 INFO: Application startup complete.
 ```
 
@@ -88,7 +88,7 @@ Copia el hash generado (empieza con `$2b$12$...`) y ejecuta en pgAdmin:
 ```sql
 -- Paso 1: Insertar usuario
 INSERT INTO users (name, email, hashed_password, role)
-VALUES ('admin@cyberprotection.cl', 'PEGA_EL_HASH_AQUI', true);
+VALUES ('admin@cyberprotection.cl', '$2b$12$y6CdCGiFCUDZh3RSRubgE.i9cRehruUa02h599Hzwmt8ZspCcmjUG', true);
 
 -- Paso 2: Ver el id asignado
 SELECT id FROM users WHERE email = 'admin@cyberprotection.cl';
@@ -191,7 +191,7 @@ Déjalo corriendo mientras usas el sistema.
 
 ### 3.5 Verificar integración
 
-Ve a `http://localhost:8080/docs` en el navegador y busca el endpoint:
+Ve a `http://localhost:8000/docs` en el navegador y busca el endpoint:
 ```
 POST /proposals/generate
 ```
@@ -208,7 +208,7 @@ Cada vez que uses el sistema necesitas tener **3 terminales abiertas**:
 ```powershell
 cd cyber-protection-ai-main
 .\venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload --port 8080
+uvicorn app.main:app --reload --port 8000
 ```
 
 **Terminal 2 — Frontend:**
@@ -255,7 +255,7 @@ ollama serve
 
 ### Documentación interactiva
 ```
-http://localhost:8080/docs
+http://localhost:8000/docs
 ```
 
 ---

@@ -10,7 +10,7 @@ import requests
 from typing import List
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL      = "mistral"
+MODEL      = "gemma3:4b"
 
 INSTRUCCION_TONO = """
 Instrucciones de redacción (SIEMPRE respetar):
@@ -54,8 +54,10 @@ def _ollama(prompt: str, tokens: int = 300) -> str:
 
 
 def generar_introduccion(empresa, industria, servicios, antecedente=""):
-    srvs = ", ".join(servicios[:6])
-    ctx  = f"Contexto importante: {antecedente}" if antecedente else ""
+    # Usar hasta 8 servicios para dar contexto real sin sobrecargar el prompt
+    srvs = ", ".join(servicios[:8])
+    n    = len(servicios)
+    ctx  = f"Contexto importante del cliente: {antecedente}" if antecedente else ""
     prompt = f"""{INSTRUCCION_TONO}
 
 Escribe el párrafo de introducción de una propuesta comercial de ciberseguridad.
@@ -63,18 +65,19 @@ Escribe el párrafo de introducción de una propuesta comercial de cibersegurida
 Datos:
 - Empresa cliente: {empresa}
 - Industria: {industria}
-- Servicios ofrecidos: {srvs}
+- Cantidad de servicios propuestos: {n}
+- Servicios principales: {srvs}
 {ctx}
 
 El párrafo debe:
-- Presentar a Cyber-Protection como el aliado estratégico del cliente
-- Mencionar el contexto de amenazas relevante para su industria (sin exagerar)
-- Indicar brevemente qué se propone sin detallar cada servicio
-- Entre 90 y 130 palabras
-- Comenzar directo con el texto, sin encabezado
+- Presentar a Cyber-Protection como aliado estratégico especializado en {industria}
+- Mencionar el contexto de amenazas específico de su industria en Chile
+- Referirse brevemente a los servicios propuestos como un conjunto cohesionado
+- Entre 100 y 140 palabras
+- Comenzar directo con el texto, sin encabezado ni títulos
 
 Solo escribe el párrafo."""
-    return _ollama(prompt, 250)
+    return _ollama(prompt, 280)
 
 
 def generar_analisis_riesgo(empresa, industria, antecedente=""):
@@ -176,14 +179,16 @@ def generar_textos_completos(
 ) -> dict:
     """
     Genera todas las secciones con IA en secuencia.
+    servicios: lista de nombres de servicios tal como están en la BD.
     Retorna dict compatible con generar_propuesta().
     """
-    print(f"\n🤖 Generando informe con Ollama para: {empresa_cliente}")
+    print(f"\n🤖 Generando informe con Ollama (gemma3:4b) para: {empresa_cliente}")
+    print(f"   Servicios ({len(servicios)}): {', '.join(servicios[:4])}{'...' if len(servicios) > 4 else ''}")
 
     print("  [1/6] Introducción...")
     introduccion = generar_introduccion(empresa_cliente, industria, servicios, antecedente)
 
-    print("  [2/6] Análisis de riesgo...")
+    print("  [2/6] Análisis de riesgo / alcance...")
     analisis = generar_analisis_riesgo(empresa_cliente, industria, antecedente)
 
     print("  [3/6] Justificación de servicios...")
@@ -192,22 +197,106 @@ def generar_textos_completos(
     print("  [4/6] Valor estratégico...")
     valor = generar_valor_estrategico(empresa_cliente, industria, servicios)
 
-    print("  [5/6] Conclusión...")
+    print("  [5/6] Conclusión / cierre...")
     conclusion = generar_conclusion(empresa_cliente, contacto or "equipo directivo", servicios)
 
     print("  [6/6] Frase clave...")
     frase = generar_frase_clave(empresa_cliente, industria)
 
-    print(f"  ✅ Listo\n")
+    print(f"  ✅ Textos generados correctamente\n")
 
     return {
-        "introduccion":             introduccion,
-        "frase_clave":              frase,
-        "alcance_intro":            analisis,
-        "valor_estrategico":        valor,
-        "cierre_intro":             conclusion,
-        "justificacion_servicios":  justificacion,
-        "antecedente_titulo":       "Análisis de Riesgo" if antecedente else None,
-        "antecedente_descripcion":  antecedente or "",
-        "antecedente_bullets":      [],
+        "introduccion":            introduccion,
+        "frase_clave":             frase,
+        "alcance_intro":           analisis,
+        "valor_estrategico":       valor,
+        "cierre_intro":            conclusion,
+        "justificacion_servicios": justificacion,
+        "antecedente_titulo":      "Antecedente del Cliente" if antecedente else None,
+        "antecedente_descripcion": antecedente or "",
+        "antecedente_bullets":     [],
     }
+
+def generar_descripcion_servicio(nombre: str, descripcion_base: str, empresa: str, industria: str) -> dict:
+    """
+    Genera una descripción estructurada (JSON) para un servicio usando Ollama.
+    Retorna dict con formato:
+    {
+        "intro": "...",
+        "secciones": [
+            {
+                "titulo": "...",
+                "items": [
+                    {"label": "...", "subitems": ["...", "..."]}
+                ]
+            }
+        ]
+    }
+    Si Ollama falla o el JSON es inválido, retorna la descripción base como texto plano.
+    """
+    import json
+
+    prompt = f"""Eres un experto en ciberseguridad. Debes estructurar la descripción de un servicio para una propuesta comercial profesional.
+
+Servicio: {nombre}
+Empresa cliente: {empresa}
+Industria: {industria}
+Descripción base del servicio:
+{descripcion_base}
+
+Genera una descripción estructurada en formato JSON estricto. El JSON debe tener exactamente esta estructura:
+{{
+  "intro": "Párrafo introductorio del servicio, 2-3 oraciones, tono ejecutivo formal en español",
+  "secciones": [
+    {{
+      "titulo": "Título de la sección (ej: Fases del Servicio, Actividades, Entregables)",
+      "items": [
+        {{
+          "label": "Nombre del item o fase",
+          "subitems": ["actividad o detalle 1", "actividad o detalle 2"]
+        }}
+      ]
+    }}
+  ]
+}}
+
+Reglas estrictas:
+- Responde SOLO con el JSON, sin texto antes ni después, sin bloques de código, sin markdown
+- El campo "intro" es obligatorio
+- Mínimo 1 sección con mínimo 2 items
+- Cada item debe tener entre 2 y 5 subitems
+- Máximo 3 secciones
+- Todo en español formal chileno
+- Adaptar el contenido a la empresa {empresa} del sector {industria}"""
+
+    try:
+        raw = _ollama(prompt, tokens=1200)
+
+        # Limpiar posibles bloques markdown que el modelo añada
+        raw = raw.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        raw = raw.strip().rstrip("```").strip()
+
+        # Buscar el primer { y último } para extraer JSON válido
+        inicio = raw.find("{")
+        fin    = raw.rfind("}") + 1
+        if inicio == -1 or fin == 0:
+            raise ValueError("No se encontró JSON en la respuesta")
+
+        data = json.loads(raw[inicio:fin])
+
+        # Validar estructura mínima
+        if "intro" not in data or "secciones" not in data:
+            raise ValueError("JSON incompleto")
+        if not isinstance(data["secciones"], list) or len(data["secciones"]) == 0:
+            raise ValueError("Sin secciones")
+
+        return data
+
+    except Exception as e:
+        print(f"  ⚠️  generar_descripcion_servicio falló para '{nombre}': {e}. Usando texto plano.")
+        # Fallback: retornar None para que _srv_bloques use texto plano
+        return None

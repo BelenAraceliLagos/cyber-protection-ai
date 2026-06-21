@@ -21,7 +21,6 @@ from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.models.client import Client
 from app.models.service import Service
-from app.models.company import Company
 
 from app.services.ollama_service import generar_textos_completos
 from app.services.generate_proposal import generar_propuesta
@@ -34,13 +33,12 @@ router = APIRouter(
 # ─── Schemas ──────────────────────────────────────────────────────────
 
 class ProposalRequest(BaseModel):
-    cliente_id: int
-    service_ids: List[int]
-    titulo_proyecto: Optional[str] = None
-    antecedente: Optional[str] = ""
+    cliente_id:        int
+    service_ids:       List[int]
+    titulo_proyecto:   Optional[str] = None
+    antecedente:       Optional[str] = ""
     logo_cliente_path: Optional[str] = None
-    logo_base64: Optional[str] = None   # imagen base64 del logo del cliente
-    company_id: Optional[int] = None
+    logo_base64:       Optional[str] = None   # imagen base64 del logo del cliente
 
 class ProposalResponse(BaseModel):
     mensaje: str
@@ -50,20 +48,20 @@ class ProposalResponse(BaseModel):
 # ─── Construcción del dict de datos para el generador PDF ─────────────
 
 def construir_data_propuesta(
-    cliente,
-    servicios,
-    textos,
-    titulo_proyecto,
-    logo_cliente_path=None,
-    company=None
+    cliente: Client,
+    servicios: List[Service],
+    textos: dict,
+    titulo_proyecto: str,
+    logo_cliente_path: Optional[str]
 ) -> dict:
 
+    # Servicios para el PDF — descripción completa, sin truncar
     servicios_pdf = []
     for s in servicios:
         servicios_pdf.append({
-            "nombre": s.name,
+            "nombre":      s.name,
             "descripcion": s.description or "",
-            "base_price": s.base_price,
+            "base_price":  s.base_price,
         })
 
     # Matriz de valor por servicio
@@ -110,19 +108,6 @@ def construir_data_propuesta(
             f"respuesta efectiva ante amenazas."
         ),
         "logo_cliente": logo_cliente_path,
-        "company": {
-            "name": company.name if company else "",
-
-            "logo": company.logo_path if company else None,
-
-            "portada": company.portada_path if company else None,
-
-            "interior": company.interior_path if company else None,
-
-            "primary_color": company.primary_color if company else None,
-
-            "secondary_color": company.secondary_color if company else None,
-        },
 
         # Textos generados por IA
         "introduccion":             textos["introduccion"],
@@ -162,7 +147,7 @@ def construir_data_propuesta(
             "Valores referenciales. Costos definitivos a confirmar tras reunión de alcance."
         ),
 
-        "conditions": [
+        "condiciones": [
             "Los valores son netos y no incluyen IVA.",
             "Los costos de despacho fuera de la Región Metropolitana son por cuenta del cliente.",
             "",
@@ -202,17 +187,6 @@ def generate_proposal(
     cliente = db.query(Client).filter(Client.id == request.cliente_id).first()
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    
-    # 1.5 Validar compañía emisora
-    if not request.company_id:
-        raise HTTPException(status_code=400, detail="Debe seleccionar una empresa emisora")
-
-    company = db.query(Company).filter(Company.id == request.company_id).first()
-    if not company:
-        raise HTTPException(status_code=404, detail="Company not found")
-
-    if not company.active:
-        raise HTTPException(status_code=400, detail="Company is inactive")
 
     # 2. Validar servicios
     servicios = db.query(Service).filter(
@@ -244,7 +218,7 @@ def generate_proposal(
     if request.logo_base64:
         # El frontend ya envía un data URI completo: "data:image/...;base64,..."
         logo_uri = request.logo_base64
-        print(f"   Logo recibido: {logo_uri[:50]}...")
+        print(f"  Logo recibido: {logo_uri[:50]}...")
     elif request.logo_cliente_path:
         # Fallback: path local (no usado normalmente)
         logo_uri = request.logo_cliente_path
@@ -255,8 +229,7 @@ def generate_proposal(
         servicios=servicios,
         textos=textos,
         titulo_proyecto=titulo,
-        logo_cliente_path=logo_uri,
-        company=company
+        logo_cliente_path=logo_uri
     )
 
     # 7. Generar el PDF
@@ -265,20 +238,11 @@ def generate_proposal(
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, nombre_archivo)
 
-    import traceback
-
     try:
-       generar_propuesta(data, output_path)
-
+        generar_propuesta(data, output_path)
     except Exception as e:
-        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error generando PDF: {str(e)}")
 
-        print("ERROR PDF:", str(e))
-
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error generando PDF: {str(e)}"
-        )
 
     # 8. Devolver el PDF como descarga
     return FileResponse(

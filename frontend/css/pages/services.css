@@ -6,3 +6,53 @@
   justify-content: flex-end;
   margin-top: 16px;
 }
+
+/* ═══════════════════════════════════════════
+   CATEGORÍAS DE SERVICIOS (estilo similar a
+   "Generar informe" para coherencia visual)
+═══════════════════════════════════════════ */
+.svc-categorias {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.svc-categoria {
+  border: 1px solid var(--cp-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.svc-categoria__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--cp-bg-soft);
+  cursor: pointer;
+  user-select: none;
+}
+.svc-categoria__header:hover { background: var(--cp-info-bg); }
+
+.svc-categoria__nombre {
+  font-weight: 600;
+  font-size: 14px;
+  flex: 1;
+}
+
+.svc-categoria__header i.ti-chevron-down {
+  transition: transform 0.2s ease;
+}
+.svc-categoria__header--open i.ti-chevron-down {
+  transform: rotate(180deg);
+}
+
+.svc-categoria__body {
+  display: none;
+}
+.svc-categoria__body--open {
+  display: block;
+}
+.svc-categoria__body .table {
+  margin: 0;
+}

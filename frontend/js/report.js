@@ -2,52 +2,33 @@
 
 import { clientsAPI, servicesAPI, proposalsAPI } from './api.js'
 import { showAlert, showSpinner, hideSpinner, requireAuth, escapeHtml, escapeAttr } from './utils.js'
-
-// ── Categorías y keywords de servicios ────────────────────────────────
-const CATEGORIAS_ORDEN = [
-  '🛡  Detección y Respuesta',
-  '🔑  Gestión de Identidades y Accesos',
-  '☁  Protección de Infraestructura',
-  '⚖  Cumplimiento y Gobernanza',
-  '🎓  Capacitación y Desarrollo Seguro',
-]
-const KEYWORDS = {
-  '🛡  Detección y Respuesta': ['incident','response','soc','monitoreo','vulnerability','pentest','penetration','forensi','threat','detección','deteccion','respuesta','brecha','intrusion','siem','edr','xdr','alerta','hunting','phishing','ransomware','tabletop','simulacro'],
-  '🔑  Gestión de Identidades y Accesos': ['iam','identidad','identity','acceso','access','mfa','autenticacion','autenticación','privileged','pam','zero trust','parche','patch','contraseña','password','directorio','ldap','sso'],
-  '☁  Protección de Infraestructura': ['cloud','nube','aws','azure','gcp','firewall','red','network','endpoint','backup','recuperacion','recuperación','drp','infraestructura','servidor','server','segmentacion','segmentación','vpn','email','correo','devsecops','ssdlc'],
-  '⚖  Cumplimiento y Gobernanza': ['cumplimiento','compliance','iso','normativa','ley','gdpr','gobernanza','governance','audit','auditoria','auditoría','legal','regulatorio','certificacion','certificación','política','politica','riesgo','risk','dpia','privacidad','vciso','sgsi','bcp','continuidad','dpo','gap'],
-  '🎓  Capacitación y Desarrollo Seguro': ['capacitacion','capacitación','training','awareness','simulacion','simulación','desarrollo','development','sast','dast','reporte','dashboard','kpi','concientizacion','concientización','taller','conocimiento'],
-}
-function categorizar(nombre, desc) {
-  const txt = ((nombre||'')+(desc||'')).toLowerCase()
-  let best = CATEGORIAS_ORDEN[0], score = 0
-  for (const [cat, kws] of Object.entries(KEYWORDS)) {
-    const s = kws.reduce((a, k) => a + (txt.includes(k) ? 1 : 0), 0)
-    if (s > score) { score = s; best = cat }
-  }
-  return best
-}
-function agrupar(servicios) {
-  const g = {}
-  for (const c of CATEGORIAS_ORDEN) g[c] = []
-  for (const s of servicios) {
-    const c = categorizar(s.name, s.description)
-    g[c].push(s)
-  }
-  return g
-}
+import { CATEGORIAS_ORDEN, agrupar } from './categories.js'
 
 // ── Estado ────────────────────────────────────────────────────────────
 let clientes      = []
 let servicios     = []
+let companies     = []
 let seleccionados = new Set()
 let clienteSel    = null
+let companySel    = null
+let logoBase64    = null
 
 // ── Init ──────────────────────────────────────────────────────────────
 export async function initReport() {
+
+  console.log("REPORT INIT")
+
   if (!requireAuth()) return
-  await Promise.all([cargarClientes(), cargarServicios()])
+
+  await Promise.all([
+    cargarClientes(),
+    cargarServicios(),
+    cargarCompanies()
+  ])
+
   bindCliente()
+  bindCompany()
+  bindLogo()
   bindGenerar()
 }
 
@@ -68,6 +49,63 @@ async function cargarServicios() {
     servicios = await servicesAPI.getAll()
     renderCatalogo()
   } catch (e) { showAlert('Error cargando servicios', 'error') }
+}
+
+async function cargarCompanies() {
+
+  try {
+
+    console.log("entrando cargarCompanies")
+
+    companies = await proposalsAPI.getCompanies()
+
+    console.log("companies:", companies)
+
+    const sel = document.getElementById('r-company')
+
+    if (!sel) return
+
+    sel.innerHTML =
+      '<option value="">— Selecciona empresa —</option>' +
+      companies.map(c =>
+        `
+        <option value="${c.id}">
+          ${escapeHtml(c.name)}
+        </option>
+        `
+      ).join('')
+
+
+  } catch(e) {
+
+    console.error("ERROR companies", e)
+    showAlert(
+      "Error cargando empresas emisoras",
+      "error"
+    )
+  }
+}
+
+
+function bindCompany(){
+
+  const sel =
+    document.getElementById('r-company')
+
+  if(!sel) return
+
+  sel.addEventListener(
+    'change',
+    ()=>{
+
+      const id = Number(sel.value)
+
+      companySel =
+        companies.find(c=>c.id===id)
+        || null
+
+    }
+  )
 }
 
 function bindCliente() {
@@ -173,6 +211,60 @@ function resetSteps() {
 }
 
 // ── Generar ───────────────────────────────────────────────────────────
+// ── Logo del cliente ────────────────────────────────────────────────
+function bindLogo() {
+  const input     = document.getElementById('r-logo-input')
+  const dropArea  = document.getElementById('logo-drop-area')
+  const emptyEl   = document.getElementById('logo-empty')
+  const previewEl = document.getElementById('logo-preview')
+  const imgEl     = document.getElementById('logo-img-preview')
+  const removeBtn = document.getElementById('logo-remove')
+  if (!input) return
+
+  function loadFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      showAlert('Solo se aceptan imágenes PNG, JPG o SVG.', 'warning')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showAlert('El logo no debe superar 2MB.', 'warning')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      logoBase64 = e.target.result
+      imgEl.src  = logoBase64
+      emptyEl.style.display   = 'none'
+      previewEl.style.display = 'flex'
+      dropArea.style.borderStyle = 'solid'
+      dropArea.style.borderColor = 'var(--cp-blue-main)'
+    }
+    reader.readAsDataURL(file)
+  }
+
+  input.addEventListener('change', () => { if (input.files[0]) loadFile(input.files[0]) })
+
+  removeBtn?.addEventListener('click', () => {
+    logoBase64 = null
+    input.value = ''
+    imgEl.src   = ''
+    emptyEl.style.display   = 'flex'
+    previewEl.style.display = 'none'
+    dropArea.style.borderStyle = 'dashed'
+    dropArea.style.borderColor = ''
+  })
+
+  // Drag & drop
+  dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.classList.add('drag-over') })
+  dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'))
+  dropArea.addEventListener('drop', (e) => {
+    e.preventDefault()
+    dropArea.classList.remove('drag-over')
+    const file = e.dataTransfer.files[0]
+    if (file) loadFile(file)
+  })
+}
+
 function bindGenerar() {
   const btn  = document.getElementById('r-generar-btn')
   const sinIA = document.getElementById('r-sin-ia')
@@ -217,11 +309,21 @@ function bindGenerar() {
 
     try {
       const resp = await proposalsAPI.generate({
-        cliente_id:      clienteSel.id,
-        service_ids:     Array.from(seleccionados),
+
+        cliente_id: clienteSel.id,
+
+        service_ids: Array.from(seleccionados),
+
         titulo_proyecto: titulo,
-        antecedente:     contexto,
-        usar_ia:         usarIA,
+
+        antecedente: contexto,
+
+        usar_ia: true,
+
+        logo_base64: logoBase64 || null,
+
+        company_id: companySel?.id || null
+
       })
 
       if (!resp.ok) {

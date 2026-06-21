@@ -67,7 +67,7 @@
           <h1 class="page-header__title">Servicios</h1>
           <p class="page-header__sub">Catálogo de servicios disponibles para propuestas</p>
         </div>
-        <button class="btn btn--primary" id="new-service-btn" onclick="openNewServiceModal()">
+        <button class="btn btn--primary" id="new-service-btn">
           <i class="ti ti-plus btn__icon" aria-hidden="true"></i>
           Nuevo servicio
         </button>
@@ -76,7 +76,7 @@
       <div class="card page-enter page-enter--d1">
         <div class="card__header">
           <div class="card__title">
-            Servicios activos
+            Servicios
             <span class="badge badge--info" id="services-count">—</span>
           </div>
           <div class="card__actions">
@@ -87,18 +87,8 @@
             </div>
           </div>
         </div>
-        <div class="card__body table-wrapper">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Servicio</th>
-                <th>Precio base</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="services-tbody"></tbody>
-          </table>
+        <div class="card__body">
+          <div id="services-categorias" class="svc-categorias"></div>
         </div>
       </div>
     </main>

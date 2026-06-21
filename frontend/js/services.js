@@ -3,10 +3,10 @@
 import { servicesAPI } from './api.js'
 import {
   showAlert, showSpinner, hideSpinner,
-  renderSkeletonRows, animateTableRows,
-  renderEmptyState, openModal, closeModal,
+  openModal, closeModal,
   debounce, requireAuth, escapeHtml, escapeAttr
 } from './utils.js'
+import { CATEGORIAS_ORDEN, agrupar } from './categories.js'
 
 let allServices = []
 let editingId   = null
@@ -22,106 +22,146 @@ export async function initServices() {
 }
 
 async function loadServices() {
-  const tbody = document.getElementById('services-tbody')
-  if (!tbody) return
+  const cont = document.getElementById('services-categorias')
+  if (!cont) return
 
-  renderSkeletonRows(tbody, 4)
+  cont.innerHTML = '<div class="empty-state">Cargando servicios...</div>'
 
   try {
     allServices = await servicesAPI.getAll()
-    renderTable(allServices)
+    renderCategorias(allServices)
   } catch (err) {
     showAlert(err.message, 'error')
-    renderEmptyState(
-      tbody.closest('.card') || tbody.parentElement,
-      'Error al cargar servicios',
-      'No se pudo conectar con el servidor.',
-      'ti-briefcase'
-    )
+    cont.innerHTML = `
+      <div class="empty-state page-enter">
+        <div class="empty-state__icon"><i class="ti ti-briefcase" aria-hidden="true"></i></div>
+        <p class="empty-state__title">Error al cargar servicios</p>
+        <p class="empty-state__desc">No se pudo conectar con el servidor.</p>
+      </div>`
   }
 }
 
-function renderTable(services) {
-  const tbody = document.getElementById('services-tbody')
+// ── Render por categorías (igual que el módulo "Generar informe") ─────────
+function renderCategorias(services) {
+  const cont  = document.getElementById('services-categorias')
   const count = document.getElementById('services-count')
-  if (!tbody) return
+  if (!cont) return
 
+  // El contador total SIEMPRE refleja allServices.length, no el filtrado
   if (count) count.textContent =
-    `${services.length} servicio${services.length !== 1 ? 's' : ''}`
+    `${allServices.length} servicio${allServices.length !== 1 ? 's' : ''}`
 
   if (!services.length) {
-    renderEmptyState(
-      tbody.closest('.card') || tbody.parentElement,
-      'Sin servicios aún',
-      'Agrega tu primer servicio con el botón de arriba.',
-      'ti-briefcase'
-    )
+    cont.innerHTML = `
+      <div class="empty-state page-enter">
+        <div class="empty-state__icon"><i class="ti ti-search-off" aria-hidden="true"></i></div>
+        <p class="empty-state__title">Sin resultados</p>
+        <p class="empty-state__desc">No hay servicios que coincidan con tu búsqueda.</p>
+      </div>`
     return
   }
 
-  tbody.innerHTML = services.map(s => {
-    const id = Number(s.id) || 0
-    const name = s.name || ''
-    const price = Number(s.base_price) > 0 ? `${Number(s.base_price).toFixed(1)} UF` : 'A convenir'
+  const grupos = agrupar(services)
+  cont.innerHTML = ''
 
-    return `
-      <tr>
-        <td>
-          <div class="entity-cell__title">${escapeHtml(name)}</div>
-          <div class="entity-cell__meta">
-            ${escapeHtml(s.description || '—')}
-          </div>
-        </td>
-        <td>
-          <span class="entity-cell__title">
-            ${escapeHtml(price)}
-          </span>
-        </td>
-        <td>
-          <span class="badge ${s.active ? 'badge--success' : 'badge--neutral'}">
-            ${s.active ? 'Activo' : 'Inactivo'}
-          </span>
-        </td>
-        <td>
-          <div class="table-actions">
-            <button class="btn btn--sm btn--secondary"
-              data-service-edit="${id}" aria-label="Editar">
-              <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
-            </button>
-            <button class="btn btn--sm btn--danger"
-              data-service-delete="${id}" data-service-name="${escapeAttr(name)}">
-              <i class="ti ti-trash btn__icon" aria-hidden="true"></i>
-            </button>
-          </div>
-        </td>
-      </tr>`
-  }).join('')
+  for (const cat of CATEGORIAS_ORDEN) {
+    const srvs = grupos[cat]
+    if (!srvs.length) continue
 
-  tbody.querySelectorAll('[data-service-edit]').forEach(btn => {
+    const bloque = document.createElement('div')
+    bloque.className = 'svc-categoria'
+    bloque.innerHTML = `
+      <div class="svc-categoria__header" data-toggle-cat>
+        <span class="svc-categoria__nombre">${escapeHtml(cat)}</span>
+        <span class="badge badge--info badge--xs">${srvs.length}</span>
+        <i class="ti ti-chevron-down" aria-hidden="true"></i>
+      </div>
+      <div class="svc-categoria__body table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Servicio</th>
+              <th>Precio base</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${srvs.map(filaServicio).join('')}
+          </tbody>
+        </table>
+      </div>`
+    cont.appendChild(bloque)
+  }
+
+  // Header click → toggle abierto/cerrado
+  cont.querySelectorAll('[data-toggle-cat]').forEach(header => {
+    header.addEventListener('click', () => {
+      header.nextElementSibling?.classList.toggle('svc-categoria__body--open')
+      header.classList.toggle('svc-categoria__header--open')
+    })
+    // Abrir todas por defecto
+    header.nextElementSibling?.classList.add('svc-categoria__body--open')
+    header.classList.add('svc-categoria__header--open')
+  })
+
+  // Acciones editar / eliminar
+  cont.querySelectorAll('[data-service-edit]').forEach(btn => {
     btn.addEventListener('click', () => editService(Number(btn.dataset.serviceEdit)))
   })
-  tbody.querySelectorAll('[data-service-delete]').forEach(btn => {
-    btn.addEventListener('click', () => deleteService(Number(btn.dataset.serviceDelete), btn.dataset.serviceName || ''))
+  cont.querySelectorAll('[data-service-delete]').forEach(btn => {
+    btn.addEventListener('click', () =>
+      deleteService(Number(btn.dataset.serviceDelete), btn.dataset.serviceName || ''))
   })
-
-  animateTableRows(tbody)
 }
 
+function filaServicio(s) {
+  const id    = Number(s.id) || 0
+  const name  = s.name || ''
+  const price = Number(s.base_price) > 0 ? `${Number(s.base_price).toFixed(1)} UF` : 'A convenir'
+
+  return `
+    <tr>
+      <td>
+        <div class="entity-cell__title">${escapeHtml(name)}</div>
+        <div class="entity-cell__meta">${escapeHtml(s.description || '—')}</div>
+      </td>
+      <td><span class="entity-cell__title">${escapeHtml(price)}</span></td>
+      <td>
+        <span class="badge ${s.active ? 'badge--success' : 'badge--neutral'}">
+          ${s.active ? 'Activo' : 'Inactivo'}
+        </span>
+      </td>
+      <td>
+        <div class="table-actions">
+          <button class="btn btn--sm btn--secondary" data-service-edit="${id}" aria-label="Editar">
+            <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
+          </button>
+          <button class="btn btn--sm btn--danger" data-service-delete="${id}" data-service-name="${escapeAttr(name)}">
+            <i class="ti ti-trash btn__icon" aria-hidden="true"></i>
+          </button>
+        </div>
+      </td>
+    </tr>`
+}
+
+// ── Búsqueda (sin romper el DOM en resultados vacíos) ──────────────────────
 function bindSearch() {
   const input = document.getElementById('service-search')
   if (!input) return
 
   input.addEventListener('input', debounce(() => {
-    const q = input.value.toLowerCase().trim()
+    const q = (input.value || '').toLowerCase().trim()
     const filtered = q
       ? allServices.filter(s =>
-          s.name.toLowerCase().includes(q) ||
+          (s.name || '').toLowerCase().includes(q) ||
           (s.description || '').toLowerCase().includes(q))
       : allServices
-    renderTable(filtered)
+    renderCategorias(filtered)
   }, 250))
 }
 
+// ── Formulario crear / editar ──────────────────────────────────────────────
 function bindForm() {
   const form = document.getElementById('service-form')
   const btn  = document.getElementById('service-submit')
@@ -185,7 +225,7 @@ function bindModalClose() {
   })
 }
 
-window.openNewServiceModal = function () {
+function openNewServiceModal() {
   editingId = null
   document.getElementById('service-form')?.reset()
   document.getElementById('sf-active').value = 'true'
@@ -195,7 +235,7 @@ window.openNewServiceModal = function () {
   document.getElementById('sf-name')?.focus()
 }
 
-window.editService = function (id) {
+function editService(id) {
   const s = allServices.find(x => x.id === id)
   if (!s) return
 
@@ -209,7 +249,7 @@ window.editService = function (id) {
   document.getElementById('sf-name')?.focus()
 }
 
-window.deleteService = async function (id, name) {
+async function deleteService(id, name) {
   if (!confirm(`¿Eliminar "${name}"? Esta acción no se puede deshacer.`)) return
 
   try {

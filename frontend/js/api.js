@@ -1,6 +1,6 @@
 'use strict'
 
-const BASE_URL = 'http://localhost:8000'
+import { BASE_URL } from './config.js'
 
 function getToken() {
   return sessionStorage.getItem('cp_token')
@@ -58,15 +58,15 @@ export const authAPI = {
 /* ── CLIENTS ── */
 export const clientsAPI = {
   getAll()         { return request('GET',    '/clients') },
-  create(data)     { return request('POST',   '/clients', data) },
+  create(data)     { return request('POST',   '/clients/', data) },
   update(id, data) { return request('PUT',    `/clients/${id}`, data) },
   delete(id)       { return request('DELETE', `/clients/${id}`) }
 }
 
 /* ── SERVICES ── */
 export const servicesAPI = {
-  getAll()         { return request('GET',    '/services') },
-  create(data)     { return request('POST',   '/services', data) },
+  getAll()         { return request('GET',    '/services/') },
+  create(data)     { return request('POST',   '/services/', data) },
   update(id, data) { return request('PUT',    `/services/${id}`, data) },
   delete(id)       { return request('DELETE', `/services/${id}`) }
 }
@@ -81,7 +81,7 @@ export const reportAPI = {
 /* ── USERS (admin) ── */
 export const usersAPI = {
   getAll()         { return request('GET',    '/users') },
-  create(data)     { return request('POST',   '/users', data) },
+  create(data)     { return request('POST',   '/users/', data) },
   update(id, data) { return request('PUT',    `/users/${id}`, data) },
   delete(id)       { return request('DELETE', `/users/${id}`) }
 }
@@ -116,5 +116,26 @@ export const proposalsAPI = {
   },
   preview(clienteId, serviceIds) {
     return request('GET', `/proposals/preview/${clienteId}?service_ids=${serviceIds.join(',')}`)
+  },
+  getCompanies: async () => {
+
+  const token = sessionStorage.getItem('cp_token')
+
+  const res = await fetch(
+    `${BASE_URL}/companies/`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  )
+
+  if (!res.ok) {
+    throw new Error(
+      `Error companies ${res.status}`
+    )
   }
+
+  return res.json()
+}
 }

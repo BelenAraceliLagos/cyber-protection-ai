@@ -65,3 +65,10 @@ class Quotation(Base):
         back_populates="quotation",
         cascade="all, delete"
     )
+    
+    company_id = Column(
+    Integer,
+    ForeignKey("companies.id")
+    )
+
+    company = relationship("Company")
