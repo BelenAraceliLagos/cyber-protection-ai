@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Any, Dict, Optional
 
 
 class CompanyCreate(BaseModel):
@@ -25,6 +25,8 @@ class CompanyUpdate(BaseModel):
     primary_color: Optional[str] = None
 
     secondary_color: Optional[str] = None
+    
+    portada_config: Optional[Dict[str, Any]] = {}
 
     active: Optional[bool] = None
 

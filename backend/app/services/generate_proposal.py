@@ -27,34 +27,6 @@ MAPA mm para CSS (1pt = 0.353mm, página = 210x297mm):
   Interior content estándar: left=43.6mm, top=92.2mm, width=145mm
   Interior content con banner: left=38mm, top=52mm, width=155mm (banner arriba)
 ─────────────────────────────────────────────────────────────────────
-generate_proposal.py — Generador PDF con WeasyPrint.
-Coordenadas pixel-perfect extraídas de propuesta_real.pdf con pdfplumber.
-
-MEDIDAS EXACTAS (595.5 x 842.25 pts = A4):
-─────────────────────────────────────────────────────────────────────
-PORTADA (pág 1):
-  Título:       x=59.5, y_top=118.3, font=38.5pt, bold, color=#155FCF
-  "Preparado":  x=59.5, y=336.5,  font=17pt, bold
-  Cliente:      x=59.5, y=387.5,  font=17pt, bold
-  Objetivo:     x=59.5, y=464.0,  font=17pt, bold
-  "Elaborado":  x=349.5, y=691.3, font=12pt, bold
-  Zona texto:   x=59.5 → ~480, y=118 → ~650
-
-INTERIORES estándar (págs 2,4,5,6,8):
-  H1:           x=123.6, y_top≈261, font=26pt, bold, color=#155FCF
-  Body:         x=125.5, y_start≈351, font=10.5pt, regular, justify
-  Zona texto:   x=123.6 → 535.7, y=261 → ~720
-  Firma:        centrada, y≈677-710
-
-INTERIORES con banner (págs 3,7):
-  Banner-título: zona verde centrada en x≈297-396, y≈150-176
-  Body:          x=107.9 → 578.5, y_start≈337
-
-MAPA mm para CSS (1pt = 0.353mm, página = 210x297mm):
-  Portada content: left=21mm, top=41.8mm, width=150mm
-  Interior content estándar: left=43.6mm, top=92.2mm, width=145mm
-  Interior content con banner: left=38mm, top=52mm, width=155mm (banner arriba)
-─────────────────────────────────────────────────────────────────────
 """
 
 import os
@@ -158,6 +130,18 @@ def _css_base(company: dict = None) -> str:
         if interior_path.exists()
         else ""
     )
+    
+    layout = company.get("portada_config", {})
+    
+    print("DEBUG LAYOUT COORDENADAS:", layout)
+    titulo_x = layout["titulo"]["x"]
+    titulo_y = layout["titulo"]["y"]
+    
+    objetivo_x = layout["objetivo"]["x"]
+    objetivo_y = layout["objetivo"]["y"]
+    
+    logo_x = layout["logo_cliente"]["x"]
+    logo_y = layout["logo_cliente"]["y"]
 
     return f"""
     
@@ -212,6 +196,9 @@ body {{
 
 /* Portada título: Segoe UI Bold, 34pt — reducido para evitar overflow con títulos largos */
 .portada-titulo {{
+    position:absolute;
+    left:{titulo_x}mm;
+    top:{titulo_y}mm;
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     34pt;
     font-weight:   700;
@@ -240,8 +227,8 @@ body {{
 }}
 .portada-objetivo {{
     position: absolute;
-    left: 4mm;
-    top: 190mm;
+    left: {objetivo_x}mm;
+    top: {objetivo_y}mm;
     max-width: 95mm;
     font-size: 11pt;
     line-height: 1.4;
@@ -250,8 +237,8 @@ body {{
    Centro círculo: x=163.4mm, y=250.4mm, radio≈56mm */
 .portada-elaborado {{
     position: absolute;
-    left: 128mm;
-    top: 215mm;
+    left: {logo_x}mm;
+    top: {logo_y}mm;
     width: 60mm;
     font-family:     'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:       10pt;
@@ -706,7 +693,6 @@ ul li strong {{
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SECCIONES HTML
-# SECCIONES HTML
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _page_std(contenido_html: str) -> str:
@@ -766,7 +752,6 @@ def sec_portada(data: dict) -> str:
         data.get("logo_cliente") or ""
     )
 
-
     cliente_html = (
 
         f'''
@@ -781,19 +766,16 @@ def sec_portada(data: dict) -> str:
                 Elaborado para:
             </div>
 
-
             <img src="{logo_cliente}"
                 style="
                 max-width:60mm;
                 max-height:34mm;
                 object-fit:contain;
                 ">
-
         </div>
         '''
 
         if logo_cliente else ""
-
     )
 
 
@@ -1222,66 +1204,29 @@ def sec_matriz(data: dict) -> str:
         paginas.append(_page_std(titulo + tabla))
 
     return "".join(paginas)
-def sec_cumplimiento(data: dict) -> str:
-    """Página propia: Cumplimiento Normativo."""
-    cum = data.get("cumplimiento", {})
-    html = '<h1>Cumplimiento Normativo</h1><div class="hr"></div>'
-    html += f'<p><strong>{cum.get("intro", "")}</strong></p><ul>'
-    for b in cum.get("bullets", []):
-        html += f"<li>{b}</li>"
-    html += "</ul>"
-    return _page_std(html)
-
-
-def sec_matriz(data: dict) -> str:
-    """Matriz de Valor — paginada en bloques de MAX_MATRIZ filas."""
-    MAX_FILAS = 10
-    filas = data.get("matriz_valor", [])
-    if not filas:
-        return _page_std('<h1>Matriz de Valor</h1><div class="hr"></div>')
-
-    TH = '''<table class="tabla-matriz">
-        <tr>
-          <th style="width:33%">Servicio</th>
-          <th style="width:34%">Beneficio Directo</th>
-          <th style="width:33%">Valor Agregado</th>
-        </tr>'''
-
-    paginas = []
-    for i in range(0, len(filas), MAX_FILAS):
-        chunk = filas[i:i + MAX_FILAS]
-        es_primera = (i == 0)
-        titulo = '<h1>Matriz de Valor</h1><div class="hr"></div><p><strong>Áreas que cubre el servicio y aporta a la organización</strong></p>' if es_primera else '<h1>Matriz de Valor </h1><div class="hr"></div>'
-        tabla = TH
-        for f in chunk:
-            tabla += f'''<tr>
-              <td>{f.get("servicio","")}</td>
-              <td>{f.get("beneficio","")}</td>
-              <td>{f.get("valor_agregado","")}</td>
-            </tr>'''
-        tabla += "</table>"
-        paginas.append(_page_std(titulo + tabla))
-
-    return "".join(paginas)
 
 
 def sec_metodologia(data: dict) -> str:
-    html = '<h2>4. Metodología de Trabajo</h2><div class="hr"></div><ul>'
-def sec_metodologia(data: dict) -> str:
-    html = '<h2>4. Metodología de Trabajo</h2><div class="hr"></div><ul>'
-    for b in data.get("metodologia", []):
-        html += f"<li>{b}</li>"
-    html += "</ul>"
-    html += '<h2>5. Diferenciadores Locales</h2><div class="hr"></div><ul>'
-        html += f"<li>{b}</li>"
-    html += "</ul>"
-    html += '<h2>5. Diferenciadores Locales</h2><div class="hr"></div><ul>'
-    for b in data.get("diferenciadores", []):
-        html += f"<li>{b}</li>"
-    html += "</ul>"
-    return _page_std(html)
-        html += f"<li>{b}</li>"
-    html += "</ul>"
+    html = '<h2>4. Metodología de Trabajo</h2><div class="hr"></div>'
+    
+    # 1. Ciclo para la Metodología
+    metodologia_lista = data.get("metodologia", [])
+    if metodologia_lista:
+        html += "<ul>"
+        for item in metodologia_lista:
+            html += f"<li>{item}</li>"
+        html += "</ul>"
+    
+    html += '<h2>5. Diferenciadores Locales</h2><div class="hr"></div>'
+    
+    # 2. Ciclo para los Diferenciadores (Independiente y limpio)
+    diferenciadores_lista = data.get("diferenciadores", [])
+    if diferenciadores_lista:
+        html += "<ul>"
+        for item in diferenciadores_lista:
+            html += f"<li>{item}</li>"
+        html += "</ul>"
+        
     return _page_std(html)
 
 
@@ -1301,14 +1246,13 @@ def sec_costos(agrupado: dict, data: dict) -> tuple:
     for cat, srvs in agrupado.items():
         filas.append(('cat', f'<tr class="cat-row"><td>&#9632; {cat}</td><td></td></tr>'))
         for srv in srvs:
-        filas.append(('cat', f'<tr class="cat-row"><td>&#9632; {cat}</td><td></td></tr>'))
+            filas.append(('cat', f'<tr class="cat-row"><td>&#9632; {cat}</td><td></td></tr>'))
         for srv in srvs:
             precio = srv.get("base_price", 0)
             total += precio if isinstance(precio, (int, float)) else 0
             precio_str = f"{precio:.1f}" if isinstance(precio, (int, float)) and precio > 0 else "A convenir"
             filas.append(('srv', f'<tr class="srv-row"><td>&nbsp;&nbsp;{srv["nombre"]}</td><td class="right">{precio_str}</td></tr>'))
             precio_str = f"{precio:.1f}" if isinstance(precio, (int, float)) and precio > 0 else "A convenir"
-            filas.append(('srv', f'<tr class="srv-row"><td>&nbsp;&nbsp;{srv["nombre"]}</td><td class="right">{precio_str}</td></tr>'))
 
     total_str = f"{total:.1f} UF/mes" if total > 0 else "A convenir"
     fila_total = f'''<tr class="total-row"><td>TOTAL SUITE</td><td class="right">{total_str}</td></tr>'''
@@ -1390,16 +1334,12 @@ def sec_condiciones(data: dict) -> str:
     for linea in data.get("conditions", []):
         if linea.strip():
             html += f'<div class="condicion-linea">{linea}</div>'
-            html += f'<div class="condicion-linea">{linea}</div>'
         else:
-            html += "<br>"
-    return _page_std(html)
             html += "<br>"
     return _page_std(html)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CATEGORIZACIÓN
 # CATEGORIZACIÓN
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -1458,8 +1398,8 @@ def categorizar_servicios(servicios, usar_ia=True):
             cats  = "\n".join(f"  {i+1}. {c}" for i, c in enumerate(_CATEGORIAS))
             prompt = (f"Clasifica cada servicio en UNA categoría:\n{cats}\n\n"
                       f"Servicios:\n{lista}\n\n"
-                      "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}")
-                      "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}")
+                       "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}")
+            "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}"
             r = _requests.post(
                 "http://localhost:11434/api/generate",
                 json={"model": "gemma3:4b", "prompt": prompt,

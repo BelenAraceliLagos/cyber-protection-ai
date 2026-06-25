@@ -11,7 +11,6 @@ from typing import List
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL      = "gemma3:4b"
-MODEL      = "gemma3:4b"
 
 INSTRUCCION_TONO = """
 Instrucciones de redacción (SIEMPRE respetar):
@@ -54,44 +53,46 @@ def _ollama(prompt: str, tokens: int = 300) -> str:
         raise RuntimeError(f"Error con Ollama: {e}")
 
 
-def generar_introduccion(empresa, industria, servicios, antecedente=""):
-    # Usar hasta 8 servicios para dar contexto real sin sobrecargar el prompt
+def generar_introduccion(
+    empresa,
+    empresa_emisora,
+    industria,
+    servicios,
+    antecedente=""
+):
     srvs = ", ".join(servicios[:8])
-    n    = len(servicios)
-    ctx  = f"Contexto importante del cliente: {antecedente}" if antecedente else ""
-    # Usar hasta 8 servicios para dar contexto real sin sobrecargar el prompt
-    srvs = ", ".join(servicios[:8])
-    n    = len(servicios)
-    ctx  = f"Contexto importante del cliente: {antecedente}" if antecedente else ""
+    n = len(servicios)
+
+    ctx = (
+        f"Contexto importante del cliente: {antecedente}"
+        if antecedente else ""
+    )
+
     prompt = f"""{INSTRUCCION_TONO}
 
 Escribe el párrafo de introducción de una propuesta comercial de ciberseguridad.
 
 Datos:
 - Empresa cliente: {empresa}
+- Empresa emisora: {empresa_emisora}
 - Industria: {industria}
 - Cantidad de servicios propuestos: {n}
 - Servicios principales: {srvs}
-- Cantidad de servicios propuestos: {n}
-- Servicios principales: {srvs}
+
 {ctx}
 
 El párrafo debe:
-- Presentar a Cyber-Protection como aliado estratégico especializado en {industria}
-- Mencionar el contexto de amenazas específico de su industria en Chile
+- Presentar a {empresa_emisora} como aliado estratégico especializado en ciberseguridad
+- Mencionar el contexto de amenazas específico de la industria
 - Referirse brevemente a los servicios propuestos como un conjunto cohesionado
 - Entre 100 y 140 palabras
-- Comenzar directo con el texto, sin encabezado ni títulos
-- Presentar a Cyber-Protection como aliado estratégico especializado en {industria}
-- Mencionar el contexto de amenazas específico de su industria en Chile
-- Referirse brevemente a los servicios propuestos como un conjunto cohesionado
-- Entre 100 y 140 palabras
-- Comenzar directo con el texto, sin encabezado ni títulos
+- Comenzar directamente con el texto
+- Sin encabezados
 
-Solo escribe el párrafo."""
-    return _ollama(prompt, 280)
-    return _ollama(prompt, 280)
+Solo escribe el párrafo.
+"""
 
+    return _ollama(prompt, 280)
 
 def generar_analisis_riesgo(empresa, industria, antecedente=""):
     ctx = f"Antecedente específico del cliente: {antecedente}" if antecedente else ""
@@ -150,7 +151,7 @@ Solo escribe el párrafo."""
     return _ollama(prompt, 220)
 
 
-def generar_conclusion(empresa, contacto, servicios):
+def generar_conclusion(empresa, empresa_emisora, contacto, servicios):
     prompt = f"""{INSTRUCCION_TONO}
 
 Escribe el párrafo de cierre de una propuesta de ciberseguridad para "{empresa}".
@@ -159,7 +160,7 @@ Contacto: {contacto}. Servicios propuestos: {len(servicios)}.
 El texto debe:
 - Agradecer la confianza y el tiempo dedicado a revisar la propuesta
 - Invitar a una reunión de alcance para afinar detalles y costos
-- Expresar disponibilidad y compromiso de Cyber-Protection
+- Expresar disponibilidad y compromiso de {empresa_emisora}
 - Sonar cálido pero profesional
 - Entre 60 y 90 palabras
 
@@ -185,6 +186,7 @@ Solo escribe la frase."""
 
 def generar_textos_completos(
     empresa_cliente: str,
+    empresa_emisora: str,
     industria: str,
     servicios: List[str],
     antecedente: str = "",
@@ -193,18 +195,15 @@ def generar_textos_completos(
     """
     Genera todas las secciones con IA en secuencia.
     servicios: lista de nombres de servicios tal como están en la BD.
-    servicios: lista de nombres de servicios tal como están en la BD.
     Retorna dict compatible con generar_propuesta().
     """
     print(f"\n🤖 Generando informe con Ollama (gemma3:4b) para: {empresa_cliente}")
+    print(f"   Empresa emisora: {empresa_emisora}")
     print(f"   Servicios ({len(servicios)}): {', '.join(servicios[:4])}{'...' if len(servicios) > 4 else ''}")
-    print(f"\n🤖 Generando informe con Ollama (gemma3:4b) para: {empresa_cliente}")
-    print(f"   Servicios ({len(servicios)}): {', '.join(servicios[:4])}{'...' if len(servicios) > 4 else ''}")
-
+    
     print("  [1/6] Introducción...")
-    introduccion = generar_introduccion(empresa_cliente, industria, servicios, antecedente)
+    introduccion = generar_introduccion(empresa_cliente, empresa_emisora, industria, servicios, antecedente)
 
-    print("  [2/6] Análisis de riesgo / alcance...")
     print("  [2/6] Análisis de riesgo / alcance...")
     analisis = generar_analisis_riesgo(empresa_cliente, industria, antecedente)
 
@@ -215,13 +214,11 @@ def generar_textos_completos(
     valor = generar_valor_estrategico(empresa_cliente, industria, servicios)
 
     print("  [5/6] Conclusión / cierre...")
-    print("  [5/6] Conclusión / cierre...")
-    conclusion = generar_conclusion(empresa_cliente, contacto or "equipo directivo", servicios)
+    conclusion = generar_conclusion(empresa_cliente, empresa_emisora, contacto or "equipo directivo", servicios)
 
     print("  [6/6] Frase clave...")
     frase = generar_frase_clave(empresa_cliente, industria)
 
-    print(f"  ✅ Textos generados correctamente\n")
     print(f"  ✅ Textos generados correctamente\n")
 
     return {

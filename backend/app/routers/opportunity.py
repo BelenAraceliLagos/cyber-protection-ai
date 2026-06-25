@@ -3,11 +3,12 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.database import get_db
-from app.models.opportunity import Opportunity, Milestone
+from app.models.opportunity import Opportunity
+from app.models.milestone import Milestone
 from app.models.client import Client
 from app.schemas.opportunity import (
     OpportunityCreate, OpportunityPatch, OpportunityResponse,
-    MilestoneCreate, MilestoneResponse
+    MilestoneCreate
 )
 
 router = APIRouter(prefix="/opportunities", tags=["Opportunities"])

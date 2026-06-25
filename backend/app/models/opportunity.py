@@ -14,19 +14,15 @@ class Opportunity(Base):
     notas        = Column(Text, default="")
 
     client = relationship("Client", backref="opportunities")
-    hitos  = relationship("Milestone", back_populates="opportunity", cascade="all, delete-orphan")
+    milestones = relationship(
+    "Milestone",
+    back_populates="opportunity",
+    cascade="all, delete-orphan"
+)
+    activity_notes = relationship(
+        "ActivityNote",
+        back_populates="opportunity",
+        cascade="all, delete-orphan"
+    )
 
 
-class Milestone(Base):
-    __tablename__ = "milestones"
-
-    id           = Column(Integer, primary_key=True, index=True)
-    opportunity_id = Column(Integer, ForeignKey("opportunities.id"), nullable=False)
-    tipo         = Column(String, default="reunion")
-    titulo       = Column(String, nullable=False)
-    descripcion  = Column(Text, default="")
-    completado   = Column(Boolean, default=False)
-    fecha_inicio = Column(DateTime, nullable=True)
-    fecha_fin    = Column(DateTime, nullable=True)
-
-    opportunity  = relationship("Opportunity", back_populates="hitos")

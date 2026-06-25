@@ -6,7 +6,8 @@ from app.models.client import Client
 from app.models.user import User
 from app.models.service import Service
 from app.models.quotation import Quotation
-from app.models.opportunity import Opportunity, Milestone
+from app.models.opportunity import Opportunity
+from app.models.milestone import Milestone
 
 from app.routers.client import router as client_router
 from app.routers.auth import router as auth_router

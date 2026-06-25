@@ -15,3 +15,5 @@ class Role(Base):
         "UserRole",
         back_populates="role",
     )
+    
+    role_links = relationship("UserRole", back_populates="role", overlaps="user_links")

@@ -1,9 +1,9 @@
 from sqlalchemy import (
+    JSON,
     Column,
     Integer,
     String,
-    Boolean,
-    DateTime
+    Boolean
 )
 
 from datetime import datetime
@@ -27,5 +27,6 @@ class Company(Base):
 
     primary_color = Column(String)
     secondary_color = Column(String)
+    portada_config = Column(JSON, nullable=True, default=dict)
 
     active = Column(Boolean, default=True)

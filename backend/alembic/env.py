@@ -12,7 +12,8 @@ from app.models.quotation import Quotation
 from app.models.quotation_item import QuotationItem
 from app.models.service import Service
 from app.models.user import User
-from app.models.opportunity import Opportunity, Milestone
+from app.models.opportunity import Opportunity
+from app.models.milestone import Milestone
 
 config = context.config
 
