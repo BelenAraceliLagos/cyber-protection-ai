@@ -91,12 +91,22 @@ def _img_uri(source: str) -> str:
         return ""
 
 
+def _luminance(hex_color: str) -> float:
+    """Retorna luminancia relativa 0-1 (0=negro, 1=blanco)."""
+    try:
+        h = hex_color.lstrip('#')
+        r, g, b = int(h[0:2],16)/255, int(h[2:4],16)/255, int(h[4:6],16)/255
+        def lin(c): return c/12.92 if c<=0.04045 else ((c+0.055)/1.055)**2.4
+        return 0.2126*lin(r) + 0.7152*lin(g) + 0.0722*lin(b)
+    except Exception:
+        return 0.5
+
 def _css_base(company: dict = None) -> str:
 
     portada_path = BASE_PORTADA
     interior_path = BASE_INTERIOR
     
-    primary_color = "#155FCF"
+    primary_color   = "#155FCF"
     secondary_color = "#8EE3C8"
 
     if company:
@@ -112,6 +122,41 @@ def _css_base(company: dict = None) -> str:
         )
 
     company = company or {}
+
+    # Color para el contenido interior:
+    # 1. Si la empresa tiene content_color explícito en BD → usarlo
+    # 2. Si no, calcular automáticamente por luminancia de primary_color
+    # content_color: 1) portada_config.banner.text_color, 2) content_color BD, 3) auto-luminancia
+    _pc = company.get("portada_config") or {}
+    explicit_content = (
+        (_pc.get("banner") or {}).get("text_color")
+        or company.get("content_color")
+    ) if company else None
+    if explicit_content:
+        content_color = explicit_content
+    elif _luminance(primary_color) > 0.5:
+        content_color = "#1A2B5F"
+    else:
+        content_color = primary_color
+
+    # secondary_color: puede venir de portada_config.banner.bg_color
+    _banner_bg = (_pc.get("banner") or {}).get("bg_color")
+    if _banner_bg:
+        secondary_color = _banner_bg
+
+    # Tipografía de portada desde portada_config (ya extraída en layout)
+    # Tipografía de banner y cuerpo desde portada_config
+    _banner_cfg = _pc.get("banner") or {}
+    _cuerpo_cfg = _pc.get("cuerpo") or {}
+    banner_size      = _banner_cfg.get("size",    26)
+    banner_weight    = _banner_cfg.get("weight",  700)
+    banner_y_pct     = _banner_cfg.get("y_start", 45)   # % desde top de la página interior
+    cuerpo_size      = _cuerpo_cfg.get("size",    10.5)
+    cuerpo_weight    = _cuerpo_cfg.get("weight",  400)
+    cuerpo_y_pct     = _cuerpo_cfg.get("y_start", 75)   # % desde top de la página interior
+    # Convertir % a mm (página interior = 297mm)
+    banner_top_mm = round(banner_y_pct * 297 / 100, 1)
+    cuerpo_top_mm = round(cuerpo_y_pct * 297 / 100, 1)
 
     if company.get("portada"):
         portada_path = Path(company["portada"])
@@ -131,17 +176,31 @@ def _css_base(company: dict = None) -> str:
         else ""
     )
     
-    layout = company.get("portada_config", {})
-    
-    print("DEBUG LAYOUT COORDENADAS:", layout)
-    titulo_x = layout["titulo"]["x"]
-    titulo_y = layout["titulo"]["y"]
-    
-    objetivo_x = layout["objetivo"]["x"]
-    objetivo_y = layout["objetivo"]["y"]
-    
-    logo_x = layout["logo_cliente"]["x"]
-    logo_y = layout["logo_cliente"]["y"]
+    layout = company.get("portada_config") or {}
+
+    # Valores por defecto cuando portada_config está vacío (empresa nueva)
+    _DEFAULT = {
+        "titulo":       {"x": 28, "y": 148, "size": 34, "weight": 700, "align": "left"},
+        "objetivo":     {"x": 28, "y": 210, "size": 11, "weight": 400, "align": "left"},
+        "logo_cliente": {"x": 28, "y": 248},
+    }
+    def _get(key, field, default):
+        return layout.get(key, {}).get(field) or _DEFAULT[key].get(field, default)
+
+    titulo_x      = _get("titulo",       "x",      28)
+    titulo_y      = _get("titulo",       "y",      148)
+    titulo_size   = _get("titulo",       "size",   34)
+    titulo_weight = _get("titulo",       "weight", 700)
+    titulo_align  = _get("titulo",       "align",  "left")
+
+    objetivo_x      = _get("objetivo",   "x",      28)
+    objetivo_y      = _get("objetivo",   "y",      210)
+    objetivo_size   = _get("objetivo",   "size",   11)
+    objetivo_weight = _get("objetivo",   "weight", 400)
+    objetivo_align  = _get("objetivo",   "align",  "left")
+
+    logo_x = _get("logo_cliente", "x", 28)
+    logo_y = _get("logo_cliente", "y", 248)
 
     return f"""
     
@@ -199,11 +258,13 @@ body {{
     position:absolute;
     left:{titulo_x}mm;
     top:{titulo_y}mm;
+    max-width: 140mm;
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
-    font-size:     34pt;
-    font-weight:   700;
+    font-size:     {titulo_size}pt;
+    font-weight:   {titulo_weight};
     color:         {primary_color};
     line-height:   1.15;
+    text-align:    {titulo_align};
     margin-bottom: 0;
 }}
 /* "Preparado para:": posición absoluta medida del PDF original
@@ -229,9 +290,12 @@ body {{
     position: absolute;
     left: {objetivo_x}mm;
     top: {objetivo_y}mm;
-    max-width: 95mm;
-    font-size: 11pt;
+    max-width: 120mm;
+    font-size: {objetivo_size}pt;
+    font-weight: {objetivo_weight};
     line-height: 1.4;
+    text-align: {objetivo_align};
+    color: {primary_color};
 }}
 /* Logo cliente — centrado en círculo verde menta
    Centro círculo: x=163.4mm, y=250.4mm, radio≈56mm */
@@ -294,16 +358,16 @@ body {{
 .banner-titulo {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     background:    {secondary_color};
-    color:         {primary_color};
-    font-size:     26pt;
-    font-weight:   700;
+    color:         {content_color};
+    font-size:     {banner_size}pt;
+    font-weight:   {banner_weight};
     padding:       3mm 8mm;
     display:       block;
     width:         160mm;
     line-height:   1.1;
     position:      absolute;
     left:          32mm;
-    top:           45mm;
+    top:           {banner_top_mm}mm;
 }}
 .banner-titulo.banner-alcance-pos {{
     top: 45mm;
@@ -336,7 +400,7 @@ h1 {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     26pt;
     font-weight:   700;
-    color:         {primary_color};
+    color:         {content_color};
     margin-bottom: 3mm;
     line-height:   1.15;
 }}
@@ -347,7 +411,7 @@ h2 {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     14pt;
     font-weight:   700;
-    color:         {primary_color};
+    color:         {content_color};
     margin-top:    5mm;
     margin-bottom: 2mm;
     line-height:   1.25;
@@ -359,14 +423,14 @@ h3 {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     11pt;
     font-weight:   700;
-    color:         {primary_color};
+    color:         {content_color};
     margin-top:    3mm;
     margin-bottom: 1.5mm;
 }}
 
 .hr {{
     border:         none;
-    border-top:     0.8pt solid {primary_color};
+    border-top:     0.8pt solid {content_color};
     margin-bottom:  3mm;
     margin-top:     0.5mm;
 }}
@@ -375,9 +439,9 @@ h3 {{
    Fuente: Segoe UI Regular, 10.5pt, justificado */
 p {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
-    font-size:     10.5pt;
-    font-weight:   400;
-    color:         {primary_color};
+    font-size:     {cuerpo_size}pt;
+    font-weight:   {cuerpo_weight};
+    color:         {content_color};
     line-height:   1.55;
     text-align:    justify;
     margin-bottom: 3mm;
@@ -392,7 +456,7 @@ p {{
     font-size:     10.5pt;
     font-weight:   700;
     font-style:    italic;
-    color:         {primary_color};
+    color:         {content_color};
     text-align:    justify;
     line-height:   1.6;
     margin-bottom: 3mm;
@@ -408,7 +472,7 @@ ul li {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     10.5pt;
     font-weight:   400;
-    color:         {primary_color};
+    color:         {content_color};
     line-height:   1.55;
     margin-bottom: 1mm;
     text-align:    justify;
@@ -433,7 +497,7 @@ ul li strong {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     10.5pt;
     font-weight:   700;
-    color:         {primary_color};
+    color:         {content_color};
     line-height:   1.5;
 }}
 /* Cargo firma: Segoe UI Regular */
@@ -441,7 +505,7 @@ ul li strong {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     10.5pt;
     font-weight:   400;
-    color:         {primary_color};
+    color:         {content_color};
     line-height:   1.5;
 }}
 
@@ -460,7 +524,7 @@ ul li strong {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     10pt;
     font-weight:   400;
-    color:         {primary_color};
+    color:         {content_color};
     line-height:   1.5;
     margin-bottom: 1.5mm;
     text-align:    justify;
@@ -476,7 +540,7 @@ ul li strong {{
 .srv-intro {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     10pt;
-    color:         {primary_color};
+    color:         {content_color};
     line-height:   1.5;
     text-align:    justify;
     margin-bottom: 2mm;
@@ -486,7 +550,7 @@ ul li strong {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     10.5pt;
     font-weight:   700;
-    color:         {primary_color};
+    color:         {content_color};
     margin-top:    3mm;
     margin-bottom: 1mm;
 }}
@@ -501,7 +565,7 @@ ul li strong {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     10pt;
     font-weight:   700;
-    color:         {primary_color};
+    color:         {content_color};
     line-height:   1.5;
     margin-bottom: 1mm;
 }}
@@ -520,7 +584,7 @@ ul li strong {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     9.5pt;
     font-weight:   400;
-    color:         {primary_color};
+    color:         {content_color};
     line-height:   1.45;
     margin-bottom: 0.8mm;
     text-align:    justify;
@@ -541,7 +605,7 @@ ul li strong {{
 /* Tabla costos: th=Segoe UI Bold, td=Segoe UI Regular */
 .tabla-costos th {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
-    background:    {primary_color};
+    background:    {content_color};
     color:         white;
     font-size:     10pt;
     font-weight:   700;
@@ -554,7 +618,7 @@ ul li strong {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     9pt;
     font-weight:   400;
-    color:         {primary_color};
+    color:         {content_color};
     padding:       2mm 3mm;
     border:        0.5pt solid #CCCCCC;
 }}
@@ -567,7 +631,7 @@ ul li strong {{
 .tabla-costos tr.srv-row:nth-child(odd) td  {{ background: white; }}
 .tabla-costos tr.srv-row:nth-child(even) td {{ background: #F5F9FF; }}
 .tabla-costos tr.total-row td {{
-    background:  {primary_color};
+    background:  {content_color};
     color:       white;
     font-weight: bold;
     font-size:   10pt;
@@ -587,7 +651,7 @@ ul li strong {{
 }}
 .tabla-planes th {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
-    background:    {primary_color};
+    background:    {content_color};
     color:         white;
     font-size:     10pt;
     font-weight:   700;
@@ -599,7 +663,7 @@ ul li strong {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     9.5pt;
     font-weight:   400;
-    color:         {primary_color};
+    color:         {content_color};
     padding:       3mm;
     text-align:    center;
     border:        0.5pt solid #CCCCCC;
@@ -648,7 +712,7 @@ ul li strong {{
 /* Tabla matriz: th=Segoe UI Bold, td=Segoe UI Regular */
 .tabla-matriz th {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
-    background:    {primary_color};
+    background:    {content_color};
     color:         white;
     padding:       2mm 2.5mm;
     text-align:    left;
@@ -658,7 +722,7 @@ ul li strong {{
 .tabla-matriz td {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-weight:   400;
-    color:         {primary_color};
+    color:         {content_color};
     padding:       2.5mm 2.5mm;
     border:        0.5pt solid #CCCCCC;
     vertical-align: top;
@@ -675,7 +739,7 @@ ul li strong {{
     font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:     10pt;
     font-weight:   400;
-    color:         {primary_color};
+    color:         {content_color};
     line-height:   1.7;
 }}
 /* Nota pie: Segoe UI Italic */
@@ -684,7 +748,7 @@ ul li strong {{
     font-size:     8.5pt;
     font-weight:   400;
     font-style:    italic;
-    color:         {primary_color};
+    color:         {content_color};
     text-align:    center;
     margin-top:    3mm;
 }}
@@ -760,7 +824,7 @@ def sec_portada(data: dict) -> str:
             <div style="
                 font-size:9pt;
                 font-weight:700;
-                color:{primary_color};
+                color:{content_color};
                 letter-spacing:0.5pt;
             ">
                 Elaborado para:
