@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+load_dotenv(dotenv_path=__file__.replace("app\\core\\config.py", ".env"))
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 

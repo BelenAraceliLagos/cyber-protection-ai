@@ -126,6 +126,8 @@ def construir_data_propuesta(
 
             "secondary_color": company.secondary_color if company else None,
             
+            "content_color": company.content_color if company else None,
+
             "portada_config": company.portada_config if company else None
         },
 

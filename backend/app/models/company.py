@@ -25,8 +25,9 @@ class Company(Base):
     interior_path = Column(String)     # base interior
     background_path = Column(String)   # foto de fondo
 
-    primary_color = Column(String)
-    secondary_color = Column(String)
+    primary_color   = Column(String)   # color texto portada
+    secondary_color = Column(String)   # color fondo banner interior
+    content_color   = Column(String)   # color texto contenido interior
     portada_config = Column(JSON, nullable=True, default=dict)
 
     active = Column(Boolean, default=True)
