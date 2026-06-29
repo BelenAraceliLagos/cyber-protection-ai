@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Empresas Emisoras — Cyber-Protection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/pages/companies.css">
+</head>
+<body>
+
+<div id="alert-container" class="alert-container"></div>
+<div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="app">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <button class="topbar__hamburger" id="hamburger" aria-label="Abrir menu">
+      <i class="ti ti-menu-2"></i>
+    </button>
+    <div class="topbar__logo">
+      <div class="topbar__logo-mark">
+        <img src="../assets/img/logo.png" alt="CP" style="width:28px;height:28px;object-fit:contain;">
+      </div>
+      <span class="topbar__brand">Cyber-Protection</span>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar" aria-label="Navegacion principal">
+    <div class="sidebar__header">
+      <div class="sidebar__logo-mark">
+        <img src="../assets/img/logo.png" alt="CP" style="width:28px;height:28px;object-fit:contain;">
+      </div>
+      <span class="sidebar__brand sidebar__label">CP Sistema</span>
+      <button class="sidebar__collapse-btn" id="sidebar-collapse-btn" aria-label="Colapsar sidebar">
+        <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-collapse-icon"></i>
+      </button>
+    </div>
+    <div class="sidebar__nav">
+      <a href="dashboard.html"     class="sidebar__item"><i class="ti ti-home"></i><span class="sidebar__label">Dashboard</span></a>
+      <a href="clients.html"       class="sidebar__item"><i class="ti ti-users"></i><span class="sidebar__label">Clientes</span></a>
+      <a href="services.html"      class="sidebar__item"><i class="ti ti-briefcase"></i><span class="sidebar__label">Servicios</span></a>
+      <a href="opportunities.html" class="sidebar__item"><i class="ti ti-trending-up"></i><span class="sidebar__label">Oportunidades</span></a>
+      <a href="report.html"        class="sidebar__item"><i class="ti ti-robot"></i><span class="sidebar__label">Generar informe</span></a>
+      <div class="sidebar__divider"></div>
+      <a href="companies.html"     class="sidebar__item sidebar__item--active" aria-current="page">
+        <i class="ti ti-building"></i><span class="sidebar__label">Empresas</span>
+      </a>
+      <a href="import.html"        class="sidebar__item"><i class="ti ti-upload"></i><span class="sidebar__label">Importar datos</span></a>
+      <a href="ingestion.html"     class="sidebar__item"><i class="ti ti-database-import"></i><span class="sidebar__label">Historial</span></a>
+    </div>
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-initials">??</div>
+      <div class="sidebar__user-info sidebar__label">
+        <div class="sidebar__username" id="sidebar-username">Cargando...</div>
+        <div class="sidebar__role"     id="sidebar-role">.</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="main__topbar">
+      <div>
+        <h1 class="main__title">Empresas Emisoras</h1>
+        <p class="main__subtitle">Gestiona las empresas que emiten propuestas PDF con sus plantillas visuales.</p>
+      </div>
+      <div class="main__actions">
+        <button class="btn btn--primary" id="btn-new-company">
+          <i class="ti ti-plus"></i> Nueva empresa
+        </button>
+      </div>
+    </header>
+
+    <div class="main__content">
+      <div class="companies-grid" id="companies-grid"></div>
+      <div class="companies-empty" id="companies-empty" style="display:none">
+        <i class="ti ti-building-off"></i>
+        <p>No hay empresas registradas todavía.</p>
+        <button class="btn btn--primary" id="btn-new-company-2">
+          <i class="ti ti-plus"></i> Crear primera empresa
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ MODAL: Crear / Editar empresa ══════════════════════════════════ -->
+<div class="modal-backdrop" id="modal-company" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal__header">
+      <h2 class="modal__title" id="modal-company-title">Nueva empresa</h2>
+      <button class="modal__close" data-close-modal="modal-company" aria-label="Cerrar">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <form id="form-company" class="modal__body" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="fc-name">Nombre de la empresa <span style="color:var(--danger)">*</span></label>
+        <input class="form-input" id="fc-name" type="text" placeholder="Ej: Cyber-Protection" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Colores del PDF</label>
+
+        <!-- Portada -->
+        <p class="color-section-label"><i class="ti ti-file-text"></i> Portada <span>(sobre la imagen de fondo)</span></p>
+        <div class="color-pair" style="margin-bottom:1rem">
+          <div class="color-field">
+            <label for="fc-primary">Texto de portada</label>
+            <div class="color-field-row">
+              <input type="color" id="fc-primary" value="#155FCF">
+              <input type="text"  id="fc-primary-hex" class="form-input" value="#155FCF" maxlength="7" placeholder="#155FCF">
+            </div>
+            <span class="color-hint">Título, objetivo y firma. Usa blanco si la portada es oscura.</span>
+          </div>
+          <div class="color-field">
+            <label for="fc-secondary">Banner de sección</label>
+            <div class="color-field-row">
+              <input type="color" id="fc-secondary" value="#8EE3C8">
+              <input type="text"  id="fc-secondary-hex" class="form-input" value="#8EE3C8" maxlength="7" placeholder="#8EE3C8">
+            </div>
+            <span class="color-hint">Fondo de la franja de título en páginas interiores.</span>
+          </div>
+        </div>
+
+        <!-- Contenido -->
+        <p class="color-section-label"><i class="ti ti-files"></i> Contenido interior <span>(sobre fondo blanco)</span></p>
+        <div class="color-pair">
+          <div class="color-field">
+            <label for="fc-content">Texto de contenido</label>
+            <div class="color-field-row">
+              <input type="color" id="fc-content" value="#1A2B5F">
+              <input type="text"  id="fc-content-hex" class="form-input" value="#1A2B5F" maxlength="7" placeholder="#1A2B5F">
+            </div>
+            <span class="color-hint">Títulos y texto en páginas interiores. Independiente de la portada.</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" data-close-modal="modal-company">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Guardar empresa</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ══ MODAL: Upload imágenes ════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modal-upload" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal__header">
+      <h2 class="modal__title" id="modal-upload-title">Subir imágenes de plantilla</h2>
+      <button class="modal__close" data-close-modal="modal-upload" aria-label="Cerrar">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div class="modal__body">
+
+      <div class="upload-tabs" role="group" aria-label="Tipo de imagen">
+        <button type="button" class="upload-tab upload-tab--active" data-type="portada" aria-pressed="true">
+          <i class="ti ti-file-text"></i>
+          <span class="upload-tab__label">Portada</span>
+          <span class="upload-tab__desc">Fondo 1.ª página</span>
+        </button>
+        <button type="button" class="upload-tab" data-type="interior" aria-pressed="false">
+          <i class="ti ti-files"></i>
+          <span class="upload-tab__label">Interior</span>
+          <span class="upload-tab__desc">Fondo páginas internas</span>
+        </button>
+        <button type="button" class="upload-tab" data-type="logo" aria-pressed="false">
+          <i class="ti ti-photo"></i>
+          <span class="upload-tab__label">Logo</span>
+          <span class="upload-tab__desc">Logotipo empresa</span>
+        </button>
+      </div>
+
+      <span id="upload-type-label">
+        <i class="ti ti-info-circle" style="font-size:14px;flex-shrink:0" aria-hidden="true"></i>
+        Portada (base_portada.png) — imagen A4 de fondo para la primera página
+      </span>
+
+      <div class="upload-zone" id="upload-zone">
+        <img class="upload-zone__preview" id="upload-preview" alt="Vista previa">
+        <input type="file" id="upload-file" accept=".png,.jpg,.jpeg">
+        <i class="ti ti-cloud-upload upload-zone__icon"></i>
+        <p class="upload-zone__text">
+          Arrastra o haz clic para seleccionar<br>
+          <strong>PNG o JPG — tamaño A4 (2480×3508 px a 300 dpi)</strong>
+        </p>
+      </div>
+
+      <p class="form-hint" style="margin-top:.75rem">
+        La imagen se guarda en <code>assets/companies/company_ID/</code>. Reemplaza cualquier imagen anterior.
+      </p>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn--ghost" data-close-modal="modal-upload">Cancelar</button>
+      <button type="button" class="btn btn--primary" id="btn-upload-confirm">
+        <i class="ti ti-upload"></i> Subir imagen
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- ══ MODAL: Editor de diseño (Opción 1) ═══════════════════════════════ -->
+<div class="modal-backdrop" id="modal-editor" role="dialog" aria-modal="true">
+  <div class="modal modal--editor">
+
+    <div class="modal__header">
+      <h2 class="modal__title" id="ed-title">Diseño de empresa</h2>
+      <button class="modal__close" data-close-modal="modal-editor" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+    </div>
+
+    <!-- Tabs portada / contenido -->
+    <div class="ed-page-tabs">
+      <button class="ed-page-tab ed-tab--active" data-page="portada" type="button">
+        <i class="ti ti-file-text"></i> Portada
+      </button>
+      <button class="ed-page-tab" data-page="contenido" type="button">
+        <i class="ti ti-files"></i> Páginas de contenido
+      </button>
+    </div>
+
+    <div class="modal__body modal__body--editor">
+
+      <!-- ══ PORTADA ══════════════════════════════════════════════════ -->
+      <div id="ed-panel-portada" class="ed-opt1">
+
+        <!-- IZQUIERDA: canvas grande -->
+        <div class="ed-opt1__canvas-col">
+          <p class="ed-tip">
+            <i class="ti ti-hand-move" aria-hidden="true"></i>
+            Arrastra los bloques para reposicionarlos. Haz clic para seleccionar.
+          </p>
+          <div class="ed-canvas" id="ed-canvas" style="height:420px">
+            <img id="ed-bg" class="ed-bg" src="" alt="">
+
+            <!-- Bloque TÍTULO -->
+            <div class="ed-block ed-block--active" id="ed-block-titulo" title="Título (arrastrar)">
+              <span class="ed-blabel ed-blabel--teal">T</span>
+              <div class="ed-btext">Propuesta de Servicios de Ciberseguridad</div>
+            </div>
+
+            <!-- Bloque OBJETIVO -->
+            <div class="ed-block" id="ed-block-objetivo" title="Objetivo (arrastrar)">
+              <span class="ed-blabel ed-blabel--blue">O</span>
+              <div class="ed-btext">Fortalecer la postura de ciberseguridad.</div>
+            </div>
+
+            <!-- Bloque LOGO CLIENTE -->
+            <div class="ed-block ed-block--logo" id="ed-block-logo" title="Logo cliente (arrastrar)">
+              <span class="ed-blabel ed-blabel--gray">L</span>
+              <div class="ed-btext" style="font-size:9px;opacity:0.7">Logo cliente</div>
+            </div>
+          </div>
+          <p class="ed-tip ed-tip--muted">El canvas muestra la imagen de portada real. Los bloques representan la posición del texto en el PDF.</p>
+        </div>
+
+        <!-- DERECHA: sidebar de controles -->
+        <div class="ed-opt1__sidebar">
+
+          <!-- 1. Selector de bloque activo -->
+          <div class="ed-card">
+            <div class="ed-card__title">Elemento activo</div>
+            <div class="ed-block-tabs">
+              <button class="ed-block-tab ed-tab--active" data-block="titulo" type="button">
+                <span style="width:32px;height:32px;border-radius:8px;background:#22C9C6;color:#0a2a2a;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">T</span>
+                <div style="text-align:left">
+                  <div style="font-size:0.82rem;font-weight:700;color:var(--cp-blue-dark)">Título</div>
+                  <div style="font-size:0.65rem;color:var(--cp-text-muted)">Texto principal</div>
+                </div>
+              </button>
+              <button class="ed-block-tab" data-block="objetivo" type="button">
+                <span style="width:32px;height:32px;border-radius:8px;background:#3B4099;color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">O</span>
+                <div style="text-align:left">
+                  <div style="font-size:0.82rem;font-weight:700">Objetivo</div>
+                  <div style="font-size:0.65rem;color:var(--cp-text-muted)">Subtítulo</div>
+                </div>
+              </button>
+              <button class="ed-block-tab" data-block="logo_cliente" type="button">
+                <span style="width:32px;height:32px;border-radius:8px;background:#888;color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">L</span>
+                <div style="text-align:left">
+                  <div style="font-size:0.82rem;font-weight:700">Logo</div>
+                  <div style="font-size:0.65rem;color:var(--cp-text-muted)">Posición</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Posición -->
+          <div class="ed-card">
+            <div class="ed-card__title">📍 Posición</div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">↔ Horizontal (X mm)</label>
+              <div class="ed-range-row">
+                <input type="range" id="ed-x" min="0" max="185" step="1" value="28">
+                <input type="number" id="ed-x-num" class="ed-num" min="0" max="185" value="28">
+              </div>
+            </div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">↕ Vertical (Y mm)</label>
+              <div class="ed-range-row">
+                <input type="range" id="ed-y" min="0" max="280" step="1" value="148">
+                <input type="number" id="ed-y-num" class="ed-num" min="0" max="280" value="148">
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Tipografía -->
+          <div class="ed-card" id="ed-typo-panel">
+            <div class="ed-card__title">🔤 Tipografía</div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Tamaño (pt)</label>
+              <div class="ed-range-row">
+                <input type="range" id="ed-size" min="7" max="60" step="0.5" value="34">
+                <input type="number" id="ed-size-num" class="ed-num" min="7" max="60" value="34">
+              </div>
+            </div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Peso</label>
+              <select id="ed-weight" class="ed-select">
+                <option value="300">Ligero</option>
+                <option value="400">Normal</option>
+                <option value="600">Semi-negrita</option>
+                <option value="700" selected>Negrita</option>
+                <option value="900">Extra negrita</option>
+              </select>
+            </div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Alineación</label>
+              <div class="ed-align-row">
+                <button type="button" class="ed-align-btn ed-tab--active" data-align="left">
+                  <i class="ti ti-align-left" aria-hidden="true"></i> Izq.
+                </button>
+                <button type="button" class="ed-align-btn" data-align="center">
+                  <i class="ti ti-align-center" aria-hidden="true"></i> Ctr.
+                </button>
+                <button type="button" class="ed-align-btn" data-align="right">
+                  <i class="ti ti-align-right" aria-hidden="true"></i> Der.
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Color -->
+          <div class="ed-card" id="ed-color-panel">
+            <div class="ed-card__title">🎨 Color del texto</div>
+            <p class="ed-hint">Elige el color que más contraste con la imagen de fondo</p>
+            <div class="ed-color-row">
+              <input type="color" id="ed-block-color" value="#ffffff">
+              <input type="text"  id="ed-block-color-hex" class="ed-hex form-input" maxlength="7" value="#ffffff">
+            </div>
+            <div class="ed-presets">
+              <button class="ed-preset" style="background:#ffffff;border:1.5px solid #ccc" data-color="#ffffff" title="Blanco"></button>
+              <button class="ed-preset" style="background:#000000" data-color="#000000" title="Negro"></button>
+              <button class="ed-preset" style="background:#1A2B5F" data-color="#1A2B5F" title="Azul oscuro"></button>
+              <button class="ed-preset" style="background:#22C9C6" data-color="#22C9C6" title="Teal"></button>
+              <button class="ed-preset" style="background:#8EE3C8" data-color="#8EE3C8" title="Verde agua"></button>
+              <button class="ed-preset" style="background:#FFD700" data-color="#FFD700" title="Dorado"></button>
+              <button class="ed-preset" style="background:#FF6B35" data-color="#FF6B35" title="Naranja"></button>
+              <button class="ed-preset" style="background:#E8E8E8;border:1px solid #ccc" data-color="#E8E8E8" title="Gris claro"></button>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn--ghost btn--sm" id="ed-reset-block" style="width:100%">
+            <i class="ti ti-refresh"></i> Restablecer elemento
+          </button>
+
+        </div><!-- /sidebar -->
+      </div><!-- /ed-panel-portada -->
+
+
+      <!-- ══ CONTENIDO ════════════════════════════════════════════════ -->
+      <div id="ed-panel-contenido" style="display:none" class="ed-opt1">
+
+        <!-- IZQUIERDA: preview -->
+        <div class="ed-opt1__canvas-col">
+          <p class="ed-tip"><i class="ti ti-eye" aria-hidden="true"></i> Vista previa en tiempo real</p>
+          <div id="ed-content-preview"></div>
+          <p class="ed-tip ed-tip--muted">Y% controla desde dónde inicia cada elemento en la página (0=arriba, 100=abajo).</p>
+        </div>
+
+        <!-- DERECHA: controles contenido -->
+        <div class="ed-opt1__sidebar">
+
+          <div class="ed-card">
+            <div class="ed-card__title">Elemento a configurar</div>
+            <div class="ed-block-tabs">
+              <button class="ed-content-tab ed-tab--active" data-section="banner" type="button">
+                <i class="ti ti-layout-navbar-filled" aria-hidden="true"></i> Banner
+              </button>
+              <button class="ed-content-tab" data-section="cuerpo" type="button">
+                <i class="ti ti-text-size" aria-hidden="true"></i> Cuerpo
+              </button>
+            </div>
+          </div>
+
+          <!-- Banner -->
+          <div id="ed-sec-banner">
+            <div class="ed-card">
+              <div class="ed-card__title">📐 Posición del banner</div>
+              <div class="ed-field">
+                <label class="ed-field__lbl">Inicio vertical (Y%)</label>
+                <div class="ed-range-row">
+                  <input type="range" id="ed-b-y" min="0" max="80" step="1" value="45">
+                  <input type="number" id="ed-b-y-num" class="ed-num" min="0" max="80" value="45">
+                </div>
+              </div>
+            </div>
+            <div class="ed-card">
+              <div class="ed-card__title">🔤 Tipografía del banner</div>
+              <div class="ed-field">
+                <label class="ed-field__lbl">Tamaño (pt)</label>
+                <div class="ed-range-row">
+                  <input type="range" id="ed-b-size" min="12" max="40" step="0.5" value="26">
+                  <input type="number" id="ed-b-size-num" class="ed-num" min="12" max="40" value="26">
+                </div>
+              </div>
+              <div class="ed-field">
+                <label class="ed-field__lbl">Peso</label>
+                <select id="ed-b-weight" class="ed-select">
+                  <option value="400">Normal</option>
+                  <option value="600">Semi-negrita</option>
+                  <option value="700" selected>Negrita</option>
+                </select>
+              </div>
+            </div>
+            <div class="ed-card">
+              <div class="ed-card__title">🎨 Colores del banner</div>
+              <div class="ed-field">
+                <label class="ed-field__lbl">Fondo de la franja</label>
+                <div class="ed-color-row">
+                  <input type="color" id="ed-b-bg" value="#8EE3C8">
+                  <input type="text"  id="ed-b-bg-hex" class="ed-hex form-input" maxlength="7" value="#8EE3C8">
+                </div>
+                <div class="ed-presets">
+                  <button class="ed-preset" style="background:#8EE3C8" data-color="#8EE3C8" data-target="ed-b-bg"></button>
+                  <button class="ed-preset" style="background:#22C9C6" data-color="#22C9C6" data-target="ed-b-bg"></button>
+                  <button class="ed-preset" style="background:#1A2B5F" data-color="#1A2B5F" data-target="ed-b-bg"></button>
+                  <button class="ed-preset" style="background:#000" data-color="#000000" data-target="ed-b-bg"></button>
+                  <button class="ed-preset" style="background:#fff;border:1px solid #ccc" data-color="#ffffff" data-target="ed-b-bg"></button>
+                </div>
+              </div>
+              <div class="ed-field" style="margin-top:.5rem">
+                <label class="ed-field__lbl">Texto del banner <span class="ed-hint">— contrasta con el fondo</span></label>
+                <div class="ed-color-row">
+                  <input type="color" id="ed-b-text" value="#1A2B5F">
+                  <input type="text"  id="ed-b-text-hex" class="ed-hex form-input" maxlength="7" value="#1A2B5F">
+                </div>
+                <div class="ed-presets">
+                  <button class="ed-preset" style="background:#fff;border:1px solid #ccc" data-color="#ffffff" data-target="ed-b-text"></button>
+                  <button class="ed-preset" style="background:#000" data-color="#000000" data-target="ed-b-text"></button>
+                  <button class="ed-preset" style="background:#1A2B5F" data-color="#1A2B5F" data-target="ed-b-text"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cuerpo -->
+          <div id="ed-sec-cuerpo" style="display:none">
+            <div class="ed-card">
+              <div class="ed-card__title">📐 Posición del texto</div>
+              <div class="ed-field">
+                <label class="ed-field__lbl">Inicio vertical (Y%)</label>
+                <p class="ed-hint">Desde dónde baja el texto bajo el banner</p>
+                <div class="ed-range-row">
+                  <input type="range" id="ed-c-y" min="10" max="90" step="1" value="75">
+                  <input type="number" id="ed-c-y-num" class="ed-num" min="10" max="90" value="75">
+                </div>
+              </div>
+            </div>
+            <div class="ed-card">
+              <div class="ed-card__title">🔤 Tipografía del cuerpo</div>
+              <div class="ed-field">
+                <label class="ed-field__lbl">Tamaño (pt)</label>
+                <div class="ed-range-row">
+                  <input type="range" id="ed-c-size" min="7" max="16" step="0.5" value="10.5">
+                  <input type="number" id="ed-c-size-num" class="ed-num" min="7" max="16" value="10.5">
+                </div>
+              </div>
+              <div class="ed-field">
+                <label class="ed-field__lbl">Peso</label>
+                <select id="ed-c-weight" class="ed-select">
+                  <option value="300">Ligero</option>
+                  <option value="400" selected>Normal</option>
+                  <option value="600">Semi-negrita</option>
+                </select>
+              </div>
+            </div>
+            <div class="ed-card">
+              <div class="ed-card__title">🎨 Color del texto de cuerpo</div>
+              <p class="ed-hint">Debe contrastar con el fondo blanco de las páginas</p>
+              <div class="ed-color-row">
+                <input type="color" id="ed-c-color" value="#1A2B5F">
+                <input type="text"  id="ed-c-color-hex" class="ed-hex form-input" maxlength="7" value="#1A2B5F">
+              </div>
+              <div class="ed-presets">
+                <button class="ed-preset" style="background:#000" data-color="#000000" data-target="ed-c-color"></button>
+                <button class="ed-preset" style="background:#1A2B5F" data-color="#1A2B5F" data-target="ed-c-color"></button>
+                <button class="ed-preset" style="background:#333" data-color="#333333" data-target="ed-c-color"></button>
+                <button class="ed-preset" style="background:#2C3280" data-color="#2C3280" data-target="ed-c-color"></button>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /sidebar contenido -->
+      </div><!-- /ed-panel-contenido -->
+
+    </div><!-- /modal__body -->
+
+    <div class="modal__footer">
+      <button type="button" class="btn btn--ghost" data-close-modal="modal-editor">Cancelar</button>
+      <button type="button" class="btn btn--primary" id="ed-save-btn">
+        <i class="ti ti-device-floppy"></i> Guardar diseño
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Scripts -->
+<script type="module">
+  import { initSidebar }   from '../js/sidebar.js'
+  import { initCompanies } from '../js/companies.js'
+
+  initSidebar()
+  initCompanies()
+</script>
+
+<!-- ══ MODAL: Editor visual de portada ══════════════════════════════════ -->
+<div class="modal-backdrop" id="modal-portada-editor" role="dialog" aria-modal="true">
+  <div class="modal modal--wide">
+    <div class="modal__header">
+      <h2 class="modal__title" id="modal-editor-title">Editor de portada</h2>
+      <button class="modal__close" data-close-modal="modal-portada-editor" aria-label="Cerrar">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div class="modal__body modal__body--editor">
+
+      <div class="pe-layout">
+
+        <!-- ── Panel izquierdo: preview ── -->
+        <div class="pe-preview-wrap">
+          <p class="pe-hint"><i class="ti ti-eye"></i> Vista previa en tiempo real</p>
+          <div class="pe-canvas" id="pe-canvas">
+            <!-- Imagen de portada como fondo -->
+            <img id="pe-bg" class="pe-bg" src="" alt="">
+            <!-- Bloque título -->
+            <div class="pe-block" id="pe-block-titulo" data-block="titulo">
+              <span class="pe-block__handle"><i class="ti ti-grip-vertical"></i></span>
+              <div class="pe-block__content" id="pe-text-titulo">Propuesta de Servicios de Ciberseguridad</div>
+            </div>
+            <!-- Bloque objetivo -->
+            <div class="pe-block" id="pe-block-objetivo" data-block="objetivo">
+              <span class="pe-block__handle"><i class="ti ti-grip-vertical"></i></span>
+              <div class="pe-block__content" id="pe-text-objetivo">Fortalecer la postura de ciberseguridad mediante servicios especializados.</div>
+            </div>
+            <!-- Bloque logo -->
+            <div class="pe-block" id="pe-block-logo" data-block="logo_cliente">
+              <span class="pe-block__handle"><i class="ti ti-grip-vertical"></i></span>
+              <div class="pe-block__content" id="pe-text-logo" style="font-size:8px;opacity:0.7">Logo cliente</div>
+            </div>
+          </div>
+          <p class="pe-hint pe-hint--drag"><i class="ti ti-arrows-move"></i> Arrastra los bloques para reposicionarlos</p>
+        </div>
+
+        <!-- ── Panel derecho: controles ── -->
+        <div class="pe-controls">
+
+          <!-- Selector de bloque activo -->
+          <div class="pe-tabs">
+            <button class="pe-tab pe-tab--active" data-block="titulo" type="button">
+              <i class="ti ti-h1"></i> Título
+            </button>
+            <button class="pe-tab" data-block="objetivo" type="button">
+              <i class="ti ti-text-size"></i> Objetivo
+            </button>
+            <button class="pe-tab" data-block="logo_cliente" type="button">
+              <i class="ti ti-photo"></i> Logo
+            </button>
+          </div>
+
+          <!-- Controles de posición -->
+          <div class="pe-section">
+            <label class="pe-section__title">Posición (mm)</label>
+            <div class="pe-row">
+              <div class="pe-field">
+                <label>X (horizontal)</label>
+                <div class="pe-input-row">
+                  <input type="range" id="pe-x" min="0" max="180" step="1" value="28">
+                  <input type="number" id="pe-x-num" min="0" max="180" value="28" class="pe-num">
+                </div>
+              </div>
+              <div class="pe-field">
+                <label>Y (vertical)</label>
+                <div class="pe-input-row">
+                  <input type="range" id="pe-y" min="0" max="280" step="1" value="148">
+                  <input type="number" id="pe-y-num" min="0" max="280" value="148" class="pe-num">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controles de tipografía (solo título y objetivo) -->
+          <div class="pe-section" id="pe-typo-section">
+            <label class="pe-section__title">Tipografía</label>
+            <div class="pe-row">
+              <div class="pe-field">
+                <label>Tamaño (pt)</label>
+                <div class="pe-input-row">
+                  <input type="range" id="pe-size" min="7" max="60" step="1" value="34">
+                  <input type="number" id="pe-size-num" min="7" max="60" value="34" class="pe-num">
+                </div>
+              </div>
+              <div class="pe-field">
+                <label>Peso</label>
+                <select id="pe-weight" class="form-input" style="font-size:0.82rem">
+                  <option value="300">Light</option>
+                  <option value="400">Regular</option>
+                  <option value="600">Semi-bold</option>
+                  <option value="700" selected>Bold</option>
+                  <option value="900">Black</option>
+                </select>
+              </div>
+            </div>
+            <div class="pe-field" style="margin-top:0.6rem">
+              <label>Alineación</label>
+              <div class="pe-align-btns">
+                <button type="button" class="pe-align-btn pe-align-btn--active" data-align="left"><i class="ti ti-align-left"></i></button>
+                <button type="button" class="pe-align-btn" data-align="center"><i class="ti ti-align-center"></i></button>
+                <button type="button" class="pe-align-btn" data-align="right"><i class="ti ti-align-right"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reset -->
+          <button type="button" class="btn btn--ghost btn--sm" id="pe-reset-block" style="margin-top:0.5rem">
+            <i class="ti ti-refresh"></i> Resetear bloque
+          </button>
+
+        </div><!-- /pe-controls -->
+      </div><!-- /pe-layout -->
+
+    </div><!-- /modal__body -->
+    <div class="modal__footer">
+      <button type="button" class="btn btn--ghost" data-close-modal="modal-portada-editor">Cancelar</button>
+      <button type="button" class="btn btn--primary" id="btn-save-portada-config">
+        <i class="ti ti-device-floppy"></i> Guardar configuración
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

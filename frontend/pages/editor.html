@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de diseño — CyberProtection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cp-bg);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Topbar ── */
+    .ed-topbar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0 1.25rem;
+      height: 52px;
+      background: var(--cp-blue-dark);
+      color: #fff;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .ed-topbar__title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      flex: 1;
+    }
+    .ed-topbar__company {
+      font-size: 0.8rem;
+      color: var(--cp-teal);
+      font-weight: 500;
+    }
+    .ed-topbar__tabs {
+      display: flex;
+      gap: 2px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .ed-topbar__tab {
+      padding: 0.3rem 0.9rem;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.6);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all .15s;
+    }
+    .ed-topbar__tab:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .ed-topbar__tab.active {
+      background: var(--cp-teal);
+      color: var(--cp-blue-dark);
+      font-weight: 600;
+    }
+    .ed-topbar__actions { display: flex; gap: 0.5rem; }
+
+    /* ── Layout principal ── */
+    .ed-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Canvas ── */
+    .ed-canvas-area {
+      flex: 1;
+      background: #0d0d1a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 1.25rem;
+      overflow: auto;
+      gap: 0.75rem;
+    }
+    .ed-canvas-hint {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.4);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      align-self: flex-start;
+    }
+    .ed-canvas {
+      position: relative;
+      width: 100%;
+      max-width: 380px;
+      aspect-ratio: 210 / 297;
+      border-radius: 3px;
+      overflow: hidden;
+      background: #111;
+      cursor: crosshair;
+      flex-shrink: 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    .ed-bg {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+
+    /* ── Bloques arrastrables ── */
+    .ed-block {
+      position: absolute;
+      cursor: move;
+      padding: 3px 6px 3px 20px;
+      border: 2px dashed rgba(255,255,255,0.4);
+      border-radius: 4px;
+      user-select: none;
+      transition: border-color .1s;
+    }
+    .ed-block:hover { border-color: var(--cp-teal); }
+    .ed-block--active {
+      border-color: var(--cp-teal) !important;
+      border-style: solid !important;
+      background: rgba(34,201,198,0.12);
+      box-shadow: 0 0 0 3px rgba(34,201,198,0.2);
+    }
+    .ed-block--logo { border-style: dotted; opacity: .7; }
+    .ed-blabel {
+      position: absolute;
+      top: 50%; left: 3px;
+      transform: translateY(-50%);
+      width: 13px; height: 13px;
+      border-radius: 50%;
+      font-size: 8px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .ed-blabel--teal { background: var(--cp-teal); color: #0a2a2a; }
+    .ed-blabel--blue { background: #3B4099; color: #fff; }
+    .ed-blabel--gray { background: #888; color: #fff; }
+    .ed-btext {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-weight: 700;
+      line-height: 1.15;
+      pointer-events: none;
+    }
+
+    /* ── Sidebar ── */
+    .ed-sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      background: var(--cp-white);
+      border-left: 1px solid var(--cp-border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .ed-sidebar__scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      scrollbar-width: thin;
+    }
+
+    /* Cards de control */
+    .ed-card {
+      background: var(--cp-bg);
+      border: 1px solid var(--cp-border);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+    }
+    .ed-card__title {
+      font-size: 0.68rem; font-weight: 700;
+      color: var(--cp-text-muted);
+      text-transform: uppercase; letter-spacing: .05em;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Selector de bloque */
+    .ed-block-selector { display: flex; flex-direction: column; gap: 0.3rem; }
+    .ed-sel-btn {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.5rem 0.65rem;
+      border: 2px solid var(--cp-border);
+      border-radius: 7px;
+      background: var(--cp-white);
+      cursor: pointer; font-family: inherit;
+      transition: all .12s; text-align: left;
+    }
+    .ed-sel-btn:hover { border-color: var(--cp-teal); background: #f0fefe; }
+    .ed-sel-btn.active {
+      border-color: var(--cp-teal);
+      background: #e8fafa;
+      box-shadow: 0 0 0 3px rgba(34,201,198,0.15);
+    }
+    .ed-sel-icon {
+      width: 30px; height: 30px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 900; flex-shrink: 0;
+    }
+    .ed-sel-icon--t { background: var(--cp-teal); color: #0a2a2a; }
+    .ed-sel-icon--o { background: #3B4099; color: #fff; }
+    .ed-sel-icon--l { background: #888; color: #fff; }
+    .ed-sel-info { flex: 1; }
+    .ed-sel-name { font-size: 0.82rem; font-weight: 700; color: var(--cp-blue-dark); }
+    .ed-sel-desc { font-size: 0.65rem; color: var(--cp-text-muted); }
+
+    /* Campos */
+    .ed-field { margin-bottom: 0.45rem; }
+    .ed-field:last-child { margin-bottom: 0; }
+    .ed-field__lbl {
+      font-size: 0.72rem; font-weight: 500;
+      color: var(--cp-text); display: block; margin-bottom: 0.25rem;
+    }
+    .ed-hint { font-size: 0.65rem; color: var(--cp-teal-dark); display: block; margin-bottom: 0.3rem; }
+    .ed-range-row { display: flex; align-items: center; gap: 0.35rem; }
+    .ed-range-row input[type="range"] { flex: 1; accent-color: var(--cp-teal); }
+    .ed-num {
+      width: 50px; padding: 0.22rem 0.3rem;
+      border: 1px solid var(--cp-border); border-radius: 4px;
+      font-size: 0.72rem; text-align: center; font-family: monospace;
+    }
+    .ed-unit { font-size: 0.65rem; color: var(--cp-text-muted); }
+    .ed-select {
+      width: 100%; font-size: 0.78rem; padding: 0.3rem 0.4rem;
+      border: 1px solid var(--cp-border); border-radius: 6px;
+      font-family: inherit; background: white;
+    }
+    .ed-align-row { display: flex; gap: 0.3rem; }
+    .ed-align-btn {
+      flex: 1; padding: 0.3rem;
+      border: 1.5px solid var(--cp-border); border-radius: 5px;
+      background: var(--cp-white); cursor: pointer;
+      font-size: 0.7rem; font-family: inherit; color: var(--cp-text-muted);
+      display: flex; align-items: center; justify-content: center; gap: 0.2rem;
+      transition: all .12s;
+    }
+    .ed-align-btn:hover { border-color: var(--cp-teal); color: var(--cp-blue-main); }
+    .ed-align-btn.active { border-color: var(--cp-teal); background: #e0f9f8; color: var(--cp-blue-dark); font-weight: 600; }
+    .ed-color-row { display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.4rem; }
+    .ed-color-row input[type="color"] {
+      width: 34px; height: 34px; padding: 2px;
+      border: 1px solid var(--cp-border); border-radius: 6px;
+      cursor: pointer; background: none; flex-shrink: 0;
+    }
+    .ed-hex { flex: 1; font-family: monospace; font-size: 0.78rem; padding: 0.25rem 0.4rem; border: 1px solid var(--cp-border); border-radius: 4px; }
+    .ed-presets { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+    .ed-preset {
+      width: 22px; height: 22px; border-radius: 50%;
+      cursor: pointer; border: none; transition: transform .1s, box-shadow .1s;
+    }
+    .ed-preset:hover { transform: scale(1.25); box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+
+    /* Contenido preview */
+    .ed-content-preview {
+      border: 1px solid var(--cp-border); border-radius: 6px;
+      overflow: hidden; background: #f0f0f0; min-height: 200px;
+    }
+    .ed-content-tabs { display: flex; gap: 0.3rem; margin-bottom: 0.5rem; }
+    .ed-ctab {
+      flex: 1; padding: 0.4rem 0.3rem;
+      border: 1.5px solid var(--cp-border); border-radius: 6px;
+      background: var(--cp-white); cursor: pointer; font-family: inherit;
+      font-size: 0.72rem; color: var(--cp-text-muted);
+      display: flex; align-items: center; justify-content: center; gap: 0.25rem;
+      transition: all .12s;
+    }
+    .ed-ctab:hover { border-color: var(--cp-teal); }
+    .ed-ctab.active { border-color: var(--cp-teal); background: #e8fafa; color: var(--cp-blue-dark); font-weight: 700; }
+
+    /* Sidebar footer */
+    .ed-sidebar__footer {
+      padding: 0.65rem 0.75rem;
+      border-top: 1px solid var(--cp-border);
+      display: flex; gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="ed-topbar">
+  <button onclick="history.back()" style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;font-size:18px;padding:0" title="Volver">
+    <i class="ti ti-arrow-left"></i>
+  </button>
+  <div>
+    <div class="ed-topbar__title">Editor de diseño</div>
+    <div class="ed-topbar__company" id="ed-company-name">Cargando...</div>
+  </div>
+  <div class="ed-topbar__tabs">
+    <button class="ed-topbar__tab active" data-page="portada" type="button">
+      <i class="ti ti-file-text"></i> Portada
+    </button>
+    <button class="ed-topbar__tab" data-page="contenido" type="button">
+      <i class="ti ti-files"></i> Contenido
+    </button>
+  </div>
+  <div class="ed-topbar__actions">
+    <button class="btn btn--ghost btn--sm" id="ed-reset-btn" type="button" style="color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.2)">
+      <i class="ti ti-refresh"></i> Restablecer
+    </button>
+    <button class="btn btn--primary btn--sm" id="ed-save-btn" type="button">
+      <i class="ti ti-device-floppy"></i> Guardar diseño
+    </button>
+  </div>
+</div>
+
+<!-- Body -->
+<div class="ed-body">
+
+  <!-- PORTADA -->
+  <div id="ed-panel-portada" class="ed-body" style="width:100%">
+
+    <!-- Canvas -->
+    <div class="ed-canvas-area">
+      <p class="ed-canvas-hint">
+        <i class="ti ti-hand-move"></i> Arrastra los bloques para reposicionarlos
+      </p>
+      <div class="ed-canvas" id="ed-canvas">
+        <img id="ed-bg" class="ed-bg" src="" alt="">
+        <div class="ed-block ed-block--active" id="ed-block-titulo" title="Título">
+          <span class="ed-blabel ed-blabel--teal">T</span>
+          <div class="ed-btext">Propuesta de Servicios de Ciberseguridad</div>
+        </div>
+        <div class="ed-block" id="ed-block-objetivo" title="Objetivo">
+          <span class="ed-blabel ed-blabel--blue">O</span>
+          <div class="ed-btext">Fortalecer la postura de ciberseguridad.</div>
+        </div>
+        <div class="ed-block ed-block--logo" id="ed-block-logo" title="Logo cliente">
+          <span class="ed-blabel ed-blabel--gray">L</span>
+          <div class="ed-btext" style="font-size:9px;opacity:.7">Logo cliente</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="ed-sidebar">
+      <div class="ed-sidebar__scroll">
+
+        <!-- Selector de bloque -->
+        <div class="ed-card">
+          <div class="ed-card__title">Elemento activo</div>
+          <div class="ed-block-selector">
+            <button class="ed-sel-btn active" data-block="titulo" type="button">
+              <span class="ed-sel-icon ed-sel-icon--t">T</span>
+              <div class="ed-sel-info">
+                <div class="ed-sel-name">Título</div>
+                <div class="ed-sel-desc">Texto principal de la portada</div>
+              </div>
+              <i class="ti ti-check" style="color:var(--cp-teal);font-size:14px"></i>
+            </button>
+            <button class="ed-sel-btn" data-block="objetivo" type="button">
+              <span class="ed-sel-icon ed-sel-icon--o">O</span>
+              <div class="ed-sel-info">
+                <div class="ed-sel-name">Objetivo</div>
+                <div class="ed-sel-desc">Subtítulo o descripción breve</div>
+              </div>
+            </button>
+            <button class="ed-sel-btn" data-block="logo_cliente" type="button">
+              <span class="ed-sel-icon ed-sel-icon--l">L</span>
+              <div class="ed-sel-info">
+                <div class="ed-sel-name">Logo cliente</div>
+                <div class="ed-sel-desc">Posición del logo en portada</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Posición -->
+        <div class="ed-card">
+          <div class="ed-card__title">📍 Posición (mm)</div>
+          <div class="ed-field">
+            <label class="ed-field__lbl">↔ Horizontal (X)</label>
+            <div class="ed-range-row">
+              <input type="range" id="ed-x" min="0" max="185" step="1" value="28">
+              <input type="number" id="ed-x-num" class="ed-num" min="0" max="185" value="28">
+              <span class="ed-unit">mm</span>
+            </div>
+          </div>
+          <div class="ed-field">
+            <label class="ed-field__lbl">↕ Vertical (Y)</label>
+            <div class="ed-range-row">
+              <input type="range" id="ed-y" min="0" max="280" step="1" value="148">
+              <input type="number" id="ed-y-num" class="ed-num" min="0" max="280" value="148">
+              <span class="ed-unit">mm</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tipografía -->
+        <div class="ed-card" id="ed-typo-panel">
+          <div class="ed-card__title">🔤 Tipografía</div>
+          <div class="ed-field">
+            <label class="ed-field__lbl">Tamaño de fuente</label>
+            <div class="ed-range-row">
+              <input type="range" id="ed-size" min="7" max="60" step="0.5" value="34">
+              <input type="number" id="ed-size-num" class="ed-num" min="7" max="60" value="34">
+              <span class="ed-unit">pt</span>
+            </div>
+          </div>
+          <div class="ed-field">
+            <label class="ed-field__lbl">Peso</label>
+            <select id="ed-weight" class="ed-select">
+              <option value="300">Ligero</option>
+              <option value="400">Normal</option>
+              <option value="600">Semi-negrita</option>
+              <option value="700" selected>Negrita</option>
+              <option value="900">Extra negrita</option>
+            </select>
+          </div>
+          <div class="ed-field">
+            <label class="ed-field__lbl">Alineación</label>
+            <div class="ed-align-row">
+              <button type="button" class="ed-align-btn active" data-align="left"><i class="ti ti-align-left"></i> Izq.</button>
+              <button type="button" class="ed-align-btn" data-align="center"><i class="ti ti-align-center"></i> Ctr.</button>
+              <button type="button" class="ed-align-btn" data-align="right"><i class="ti ti-align-right"></i> Der.</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Color -->
+        <div class="ed-card" id="ed-color-panel">
+          <div class="ed-card__title">🎨 Color del texto</div>
+          <span class="ed-hint">Elige el color que más contraste con la imagen</span>
+          <div class="ed-color-row">
+            <input type="color" id="ed-block-color" value="#ffffff">
+            <input type="text" id="ed-block-color-hex" class="ed-hex" maxlength="7" value="#ffffff">
+          </div>
+          <div class="ed-presets">
+            <button class="ed-preset" style="background:#fff;border:1.5px solid #ccc" data-color="#ffffff" title="Blanco"></button>
+            <button class="ed-preset" style="background:#000" data-color="#000000" title="Negro"></button>
+            <button class="ed-preset" style="background:#1A2B5F" data-color="#1A2B5F" title="Azul oscuro"></button>
+            <button class="ed-preset" style="background:#22C9C6" data-color="#22C9C6" title="Teal"></button>
+            <button class="ed-preset" style="background:#8EE3C8" data-color="#8EE3C8" title="Verde agua"></button>
+            <button class="ed-preset" style="background:#FFD700" data-color="#FFD700" title="Dorado"></button>
+            <button class="ed-preset" style="background:#FF6B35" data-color="#FF6B35" title="Naranja"></button>
+          </div>
+        </div>
+
+      </div>
+      <div class="ed-sidebar__footer">
+        <button type="button" class="btn btn--ghost btn--sm" id="ed-reset-block" style="flex:1">
+          <i class="ti ti-refresh"></i> Restablecer elemento
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /ed-panel-portada -->
+
+  <!-- CONTENIDO -->
+  <div id="ed-panel-contenido" class="ed-body" style="width:100%;display:none">
+
+    <div class="ed-canvas-area">
+      <p class="ed-canvas-hint"><i class="ti ti-eye"></i> Vista previa en tiempo real</p>
+      <div id="ed-content-preview" class="ed-content-preview" style="width:100%;max-width:380px"></div>
+    </div>
+
+    <div class="ed-sidebar">
+      <div class="ed-sidebar__scroll">
+
+        <div class="ed-card">
+          <div class="ed-card__title">Elemento a configurar</div>
+          <div class="ed-content-tabs">
+            <button class="ed-ctab active" data-section="banner" type="button">
+              <i class="ti ti-layout-navbar-filled"></i> Banner
+            </button>
+            <button class="ed-ctab" data-section="cuerpo" type="button">
+              <i class="ti ti-text-size"></i> Cuerpo
+            </button>
+          </div>
+        </div>
+
+        <div id="ed-sec-banner">
+          <div class="ed-card">
+            <div class="ed-card__title">📐 Posición del banner</div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Inicio vertical (Y%)</label>
+              <div class="ed-range-row">
+                <input type="range" id="ed-b-y" min="0" max="80" step="1" value="45">
+                <input type="number" id="ed-b-y-num" class="ed-num" min="0" max="80" value="45">
+                <span class="ed-unit">%</span>
+              </div>
+            </div>
+          </div>
+          <div class="ed-card">
+            <div class="ed-card__title">🔤 Tipografía del banner</div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Tamaño (pt)</label>
+              <div class="ed-range-row">
+                <input type="range" id="ed-b-size" min="12" max="40" step="0.5" value="26">
+                <input type="number" id="ed-b-size-num" class="ed-num" min="12" max="40" value="26">
+                <span class="ed-unit">pt</span>
+              </div>
+            </div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Peso</label>
+              <select id="ed-b-weight" class="ed-select">
+                <option value="400">Normal</option>
+                <option value="600">Semi-negrita</option>
+                <option value="700" selected>Negrita</option>
+              </select>
+            </div>
+          </div>
+          <div class="ed-card">
+            <div class="ed-card__title">🎨 Colores del banner</div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Fondo</label>
+              <div class="ed-color-row">
+                <input type="color" id="ed-b-bg" value="#8EE3C8">
+                <input type="text" id="ed-b-bg-hex" class="ed-hex" maxlength="7" value="#8EE3C8">
+              </div>
+              <div class="ed-presets">
+                <button class="ed-preset" style="background:#8EE3C8" data-color="#8EE3C8" data-target="ed-b-bg"></button>
+                <button class="ed-preset" style="background:#22C9C6" data-color="#22C9C6" data-target="ed-b-bg"></button>
+                <button class="ed-preset" style="background:#1A2B5F" data-color="#1A2B5F" data-target="ed-b-bg"></button>
+                <button class="ed-preset" style="background:#000" data-color="#000000" data-target="ed-b-bg"></button>
+                <button class="ed-preset" style="background:#fff;border:1px solid #ccc" data-color="#ffffff" data-target="ed-b-bg"></button>
+              </div>
+            </div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Texto del banner</label>
+              <div class="ed-color-row">
+                <input type="color" id="ed-b-text" value="#1A2B5F">
+                <input type="text" id="ed-b-text-hex" class="ed-hex" maxlength="7" value="#1A2B5F">
+              </div>
+              <div class="ed-presets">
+                <button class="ed-preset" style="background:#fff;border:1px solid #ccc" data-color="#ffffff" data-target="ed-b-text"></button>
+                <button class="ed-preset" style="background:#000" data-color="#000000" data-target="ed-b-text"></button>
+                <button class="ed-preset" style="background:#1A2B5F" data-color="#1A2B5F" data-target="ed-b-text"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="ed-sec-cuerpo" style="display:none">
+          <div class="ed-card">
+            <div class="ed-card__title">📐 Posición del texto</div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Inicio vertical (Y%)</label>
+              <span class="ed-hint">Desde dónde baja el texto bajo el banner</span>
+              <div class="ed-range-row">
+                <input type="range" id="ed-c-y" min="10" max="90" step="1" value="75">
+                <input type="number" id="ed-c-y-num" class="ed-num" min="10" max="90" value="75">
+                <span class="ed-unit">%</span>
+              </div>
+            </div>
+          </div>
+          <div class="ed-card">
+            <div class="ed-card__title">🔤 Tipografía del cuerpo</div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Tamaño (pt)</label>
+              <div class="ed-range-row">
+                <input type="range" id="ed-c-size" min="7" max="16" step="0.5" value="10.5">
+                <input type="number" id="ed-c-size-num" class="ed-num" min="7" max="16" value="10.5">
+                <span class="ed-unit">pt</span>
+              </div>
+            </div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Peso</label>
+              <select id="ed-c-weight" class="ed-select">
+                <option value="300">Ligero</option>
+                <option value="400" selected>Normal</option>
+                <option value="600">Semi-negrita</option>
+              </select>
+            </div>
+          </div>
+          <div class="ed-card">
+            <div class="ed-card__title">🎨 Color del texto</div>
+            <div class="ed-color-row">
+              <input type="color" id="ed-c-color" value="#1A2B5F">
+              <input type="text" id="ed-c-color-hex" class="ed-hex" maxlength="7" value="#1A2B5F">
+            </div>
+            <div class="ed-presets">
+              <button class="ed-preset" style="background:#000" data-color="#000000" data-target="ed-c-color"></button>
+              <button class="ed-preset" style="background:#1A2B5F" data-color="#1A2B5F" data-target="ed-c-color"></button>
+              <button class="ed-preset" style="background:#333" data-color="#333333" data-target="ed-c-color"></button>
+              <button class="ed-preset" style="background:#2C3280" data-color="#2C3280" data-target="ed-c-color"></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="ed-sidebar__footer">
+        <button type="button" class="btn btn--ghost btn--sm" style="flex:1">
+          <i class="ti ti-refresh"></i> Restablecer
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /ed-panel-contenido -->
+
+</div><!-- /ed-body -->
+
+<script type="module">
+import { BASE_URL } from '../js/config.js'
+import { requireAuth, showAlert, escapeHtml } from '../js/utils.js'
+
+requireAuth()
+
+const A4W = 210, A4H = 297
+let company = null
+let block   = 'titulo'
+let section = 'banner'
+
+let cfg = {
+  portada: {
+    titulo:       {x:28,  y:148, size:34,   weight:700, align:'left', color:null},
+    objetivo:     {x:28,  y:210, size:11,   weight:400, align:'left', color:null},
+    logo_cliente: {x:130, y:240},
+  },
+  contenido: {
+    banner: {y_start:45, size:26, weight:700, bg_color:null, text_color:null},
+    cuerpo: {y_start:75, size:10.5, weight:400, color:null},
+  }
+}
+
+// ── Cargar empresa desde URL param ───────────────────────────────
+const params  = new URLSearchParams(location.search)
+const compId  = params.get('id')
+if (!compId) { alert('No se especificó empresa'); history.back() }
+
+const token = () => sessionStorage.getItem('cp_token') || ''
+
+async function api(method, path, body=null) {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers: {'Content-Type':'application/json','Authorization':`Bearer ${token()}`},
+    body: body ? JSON.stringify(body) : null
+  })
+  if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.detail||`Error ${res.status}`) }
+  return res.text().then(t => t ? JSON.parse(t) : null)
+}
+
+async function load() {
+  company = await api('GET', `/companies/${compId}`)
+  document.getElementById('ed-company-name').textContent = company.name
+
+  // Cargar portada_config guardado
+  const s = company.portada_config || {}
+  cfg = {
+    portada: {
+      titulo:       {...cfg.portada.titulo,       ...(s.titulo       ||{})},
+      objetivo:     {...cfg.portada.objetivo,     ...(s.objetivo     ||{})},
+      logo_cliente: {...cfg.portada.logo_cliente, ...(s.logo_cliente ||{})},
+    },
+    contenido: {
+      banner: {...cfg.contenido.banner, ...(s.banner||{})},
+      cuerpo: {...cfg.contenido.cuerpo, ...(s.cuerpo||{})},
+    }
+  }
+
+  // Imagen de portada
+  const bg = document.getElementById('ed-bg')
+  if (company.portada_path) {
+    bg.src = `${BASE_URL}/companies/image-preview?path=${encodeURIComponent(company.portada_path)}`
+  }
+
+  renderAll()
+  syncControls()
+}
+
+// ── Render ───────────────────────────────────────────────────────
+function renderAll() {
+  ;['titulo','objetivo','logo_cliente'].forEach(k => posBlock(k))
+  styleBlock('titulo')
+  styleBlock('objetivo')
+}
+
+function posBlock(key) {
+  const id = key==='logo_cliente' ? 'ed-block-logo' : `ed-block-${key}`
+  const el = document.getElementById(id)
+  const canvas = document.getElementById('ed-canvas')
+  if (!el || !canvas) return
+  const c = cfg.portada[key]
+  // Usar porcentaje — funciona porque el canvas es position:relative
+  // y NO tiene ningún ancestro fixed (página normal, no modal)
+  el.style.left = (c.x / A4W * 100).toFixed(2) + '%'
+  el.style.top  = (c.y / A4H * 100).toFixed(2) + '%'
+}
+
+function styleBlock(key) {
+  if (key==='logo_cliente') return
+  const el = document.getElementById(`ed-block-${key}`)
+  if (!el) return
+  const content = el.querySelector('.ed-btext')
+  if (!content) return
+  const c = cfg.portada[key]
+  const canvas = document.getElementById('ed-canvas')
+  const pxMm = canvas.offsetWidth / A4W
+  content.style.fontSize   = (c.size * pxMm * 0.3528).toFixed(1) + 'px'
+  content.style.fontWeight = c.weight
+  content.style.textAlign  = c.align
+  content.style.maxWidth   = Math.round(pxMm * 140) + 'px'
+  content.style.lineHeight = '1.15'
+  const col = c.color || company?.primary_color || '#ffffff'
+  content.style.color = col
+  const lum = _lum(col)
+  content.style.textShadow = lum > 0.45
+    ? '0 1px 5px rgba(0,0,0,0.9)'
+    : '0 1px 2px rgba(0,0,0,0.3)'
+}
+
+function _lum(hex) {
+  try {
+    const h=hex.replace('#','')
+    const r=parseInt(h.slice(0,2),16)/255,g=parseInt(h.slice(2,4),16)/255,b=parseInt(h.slice(4,6),16)/255
+    const l=c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4
+    return .2126*l(r)+.7152*l(g)+.0722*l(b)
+  } catch{return .5}
+}
+
+function setBlock(key) {
+  block = key
+  document.querySelectorAll('.ed-sel-btn').forEach(b => {
+    const isActive = b.dataset.block === key
+    b.classList.toggle('active', isActive)
+    const check = b.querySelector('.ti-check')
+    if (check) check.style.display = isActive ? '' : 'none'
+    else if (isActive) {
+      const i = document.createElement('i')
+      i.className = 'ti ti-check'
+      i.style.cssText = 'color:var(--cp-teal);font-size:14px'
+      b.appendChild(i)
+    }
+  })
+  ;['ed-block-titulo','ed-block-objetivo','ed-block-logo'].forEach(id =>
+    document.getElementById(id)?.classList.remove('ed-block--active'))
+  const id = key==='logo_cliente' ? 'ed-block-logo' : `ed-block-${key}`
+  document.getElementById(id)?.classList.add('ed-block--active')
+  const noLogo = key !== 'logo_cliente'
+  document.getElementById('ed-typo-panel').style.display  = noLogo ? '' : 'none'
+  document.getElementById('ed-color-panel').style.display = noLogo ? '' : 'none'
+  syncControls()
+}
+
+function syncControls() {
+  const c = cfg.portada[block]
+  if (!c) return
+  sv('ed-x', c.x); sv('ed-y', c.y)
+  if (block !== 'logo_cliente') {
+    sv('ed-size', c.size)
+    const w = document.getElementById('ed-weight'); if(w) w.value = c.weight
+    document.querySelectorAll('.ed-align-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.align === (c.align||'left')))
+    sc('ed-block-color', c.color || company?.primary_color || '#ffffff')
+  }
+}
+
+function renderContent() {
+  const wrap = document.getElementById('ed-content-preview')
+  if (!wrap) return
+  const b = cfg.contenido.banner
+  const c = cfg.contenido.cuerpo
+  const bbg  = b.bg_color   || company?.secondary_color || '#8EE3C8'
+  const btxt = b.text_color || company?.content_color   || '#1A2B5F'
+  const ctxt = c.color      || company?.content_color   || '#1A2B5F'
+  const src  = company?.interior_path
+    ? `${BASE_URL}/companies/image-preview?path=${encodeURIComponent(company.interior_path)}` : ''
+  wrap.innerHTML = `
+  <div style="position:relative;min-height:280px;border-radius:6px;overflow:hidden">
+    ${src ? `<img src="${src}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.35;pointer-events:none">` : '<div style="position:absolute;inset:0;background:#e0e0e0"></div>'}
+    <div style="position:absolute;left:0;right:0;top:${b.y_start||45}%;background:${bbg};padding:8px 14px;font-family:Segoe UI,Arial,sans-serif;font-size:${Math.max(10,b.size*.55)}px;font-weight:${b.weight};color:${btxt}">Título de sección</div>
+    <div style="position:absolute;left:8%;right:4%;top:${c.y_start||75}%">
+      <p style="font-family:Segoe UI,Arial,sans-serif;font-size:${Math.max(8,c.size*1.1)}px;font-weight:600;color:${ctxt};margin:0 0 5px">Subtítulo del servicio</p>
+      <p style="font-family:Segoe UI,Arial,sans-serif;font-size:${Math.max(7,c.size)}px;font-weight:${c.weight};color:${ctxt};line-height:1.4;opacity:.9;margin:0">Así se verá el cuerpo de texto en las páginas interiores del PDF generado.</p>
+    </div>
+  </div>`
+}
+
+function setSection(sec) {
+  section = sec
+  document.querySelectorAll('.ed-ctab').forEach(t => t.classList.toggle('active', t.dataset.section===sec))
+  document.getElementById('ed-sec-banner').style.display = sec==='banner' ? '' : 'none'
+  document.getElementById('ed-sec-cuerpo').style.display = sec==='cuerpo' ? '' : 'none'
+  if (sec==='banner') {
+    const b=cfg.contenido.banner
+    sv('ed-b-y',b.y_start||45); sv('ed-b-size',b.size)
+    const w=document.getElementById('ed-b-weight');if(w)w.value=b.weight
+    sc('ed-b-bg',b.bg_color||company?.secondary_color||'#8EE3C8')
+    sc('ed-b-text',b.text_color||company?.content_color||'#1A2B5F')
+  } else {
+    const c=cfg.contenido.cuerpo
+    sv('ed-c-y',c.y_start||75); sv('ed-c-size',c.size)
+    const w=document.getElementById('ed-c-weight');if(w)w.value=c.weight
+    sc('ed-c-color',c.color||company?.content_color||'#1A2B5F')
+  }
+}
+
+// ── Drag ─────────────────────────────────────────────────────────
+function initDrag() {
+  ;['titulo','objetivo','logo'].forEach(sk => {
+    const key = sk==='logo' ? 'logo_cliente' : sk
+    const el  = document.getElementById(`ed-block-${sk}`)
+    if (!el) return
+    el.addEventListener('mousedown', e => {
+      if (e.button!==0) return
+      e.preventDefault()
+      setBlock(key)
+      const canvas = document.getElementById('ed-canvas')
+      const cr = canvas.getBoundingClientRect()
+      const er = el.getBoundingClientRect()
+      const offX = e.clientX - er.left
+      const offY = e.clientY - er.top
+      const onMove = e => {
+        const xMm = Math.max(0,Math.min(Math.round((e.clientX-cr.left-offX)/cr.width*A4W),A4W-5))
+        const yMm = Math.max(0,Math.min(Math.round((e.clientY-cr.top-offY)/cr.height*A4H),A4H-5))
+        cfg.portada[key].x = xMm
+        cfg.portada[key].y = yMm
+        posBlock(key)
+        sv('ed-x',xMm); sv('ed-y',yMm)
+      }
+      const onUp = () => { document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp) }
+      document.addEventListener('mousemove',onMove)
+      document.addEventListener('mouseup',onUp)
+    })
+    el.addEventListener('click', () => setBlock(key))
+  })
+}
+
+// ── Guardar ───────────────────────────────────────────────────────
+async function save() {
+  const btn = document.getElementById('ed-save-btn')
+  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Guardando…'
+  const payload = {
+    portada_config: {
+      titulo:       cfg.portada.titulo,
+      objetivo:     cfg.portada.objetivo,
+      logo_cliente: cfg.portada.logo_cliente,
+      banner:       cfg.contenido.banner,
+      cuerpo:       cfg.contenido.cuerpo,
+    }
+  }
+  if (cfg.portada.titulo.color)         payload.primary_color   = cfg.portada.titulo.color
+  if (cfg.contenido.banner.bg_color)    payload.secondary_color = cfg.contenido.banner.bg_color
+  if (cfg.contenido.banner.text_color)  payload.content_color   = cfg.contenido.banner.text_color
+  else if (cfg.contenido.cuerpo.color)  payload.content_color   = cfg.contenido.cuerpo.color
+  try {
+    await api('PUT', `/companies/${compId}`, payload)
+    showAlert('✅ Diseño guardado', 'success')
+    setTimeout(() => history.back(), 800)
+  } catch(e) {
+    showAlert('Error: '+e.message, 'error')
+  } finally {
+    btn.disabled=false; btn.innerHTML='<i class="ti ti-device-floppy"></i> Guardar diseño'
+  }
+}
+
+// ── Bind ─────────────────────────────────────────────────────────
+function sv(id,v){const r=document.getElementById(id),n=document.getElementById(id+'-num');if(r)r.value=v;if(n)n.value=v}
+function br(id,cb){const r=document.getElementById(id),n=document.getElementById(id+'-num');const s=v=>{const x=parseFloat(v);if(r)r.value=x;if(n)n.value=x;cb(x)};r?.addEventListener('input',e=>s(e.target.value));n?.addEventListener('input',e=>s(e.target.value))}
+function sc(id,hex){const p=document.getElementById(id),t=document.getElementById(id+'-hex');if(p)p.value=hex;if(t)t.value=hex}
+function bc(id,cb){const p=document.getElementById(id),t=document.getElementById(id+'-hex');const s=v=>{if(p)p.value=v;if(t)t.value=v;cb(v)};p?.addEventListener('input',e=>s(e.target.value));t?.addEventListener('input',e=>{if(/^#[0-9A-Fa-f]{6}$/.test(e.target.value))s(e.target.value)})}
+
+document.querySelectorAll('.ed-topbar__tab').forEach(t =>
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.ed-topbar__tab').forEach(x=>x.classList.remove('active'))
+    t.classList.add('active')
+    const page = t.dataset.page
+    document.getElementById('ed-panel-portada').style.display  = page==='portada'   ? '' : 'none'
+    document.getElementById('ed-panel-contenido').style.display = page==='contenido' ? '' : 'none'
+    if (page==='contenido') { renderContent(); setSection('banner') }
+    else renderAll()
+  }))
+
+document.querySelectorAll('.ed-sel-btn').forEach(b =>
+  b.addEventListener('click', () => setBlock(b.dataset.block)))
+
+br('ed-x',    v=>{cfg.portada[block].x=v; posBlock(block)})
+br('ed-y',    v=>{cfg.portada[block].y=v; posBlock(block)})
+br('ed-size', v=>{if(block!=='logo_cliente'){cfg.portada[block].size=v; styleBlock(block)}})
+document.getElementById('ed-weight')?.addEventListener('change',e=>{if(block!=='logo_cliente'){cfg.portada[block].weight=Number(e.target.value);styleBlock(block)}})
+document.querySelectorAll('.ed-align-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.ed-align-btn').forEach(x=>x.classList.remove('active'))
+  b.classList.add('active')
+  if(block!=='logo_cliente'){cfg.portada[block].align=b.dataset.align;styleBlock(block)}
+}))
+bc('ed-block-color',v=>{if(block!=='logo_cliente'){cfg.portada[block].color=v;styleBlock(block)}})
+
+br('ed-b-y',    v=>{cfg.contenido.banner.y_start=v;  renderContent()})
+br('ed-b-size', v=>{cfg.contenido.banner.size=v;     renderContent()})
+document.getElementById('ed-b-weight')?.addEventListener('change',e=>{cfg.contenido.banner.weight=Number(e.target.value);renderContent()})
+bc('ed-b-bg',   v=>{cfg.contenido.banner.bg_color=v;   renderContent()})
+bc('ed-b-text', v=>{cfg.contenido.banner.text_color=v; renderContent()})
+br('ed-c-y',    v=>{cfg.contenido.cuerpo.y_start=v;  renderContent()})
+br('ed-c-size', v=>{cfg.contenido.cuerpo.size=v;     renderContent()})
+document.getElementById('ed-c-weight')?.addEventListener('change',e=>{cfg.contenido.cuerpo.weight=Number(e.target.value);renderContent()})
+bc('ed-c-color',v=>{cfg.contenido.cuerpo.color=v;    renderContent()})
+
+document.querySelectorAll('.ed-ctab').forEach(t=>t.addEventListener('click',()=>setSection(t.dataset.section)))
+
+document.querySelectorAll('.ed-preset').forEach(btn=>btn.addEventListener('click',()=>{
+  const col=btn.dataset.color, tgt=btn.dataset.target
+  if(tgt){sc(tgt,col);document.getElementById(tgt)?.dispatchEvent(new Event('input'))}
+  else{sc('ed-block-color',col);document.getElementById('ed-block-color')?.dispatchEvent(new Event('input'))}
+}))
+
+document.getElementById('ed-save-btn')?.addEventListener('click', save)
+document.getElementById('ed-reset-btn')?.addEventListener('click', () => {
+  if(confirm('¿Restablecer toda la configuración de diseño?')) location.reload()
+})
+document.getElementById('ed-reset-block')?.addEventListener('click', () => {
+  const DEF = {
+    titulo:       {x:28,y:148,size:34,weight:700,align:'left',color:null},
+    objetivo:     {x:28,y:210,size:11,weight:400,align:'left',color:null},
+    logo_cliente: {x:130,y:240},
+  }
+  cfg.portada[block] = {...DEF[block]}
+  posBlock(block); styleBlock(block); syncControls()
+})
+window.addEventListener('resize', renderAll)
+
+initDrag()
+load()
+</script>
+
+</body>
+</html>
