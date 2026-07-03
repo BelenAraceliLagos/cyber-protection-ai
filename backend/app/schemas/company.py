@@ -36,6 +36,7 @@ class CompanyResponse(BaseModel):
     primary_color: str | None
     secondary_color: str | None
     content_color: str | None
+    portada_config: Optional[Dict[str, Any]] = None
     active: bool
 
     class Config:
