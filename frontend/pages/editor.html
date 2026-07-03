@@ -115,7 +115,7 @@
     .ed-bg {
       position: absolute; inset: 0;
       width: 100%; height: 100%;
-      object-fit: cover;
+      object-fit: fill;  /* igual que PDF */
       pointer-events: none;
     }
 
@@ -123,7 +123,7 @@
     .ed-block {
       position: absolute;
       cursor: move;
-      padding: 3px 6px 3px 20px;
+      padding: 3px 6px;
       border: 2px dashed rgba(255,255,255,0.4);
       border-radius: 4px;
       user-select: none;
@@ -139,8 +139,7 @@
     .ed-block--logo { border-style: dotted; opacity: .7; }
     .ed-blabel {
       position: absolute;
-      top: 50%; left: 3px;
-      transform: translateY(-50%);
+      top: 0; left: -16px;
       width: 13px; height: 13px;
       border-radius: 50%;
       font-size: 8px; font-weight: 800;
@@ -333,15 +332,28 @@
       </p>
       <div class="ed-canvas" id="ed-canvas">
         <img id="ed-bg" class="ed-bg" src="" alt="">
+        <!-- Guías de referencia cada 50mm -->
+        <div style="position:absolute;left:0;right:0;top:16.83%;height:1px;background:rgba(34,201,198,0.2);pointer-events:none" title="50mm"></div>
+        <div style="position:absolute;left:0;right:0;top:33.67%;height:1px;background:rgba(34,201,198,0.2);pointer-events:none" title="100mm"></div>
+        <div style="position:absolute;left:0;right:0;top:50.5%;height:1px;background:rgba(34,201,198,0.2);pointer-events:none" title="150mm"></div>
+        <div style="position:absolute;left:0;right:0;top:67.34%;height:1px;background:rgba(34,201,198,0.2);pointer-events:none" title="200mm"></div>
+        <div style="position:absolute;left:0;right:0;top:84.17%;height:1px;background:rgba(34,201,198,0.2);pointer-events:none" title="250mm"></div>
+        <!-- Etiquetas mm -->
+        <div style="position:absolute;right:3px;top:16%;font-size:8px;color:rgba(34,201,198,0.5);pointer-events:none">50mm</div>
+        <div style="position:absolute;right:3px;top:32.8%;font-size:8px;color:rgba(34,201,198,0.5);pointer-events:none">100mm</div>
+        <div style="position:absolute;right:3px;top:49.6%;font-size:8px;color:rgba(34,201,198,0.5);pointer-events:none">150mm</div>
+        <div style="position:absolute;right:3px;top:66.4%;font-size:8px;color:rgba(34,201,198,0.5);pointer-events:none">200mm</div>
+        <div style="position:absolute;right:3px;top:83.2%;font-size:8px;color:rgba(34,201,198,0.5);pointer-events:none">250mm</div>
         <div class="ed-block ed-block--active" id="ed-block-titulo" title="Título">
           <span class="ed-blabel ed-blabel--teal">T</span>
           <div class="ed-btext">Propuesta de Servicios de Ciberseguridad</div>
         </div>
         <div class="ed-block" id="ed-block-objetivo" title="Objetivo">
           <span class="ed-blabel ed-blabel--blue">O</span>
-          <div class="ed-btext">Fortalecer la postura de ciberseguridad.</div>
+          <div class="ed-btext">Fortalecer la postura de ciberseguridad de la organización mediante servicios especializados y cumplimiento normativo.</div>
         </div>
-        <div class="ed-block ed-block--logo" id="ed-block-logo" title="Logo cliente">
+        <div class="ed-block ed-block--logo" id="ed-block-logo" title="Logo cliente"
+          style="display:flex;align-items:center;justify-content:center;text-align:center">
           <span class="ed-blabel ed-blabel--gray">L</span>
           <div class="ed-btext" style="font-size:9px;opacity:.7">Logo cliente</div>
         </div>
@@ -395,7 +407,7 @@
           <div class="ed-field">
             <label class="ed-field__lbl">↕ Vertical (Y)</label>
             <div class="ed-range-row">
-              <input type="range" id="ed-y" min="0" max="280" step="1" value="148">
+              <input type="range" id="ed-y" min="10" max="280" step="1" value="148">
               <input type="number" id="ed-y-num" class="ed-num" min="0" max="280" value="148">
               <span class="ed-unit">mm</span>
             </div>
@@ -433,7 +445,20 @@
           </div>
         </div>
 
-        <!-- Color -->
+        <!-- Ancho del bloque -->
+        <div class="ed-card" id="ed-width-panel">
+          <div class="ed-card__title">↔ Ancho del bloque</div>
+          <span class="ed-hint">Limita el texto para encajarlo en su área</span>
+          <div class="ed-field" style="margin-top:0.3rem">
+            <div class="ed-range-row">
+              <input type="range" id="ed-width" min="30" max="185" step="1" value="150">
+              <input type="number" id="ed-width-num" class="ed-num" min="30" max="185" value="150">
+              <span class="ed-unit">mm</span>
+            </div>
+          </div>
+        </div>
+
+  <!-- Color -->
         <div class="ed-card" id="ed-color-panel">
           <div class="ed-card__title">🎨 Color del texto</div>
           <span class="ed-hint">Elige el color que más contraste con la imagen</span>
@@ -453,7 +478,28 @@
         </div>
 
       </div>
-      <div class="ed-sidebar__footer">
+      <!-- Panel logo -->
+          <div class="ed-card" id="ed-logo-panel" style="display:none">
+            <div class="ed-card__title">📐 Tamaño del área del logo</div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Ancho máximo</label>
+              <div class="ed-range-row">
+                <input type="range" id="ed-logo-w" min="20" max="120" step="1" value="60">
+                <input type="number" id="ed-logo-w-num" class="ed-num" min="20" max="120" value="60">
+                <span class="ed-unit">mm</span>
+              </div>
+            </div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Alto máximo</label>
+              <div class="ed-range-row">
+                <input type="range" id="ed-logo-h" min="10" max="80" step="1" value="34">
+                <input type="number" id="ed-logo-h-num" class="ed-num" min="10" max="80" value="34">
+                <span class="ed-unit">mm</span>
+              </div>
+            </div>
+          </div>
+
+  <div class="ed-sidebar__footer">
         <button type="button" class="btn btn--ghost btn--sm" id="ed-reset-block" style="flex:1">
           <i class="ti ti-refresh"></i> Restablecer elemento
         </button>
@@ -466,21 +512,58 @@
   <div id="ed-panel-contenido" class="ed-body" style="width:100%;display:none">
 
     <div class="ed-canvas-area">
-      <p class="ed-canvas-hint"><i class="ti ti-eye"></i> Vista previa en tiempo real</p>
-      <div id="ed-content-preview" class="ed-content-preview" style="width:100%;max-width:380px"></div>
+      <p class="ed-canvas-hint"><i class="ti ti-hand-move"></i> Arrastra los bloques para reposicionarlos</p>
+      <div class="ed-canvas" id="ed-canvas-content" style="max-width:380px">
+        <img id="ed-bg-content" class="ed-bg" src="" alt="" style="object-fit:fill">
+        <!-- Línea de inicio del área de contenido útil (~86mm = 29%) -->
+        <div style="position:absolute;left:0;right:0;top:29%;height:2px;background:rgba(34,201,198,0.5);pointer-events:none"></div>
+        <div style="position:absolute;right:3px;top:28%;font-size:8px;color:rgba(34,201,198,0.8);pointer-events:none;font-weight:700">▶ inicio área</div>
+        <!-- Guías de referencia cada 50mm -->
+        <div style="position:absolute;left:0;right:0;top:16.83%;height:1px;background:rgba(34,201,198,0.15);pointer-events:none"></div>
+        <div style="position:absolute;left:0;right:0;top:33.67%;height:1px;background:rgba(34,201,198,0.15);pointer-events:none"></div>
+        <div style="position:absolute;left:0;right:0;top:50.5%;height:1px;background:rgba(34,201,198,0.15);pointer-events:none"></div>
+        <div style="position:absolute;left:0;right:0;top:67.34%;height:1px;background:rgba(34,201,198,0.15);pointer-events:none"></div>
+        <div style="position:absolute;left:0;right:0;top:84.17%;height:1px;background:rgba(34,201,198,0.15);pointer-events:none"></div>
+        <div style="position:absolute;right:3px;top:16%;font-size:8px;color:rgba(34,201,198,0.5);pointer-events:none">50mm</div>
+        <div style="position:absolute;right:3px;top:32.8%;font-size:8px;color:rgba(34,201,198,0.5);pointer-events:none">100mm</div>
+        <div style="position:absolute;right:3px;top:49.6%;font-size:8px;color:rgba(34,201,198,0.5);pointer-events:none">150mm</div>
+        <div style="position:absolute;right:3px;top:66.4%;font-size:8px;color:rgba(34,201,198,0.5);pointer-events:none">200mm</div>
+        <div style="position:absolute;right:3px;top:83.2%;font-size:8px;color:rgba(34,201,198,0.5);pointer-events:none">250mm</div>
+        <!-- Bloque BANNER -->
+        <div class="ed-block ed-block--active" id="ed-block-banner" title="Banner de sección">
+          <span class="ed-blabel ed-blabel--teal">B</span>
+          <div class="ed-btext" id="ed-btext-banner" style="font-size:14px;font-weight:700;padding:4px 8px;white-space:nowrap">Título de sección</div>
+        </div>
+        <!-- Bloque CUERPO -->
+        <div class="ed-block" id="ed-block-cuerpo" title="Cuerpo de texto">
+          <span class="ed-blabel ed-blabel--blue">C</span>
+          <div class="ed-btext" id="ed-btext-cuerpo" style="font-size:9px;font-weight:400;max-width:200px;line-height:1.4">Así se verá el texto del cuerpo en las páginas interiores.</div>
+        </div>
+      </div>
+      <p class="ed-canvas-hint" style="opacity:0.6;font-size:0.68rem">La imagen interior real se muestra a escala con las guías en mm.</p>
     </div>
 
     <div class="ed-sidebar">
       <div class="ed-sidebar__scroll">
 
         <div class="ed-card">
-          <div class="ed-card__title">Elemento a configurar</div>
-          <div class="ed-content-tabs">
-            <button class="ed-ctab active" data-section="banner" type="button">
-              <i class="ti ti-layout-navbar-filled"></i> Banner
+          <div class="ed-card__title">Elemento activo</div>
+          <div style="display:flex;gap:0.4rem">
+            <button class="ed-sel-btn active" data-section="banner" type="button"
+              style="flex:1;padding:0.5rem 0.4rem;flex-direction:row;gap:0.4rem;align-items:center">
+              <span class="ed-sel-icon ed-sel-icon--t" style="width:24px;height:24px;font-size:12px;flex-shrink:0">B</span>
+              <div style="text-align:left">
+                <div class="ed-sel-name" style="font-size:0.78rem">Banner</div>
+                <div class="ed-sel-desc" style="font-size:0.62rem">Franja de título</div>
+              </div>
             </button>
-            <button class="ed-ctab" data-section="cuerpo" type="button">
-              <i class="ti ti-text-size"></i> Cuerpo
+            <button class="ed-sel-btn" data-section="cuerpo" type="button"
+              style="flex:1;padding:0.5rem 0.4rem;flex-direction:row;gap:0.4rem;align-items:center">
+              <span class="ed-sel-icon ed-sel-icon--o" style="width:24px;height:24px;font-size:12px;flex-shrink:0">C</span>
+              <div style="text-align:left">
+                <div class="ed-sel-name" style="font-size:0.78rem">Cuerpo</div>
+                <div class="ed-sel-desc" style="font-size:0.62rem">Texto interior</div>
+              </div>
             </button>
           </div>
         </div>
@@ -558,6 +641,14 @@
                 <input type="number" id="ed-c-y-num" class="ed-num" min="10" max="90" value="75">
                 <span class="ed-unit">%</span>
               </div>
+              <div class="ed-field" style="margin-top:0.4rem">
+                <label class="ed-field__lbl">Margen izquierdo (X mm)</label>
+                <div class="ed-range-row">
+                  <input type="range" id="ed-c-x" min="10" max="60" step="1" value="38">
+                  <input type="number" id="ed-c-x-num" class="ed-num" min="10" max="60" value="38">
+                  <span class="ed-unit">mm</span>
+                </div>
+              </div>
             </div>
           </div>
           <div class="ed-card">
@@ -619,9 +710,9 @@ let section = 'banner'
 
 let cfg = {
   portada: {
-    titulo:       {x:28,  y:148, size:34,   weight:700, align:'left', color:null},
+    titulo:       {x:28,  y:148, size:34,   weight:700, align:'left', color:null, width:150},
     objetivo:     {x:28,  y:210, size:11,   weight:400, align:'left', color:null},
-    logo_cliente: {x:130, y:240},
+    logo_cliente: {x:130, y:240, width:60, height:34},
   },
   contenido: {
     banner: {y_start:45, size:26, weight:700, bg_color:null, text_color:null},
@@ -664,18 +755,38 @@ async function load() {
     }
   }
 
-  // Imagen de portada
+  // Imagen de portada — esperar que cargue para renderizar correctamente
   const bg = document.getElementById('ed-bg')
   if (company.portada_path) {
+    bg.onload = () => { renderAll(); syncControls() }
+    bg.onerror = () => { renderAll(); syncControls() }
     bg.src = `${BASE_URL}/companies/image-preview?path=${encodeURIComponent(company.portada_path)}`
+  } else {
+    renderAll()
+    syncControls()
   }
 
-  renderAll()
-  syncControls()
+  // Imagen interior para el canvas de contenido
+  const bgContent = document.getElementById('ed-bg-content')
+  if (company.interior_path && bgContent) {
+    bgContent.src = `${BASE_URL}/companies/image-preview?path=${encodeURIComponent(company.interior_path)}`
+    bgContent.onload = () => renderContent()
+  }
+
+  // Inicializar colores de contenido con valores de la empresa si no están guardados
+  if (!cfg.contenido.banner.bg_color)   cfg.contenido.banner.bg_color   = company.secondary_color || '#22C9C6'
+  if (!cfg.contenido.banner.text_color) cfg.contenido.banner.text_color = company.content_color   || '#1A2B5F'
+  if (!cfg.contenido.cuerpo.color)      cfg.contenido.cuerpo.color      = company.content_color   || '#1A2B5F'
 }
 
 // ── Render ───────────────────────────────────────────────────────
 function renderAll() {
+  const canvas = document.getElementById('ed-canvas')
+  if (!canvas || canvas.offsetWidth === 0) {
+    // Canvas aún no tiene dimensiones — reintentar
+    requestAnimationFrame(renderAll)
+    return
+  }
   ;['titulo','objetivo','logo_cliente'].forEach(k => posBlock(k))
   styleBlock('titulo')
   styleBlock('objetivo')
@@ -687,10 +798,16 @@ function posBlock(key) {
   const canvas = document.getElementById('ed-canvas')
   if (!el || !canvas) return
   const c = cfg.portada[key]
-  // Usar porcentaje — funciona porque el canvas es position:relative
-  // y NO tiene ningún ancestro fixed (página normal, no modal)
   el.style.left = (c.x / A4W * 100).toFixed(2) + '%'
   el.style.top  = (c.y / A4H * 100).toFixed(2) + '%'
+  // El logo tiene ancho configurable (igual que portada-elaborado en el PDF)
+  if (key === 'logo_cliente') {
+    const lw = cfg.portada.logo_cliente.width || 60
+    const lh = cfg.portada.logo_cliente.height || 34
+    const pxMm = canvas.offsetWidth / A4W
+    el.style.width  = Math.round(pxMm * lw) + 'px'
+    el.style.height = Math.round(pxMm * lh) + 'px'
+  }
 }
 
 function styleBlock(key) {
@@ -705,7 +822,8 @@ function styleBlock(key) {
   content.style.fontSize   = (c.size * pxMm * 0.3528).toFixed(1) + 'px'
   content.style.fontWeight = c.weight
   content.style.textAlign  = c.align
-  content.style.maxWidth   = Math.round(pxMm * 140) + 'px'
+  const wMm = cfg.portada[key]?.width || 150
+  content.style.maxWidth   = Math.round(pxMm * wMm) + 'px'
   content.style.lineHeight = '1.15'
   const col = c.color || company?.primary_color || '#ffffff'
   content.style.color = col
@@ -743,8 +861,15 @@ function setBlock(key) {
   const id = key==='logo_cliente' ? 'ed-block-logo' : `ed-block-${key}`
   document.getElementById(id)?.classList.add('ed-block--active')
   const noLogo = key !== 'logo_cliente'
-  document.getElementById('ed-typo-panel').style.display  = noLogo ? '' : 'none'
-  document.getElementById('ed-color-panel').style.display = noLogo ? '' : 'none'
+  const _s = (id, v) => { const el = document.getElementById(id); if(el) el.style.display = v }
+  _s('ed-typo-panel',  noLogo ? '' : 'none')
+  _s('ed-color-panel', noLogo ? '' : 'none')
+  _s('ed-width-panel', noLogo ? '' : 'none')
+  _s('ed-logo-panel',  noLogo ? 'none' : '')
+  if (!noLogo) {
+    sv('ed-logo-w', cfg.portada.logo_cliente.width  || 60)
+    sv('ed-logo-h', cfg.portada.logo_cliente.height || 34)
+  }
   syncControls()
 }
 
@@ -754,6 +879,7 @@ function syncControls() {
   sv('ed-x', c.x); sv('ed-y', c.y)
   if (block !== 'logo_cliente') {
     sv('ed-size', c.size)
+    sv('ed-width', c.width || 150)
     const w = document.getElementById('ed-weight'); if(w) w.value = c.weight
     document.querySelectorAll('.ed-align-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.align === (c.align||'left')))
@@ -762,31 +888,77 @@ function syncControls() {
 }
 
 function renderContent() {
-  const wrap = document.getElementById('ed-content-preview')
-  if (!wrap) return
   const b = cfg.contenido.banner
   const c = cfg.contenido.cuerpo
   const bbg  = b.bg_color   || company?.secondary_color || '#8EE3C8'
   const btxt = b.text_color || company?.content_color   || '#1A2B5F'
   const ctxt = c.color      || company?.content_color   || '#1A2B5F'
-  const src  = company?.interior_path
-    ? `${BASE_URL}/companies/image-preview?path=${encodeURIComponent(company.interior_path)}` : ''
-  wrap.innerHTML = `
-  <div style="position:relative;min-height:280px;border-radius:6px;overflow:hidden">
-    ${src ? `<img src="${src}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.35;pointer-events:none">` : '<div style="position:absolute;inset:0;background:#e0e0e0"></div>'}
-    <div style="position:absolute;left:0;right:0;top:${b.y_start||45}%;background:${bbg};padding:8px 14px;font-family:Segoe UI,Arial,sans-serif;font-size:${Math.max(10,b.size*.55)}px;font-weight:${b.weight};color:${btxt}">Título de sección</div>
-    <div style="position:absolute;left:8%;right:4%;top:${c.y_start||75}%">
-      <p style="font-family:Segoe UI,Arial,sans-serif;font-size:${Math.max(8,c.size*1.1)}px;font-weight:600;color:${ctxt};margin:0 0 5px">Subtítulo del servicio</p>
-      <p style="font-family:Segoe UI,Arial,sans-serif;font-size:${Math.max(7,c.size)}px;font-weight:${c.weight};color:${ctxt};line-height:1.4;opacity:.9;margin:0">Así se verá el cuerpo de texto en las páginas interiores del PDF generado.</p>
-    </div>
-  </div>`
+  const canvas = document.getElementById('ed-canvas-content')
+  if (!canvas) return
+  const ch = canvas.offsetHeight || 420
+  const cw = canvas.offsetWidth  || 380
+  const pxMm = cw / 210
+
+  // Actualizar imagen de fondo
+  const bg = document.getElementById('ed-bg-content')
+  if (bg && company?.interior_path && !bg.src.includes('image-preview')) {
+    bg.src = `${BASE_URL}/companies/image-preview?path=${encodeURIComponent(company.interior_path)}`
+  }
+
+  // Posicionar bloque banner
+  const bannerEl = document.getElementById('ed-block-banner')
+  const bannerText = document.getElementById('ed-btext-banner')
+  if (bannerEl) {
+    bannerEl.style.left = '0'
+    bannerEl.style.top  = (b.y_start||45) / 100 * ch + 'px'
+    bannerEl.style.right = '0'
+    bannerEl.style.padding = '0'
+    bannerEl.style.border = 'none'
+  }
+  if (bannerText) {
+    bannerText.style.background = bbg
+    bannerText.style.color      = btxt
+    bannerText.style.fontSize   = (b.size * pxMm * 0.3528).toFixed(1) + 'px'
+    bannerText.style.fontWeight = b.weight
+    bannerText.style.padding    = '6px 12px'
+    bannerText.style.display    = 'block'
+    bannerText.style.width      = '100%'
+  }
+
+  // Posicionar bloque cuerpo
+  const cuerpoEl = document.getElementById('ed-block-cuerpo')
+  const cuerpoText = document.getElementById('ed-btext-cuerpo')
+  if (cuerpoEl) {
+    const cxMm = c.x_start || 38
+    cuerpoEl.style.left = Math.round(pxMm * cxMm) + 'px'
+    cuerpoEl.style.top  = (c.y_start||75) / 100 * ch + 'px'
+    cuerpoEl.style.maxWidth = Math.round(pxMm * (190 - cxMm)) + 'px'
+  }
+  if (cuerpoText) {
+    cuerpoText.style.color      = ctxt
+    cuerpoText.style.fontSize   = (c.size * pxMm * 0.3528).toFixed(1) + 'px'
+    cuerpoText.style.fontWeight = c.weight
+  }
 }
 
 function setSection(sec) {
   section = sec
-  document.querySelectorAll('.ed-ctab').forEach(t => t.classList.toggle('active', t.dataset.section===sec))
+
+  // Tabs selector
+  document.querySelectorAll('[data-section]').forEach(t => {
+    const isActive = t.dataset.section === sec
+    t.classList.toggle('active', isActive)
+    const check = t.querySelector('.ti-check')
+    if (check) check.style.display = isActive ? '' : 'none'
+  })
+
   document.getElementById('ed-sec-banner').style.display = sec==='banner' ? '' : 'none'
   document.getElementById('ed-sec-cuerpo').style.display = sec==='cuerpo' ? '' : 'none'
+
+  // Highlight bloque en canvas contenido
+  document.getElementById('ed-block-banner')?.classList.toggle('ed-block--active', sec==='banner')
+  document.getElementById('ed-block-cuerpo')?.classList.toggle('ed-block--active', sec==='cuerpo')
+
   if (sec==='banner') {
     const b=cfg.contenido.banner
     sv('ed-b-y',b.y_start||45); sv('ed-b-size',b.size)
@@ -795,13 +967,47 @@ function setSection(sec) {
     sc('ed-b-text',b.text_color||company?.content_color||'#1A2B5F')
   } else {
     const c=cfg.contenido.cuerpo
-    sv('ed-c-y',c.y_start||75); sv('ed-c-size',c.size)
+    sv('ed-c-y',c.y_start||75); sv('ed-c-x',c.x_start||38); sv('ed-c-size',c.size)
     const w=document.getElementById('ed-c-weight');if(w)w.value=c.weight
     sc('ed-c-color',c.color||company?.content_color||'#1A2B5F')
   }
 }
 
 // ── Drag ─────────────────────────────────────────────────────────
+function initDragContent() {
+  ;['banner','cuerpo'].forEach(key => {
+    const el = document.getElementById(`ed-block-${key}`)
+    if (!el) return
+    el.addEventListener('mousedown', e => {
+      if (e.button !== 0) return
+      e.preventDefault()
+      setSection(key)
+      const canvas = document.getElementById('ed-canvas-content')
+      const cr = canvas.getBoundingClientRect()
+      const er = el.getBoundingClientRect()
+      const offY = e.clientY - er.top
+      const onMove = e => {
+        const yPct = Math.max(0, Math.min(Math.round((e.clientY - cr.top - offY) / cr.height * 100), 95))
+        if (key === 'banner') {
+          cfg.contenido.banner.y_start = yPct
+          sv('ed-b-y', yPct)
+        } else {
+          cfg.contenido.cuerpo.y_start = yPct
+          sv('ed-c-y', yPct)
+        }
+        renderContent()
+      }
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+      }
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    })
+    el.addEventListener('click', () => setSection(key))
+  })
+}
+
 function initDrag() {
   ;['titulo','objetivo','logo'].forEach(sk => {
     const key = sk==='logo' ? 'logo_cliente' : sk
@@ -812,23 +1018,31 @@ function initDrag() {
       e.preventDefault()
       setBlock(key)
       const canvas = document.getElementById('ed-canvas')
-      const cr = canvas.getBoundingClientRect()
-      const er = el.getBoundingClientRect()
-      const offX = e.clientX - er.left
-      const offY = e.clientY - er.top
+      // Recalcular cr en cada movimiento para evitar desfases por scroll
+      // offX/offY: offset del clic dentro del bloque para mantener posición relativa
+      const erInit = el.getBoundingClientRect()
+      const crInit = canvas.getBoundingClientRect()
+      const offX = e.clientX - erInit.left
+      const offY = e.clientY - erInit.top
       const onMove = e => {
-        const xMm = Math.max(0,Math.min(Math.round((e.clientX-cr.left-offX)/cr.width*A4W),A4W-5))
-        const yMm = Math.max(0,Math.min(Math.round((e.clientY-cr.top-offY)/cr.height*A4H),A4H-5))
+        const cr = canvas.getBoundingClientRect()  // recalcular en cada frame
+        const xPx = e.clientX - cr.left - offX
+        const yPx = e.clientY - cr.top  - offY
+        const xMm = Math.max(0,  Math.min(Math.round(xPx / cr.width  * A4W), A4W-5))
+        const yMm = Math.max(10, Math.min(Math.round(yPx / cr.height * A4H), A4H-15))
         cfg.portada[key].x = xMm
         cfg.portada[key].y = yMm
         posBlock(key)
         sv('ed-x',xMm); sv('ed-y',yMm)
+        // Mostrar coordenadas en el bloque mientras se arrastra
+        const lbl = el.querySelector('.ed-drag-coords')
+        if (lbl) { lbl.textContent = `${xMm}×${yMm}mm`; lbl.style.display='block' }
       }
       const onUp = () => { document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp) }
       document.addEventListener('mousemove',onMove)
       document.addEventListener('mouseup',onUp)
     })
-    el.addEventListener('click', () => setBlock(key))
+    el.addEventListener('click', () => { setBlock(key); syncControls() })
   })
 }
 
@@ -873,8 +1087,16 @@ document.querySelectorAll('.ed-topbar__tab').forEach(t =>
     const page = t.dataset.page
     document.getElementById('ed-panel-portada').style.display  = page==='portada'   ? '' : 'none'
     document.getElementById('ed-panel-contenido').style.display = page==='contenido' ? '' : 'none'
-    if (page==='contenido') { renderContent(); setSection('banner') }
-    else renderAll()
+    if (page==='contenido') {
+      // Asegurar que el canvas de contenido tenga dimensiones
+      requestAnimationFrame(() => {
+        renderContent()
+        setSection('banner')
+      })
+    } else {
+      renderAll()
+      syncControls()
+    }
   }))
 
 document.querySelectorAll('.ed-sel-btn').forEach(b =>
@@ -890,6 +1112,9 @@ document.querySelectorAll('.ed-align-btn').forEach(b=>b.addEventListener('click'
   if(block!=='logo_cliente'){cfg.portada[block].align=b.dataset.align;styleBlock(block)}
 }))
 bc('ed-block-color',v=>{if(block!=='logo_cliente'){cfg.portada[block].color=v;styleBlock(block)}})
+br('ed-width', v=>{if(block!=='logo_cliente'){cfg.portada[block].width=v;styleBlock(block)}})
+br('ed-logo-w', v=>{cfg.portada.logo_cliente.width=v;  posBlock('logo_cliente')})
+br('ed-logo-h', v=>{cfg.portada.logo_cliente.height=v; posBlock('logo_cliente')})
 
 br('ed-b-y',    v=>{cfg.contenido.banner.y_start=v;  renderContent()})
 br('ed-b-size', v=>{cfg.contenido.banner.size=v;     renderContent()})
@@ -897,6 +1122,7 @@ document.getElementById('ed-b-weight')?.addEventListener('change',e=>{cfg.conten
 bc('ed-b-bg',   v=>{cfg.contenido.banner.bg_color=v;   renderContent()})
 bc('ed-b-text', v=>{cfg.contenido.banner.text_color=v; renderContent()})
 br('ed-c-y',    v=>{cfg.contenido.cuerpo.y_start=v;  renderContent()})
+br('ed-c-x',    v=>{cfg.contenido.cuerpo.x_start=v;  renderContent()})
 br('ed-c-size', v=>{cfg.contenido.cuerpo.size=v;     renderContent()})
 document.getElementById('ed-c-weight')?.addEventListener('change',e=>{cfg.contenido.cuerpo.weight=Number(e.target.value);renderContent()})
 bc('ed-c-color',v=>{cfg.contenido.cuerpo.color=v;    renderContent()})
@@ -925,6 +1151,7 @@ document.getElementById('ed-reset-block')?.addEventListener('click', () => {
 window.addEventListener('resize', renderAll)
 
 initDrag()
+initDragContent()
 load()
 </script>
 
