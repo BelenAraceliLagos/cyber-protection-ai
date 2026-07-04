@@ -98,6 +98,14 @@ export const importAPI = {
   }
 }
 
+/* ── DATA TRANSFER (export/import por módulo) ── */
+export const dataTransferAPI = {
+  exportModule(module)        { return request('GET',  `/data-transfer/export/${module}`) },
+  exportAll()                 { return request('GET',  '/data-transfer/export') },
+  importModule(module, data)  { return request('POST', `/data-transfer/import/${module}`, data) },
+  importAll(data)             { return request('POST', '/data-transfer/import', data) },
+}
+
 export { getToken, setToken, removeToken }
 
 /* ── PROPOSALS ── */
