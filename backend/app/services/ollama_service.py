@@ -249,14 +249,59 @@ def generar_textos_completos(
     }
 
 
+def _reparar_json_comillas(bruto: str) -> str:
+    """
+    Repara comillas dobles rectas embebidas dentro de un valor de texto
+    (la causa más común de JSON inválido generado por el modelo, ej. al
+    citar una ley o norma entre comillas). Escapa cualquier comilla que no
+    esté cumpliendo el rol estructural de abrir/cerrar una clave o valor
+    JSON (es decir, que no esté junto a los separadores típicos : , { } [ ]).
+    Respeta las secuencias que ya vienen correctamente escapadas (\\").
+    """
+    resultado = []
+    n = len(bruto)
+    i = 0
+    while i < n:
+        ch = bruto[i]
+        if ch == '\\' and i + 1 < n:
+            # Ya viene escapado en el texto original -> se respeta tal cual
+            resultado.append(ch)
+            resultado.append(bruto[i + 1])
+            i += 2
+            continue
+        if ch == '"':
+            k = len(resultado) - 1
+            while k >= 0 and resultado[k] in ' \t\n':
+                k -= 1
+            prev = resultado[k] if k >= 0 else ''
+            j = i + 1
+            while j < n and bruto[j] in ' \t\n':
+                j += 1
+            nxt = bruto[j] if j < n else ''
+            es_estructural = (
+                prev in ('', '{', '[', ':', ',') or
+                nxt in (':', ',', '}', ']', '')
+            )
+            if not es_estructural:
+                resultado.append('\\"')
+                i += 1
+                continue
+        resultado.append(ch)
+        i += 1
+    return ''.join(resultado)
+
+
 def generar_descripcion_servicio(nombre: str, descripcion_base: str, empresa: str, industria: str) -> dict:
     """
     Genera una descripción estructurada (JSON) para un servicio usando Ollama.
     """
     import json
 
-    # Truncar descripción base para evitar que Ollama se pierda con textos muy largos
-    desc_truncada = descripcion_base[:800] if len(descripcion_base) > 800 else descripcion_base
+    # Truncar descripción base solo si es extremadamente larga (evita
+    # desbordar el contexto del modelo); 6000 caracteres cubre servicios
+    # con descripciones muy detalladas de varias fases/actividades/entregables
+    # sin perder contenido, como ocurría con el límite anterior de 800.
+    desc_truncada = descripcion_base[:6000] if len(descripcion_base) > 6000 else descripcion_base
 
     prompt = f"""Eres un experto en ciberseguridad redactando una propuesta comercial para {empresa} ({industria}).
 
@@ -287,7 +332,8 @@ REGLAS ESTRICTAS:
 - Cada sección debe tener entre 2 y 4 items.
 - Cada item debe tener entre 2 y 4 subitems específicos y concretos.
 - Todo en español formal chileno.
-- Los subitems deben ser descripciones concretas de actividades, no frases genéricas."""
+- Los subitems deben ser descripciones concretas de actividades, no frases genéricas.
+- MUY IMPORTANTE PARA QUE EL JSON SEA VÁLIDO: si necesitas citar una ley, norma o nombre propio, NUNCA uses comillas dobles ("). Usa comillas simples (') o directamente sin comillas (ej: Ley 21.663, NERC CIP-002). Las comillas dobles dentro de un texto rompen el formato JSON."""
 
     try:
         raw = _ollama(prompt, tokens=1400)
@@ -304,7 +350,22 @@ REGLAS ESTRICTAS:
         if inicio == -1 or fin == 0:
             raise ValueError("No se encontró JSON en la respuesta")
 
-        data = json.loads(raw[inicio:fin])
+        bruto = raw[inicio:fin]
+        try:
+            data = json.loads(bruto)
+        except json.JSONDecodeError:
+            try:
+                # Intento 1: comillas "tipográficas" (comillas curvas de
+                # autocorrección) en vez de comillas simples.
+                reparado = (
+                    bruto.replace('“', "'").replace('”', "'")
+                         .replace('‘', "'").replace('’', "'")
+                )
+                data = json.loads(reparado)
+            except json.JSONDecodeError:
+                # Intento 2: comillas dobles rectas embebidas dentro de un
+                # valor de texto (ej. citando una ley entre comillas).
+                data = json.loads(_reparar_json_comillas(bruto))
 
         if "intro" not in data or "secciones" not in data:
             raise ValueError("JSON incompleto")

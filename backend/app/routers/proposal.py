@@ -22,6 +22,7 @@ from app.models.user import User
 from app.models.client import Client
 from app.models.service import Service
 from app.models.company import Company
+from app.models.custom_font import CustomFont
 
 from app.services.ollama_service import generar_textos_completos
 from app.services.generate_proposal import generar_propuesta
@@ -47,6 +48,64 @@ class ProposalResponse(BaseModel):
     archivo: str
 
 
+def _build_conditions(company) -> list[str]:
+    """
+    Arma las líneas de la página 'Condiciones Comerciales' a partir de los
+    datos de la empresa emisora seleccionada. Si algún campo no está
+    completado para esa empresa, simplemente se omite ese bloque (no se
+    dejan encabezados vacíos ni placeholders).
+    """
+    if not company:
+        return []
+
+    lineas: list[str] = []
+
+    def _bloque(*partes):
+        """Agrega un bloque de líneas seguido de un separador, solo si
+        alguna de las partes tiene contenido real."""
+        partes = [p for p in partes if p and str(p).strip()]
+        if not partes:
+            return
+        if lineas:
+            lineas.append("")
+        for p in partes:
+            # Permite párrafos multilínea guardados con \n en el campo
+            for sub in str(p).split("\n"):
+                lineas.append(sub)
+
+    _bloque(company.notas_valores)
+    _bloque(company.formas_pago)
+
+    if company.modalidad_proyecto and str(company.modalidad_proyecto).strip():
+        if lineas:
+            lineas.append("")
+        lineas.append("Modalidad Proyecto (implementaciones, evaluaciones, pentesting, tabletop):")
+        for sub in str(company.modalidad_proyecto).split("\n"):
+            lineas.append(sub)
+
+    if company.modalidad_consultoria and str(company.modalidad_consultoria).strip():
+        if lineas:
+            lineas.append("")
+        lineas.append("Modalidad Consultoría / Servicios Recurrentes (MDR, monitoreo, IR retainer, etc.):")
+        for sub in str(company.modalidad_consultoria).split("\n"):
+            lineas.append(sub)
+
+    datos_empresa = " | ".join(
+        p for p in [
+            company.name,
+            f"R.U.T.: {company.rut}" if company.rut else None,
+        ] if p
+    )
+    _bloque(datos_empresa or None, company.direccion, f"Tel.: {company.telefono}" if company.telefono else None)
+
+    _bloque(
+        f"Transferencias Electrónicas — {company.banco}" if company.banco else company.banco,
+        company.datos_bancarios,
+    )
+
+    return lineas
+
+
 # ─── Construcción del dict de datos para el generador PDF ─────────────
 
 def construir_data_propuesta(
@@ -55,8 +114,21 @@ def construir_data_propuesta(
     textos,
     titulo_proyecto,
     logo_cliente_path=None,
-    company=None
+    company=None,
+    db_session=None,
 ) -> dict:
+
+    # Fuentes personalizadas (subidas vía Gestión de Datos) — se pasan como
+    # un dict simple {css_key: {name, regular_path, bold_path}} para que
+    # generate_proposal.py arme los @font-face sin necesitar acceso a la BD.
+    custom_fonts = {}
+    if db_session is not None:
+        for f in db_session.query(CustomFont).all():
+            custom_fonts[f.css_key] = {
+                "name": f.name,
+                "regular_path": f.regular_path,
+                "bold_path": f.bold_path,
+            }
 
     servicios_pdf = []
     for s in servicios:
@@ -128,7 +200,9 @@ def construir_data_propuesta(
             
             "content_color": company.content_color if company else None,
 
-            "portada_config": company.portada_config if company else None
+            "portada_config": company.portada_config if company else None,
+
+            "_custom_fonts": custom_fonts,
         },
 
         # Textos generados por IA
@@ -169,26 +243,7 @@ def construir_data_propuesta(
             "Valores referenciales. Costos definitivos a confirmar tras reunión de alcance."
         ),
 
-        "conditions": [
-            "Los valores son netos y no incluyen IVA.",
-            "Los costos de despacho fuera de la Región Metropolitana son por cuenta del cliente.",
-            "",
-            "Formas de pago: Contado, Transferencia Electrónica.",
-            "",
-            "Modalidad Proyecto (implementaciones, evaluaciones, pentesting, tabletop):",
-            "50% al inicio de los trabajos.",
-            "50% a la entrega de la implementación funcional.",
-            "",
-            "Modalidad Consultoría / Servicios Recurrentes (MDR, monitoreo, IR retainer, etc.):",
-            "Facturación mensual, pago a 30 días desde la emisión de la factura (mes vencido).",
-            "",
-            "Servicio Técnico Gamer Chile SPA.  |  R.U.T.: 76.771.397-5",
-            "La Capitanía 80, oficina 108, Las Condes, Santiago – Chile.",
-            "Tel.: +56 9 4951 2772",
-            "",
-            "Transferencias Electrónicas — Banco Estado",
-            "Chequera Electrónica Empresa N° 20470014891",
-        ],
+        "conditions": _build_conditions(company),
     }
 
 
@@ -264,7 +319,8 @@ def generate_proposal(
         textos=textos,
         titulo_proyecto=titulo,
         logo_cliente_path=logo_uri,
-        company=company
+        company=company,
+        db_session=db,
     )
 
     # 7. Generar el PDF

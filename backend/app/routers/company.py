@@ -111,6 +111,15 @@ def create_company(
         primary_color=data.primary_color,
         secondary_color=data.secondary_color,
         content_color=data.content_color,
+        rut=data.rut,
+        direccion=data.direccion,
+        telefono=data.telefono,
+        notas_valores=data.notas_valores,
+        formas_pago=data.formas_pago,
+        modalidad_proyecto=data.modalidad_proyecto,
+        modalidad_consultoria=data.modalidad_consultoria,
+        banco=data.banco,
+        datos_bancarios=data.datos_bancarios,
     )
     db.add(company)
     db.commit()
@@ -156,6 +165,26 @@ def update_company(
         company.active = data.active
     if data.portada_config is not None:
         company.portada_config = data.portada_config
+
+    # Condiciones comerciales
+    if data.rut is not None:
+        company.rut = data.rut
+    if data.direccion is not None:
+        company.direccion = data.direccion
+    if data.telefono is not None:
+        company.telefono = data.telefono
+    if data.notas_valores is not None:
+        company.notas_valores = data.notas_valores
+    if data.formas_pago is not None:
+        company.formas_pago = data.formas_pago
+    if data.modalidad_proyecto is not None:
+        company.modalidad_proyecto = data.modalidad_proyecto
+    if data.modalidad_consultoria is not None:
+        company.modalidad_consultoria = data.modalidad_consultoria
+    if data.banco is not None:
+        company.banco = data.banco
+    if data.datos_bancarios is not None:
+        company.datos_bancarios = data.datos_bancarios
 
     db.commit()
     db.refresh(company)

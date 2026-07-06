@@ -51,6 +51,60 @@ AZUL  = "#155FCF"
 VERDE = "#8EE3C8"
 GRIS  = "#4a4a4a"
 
+# ── Mapeo de clave de fuente -> pila CSS real ───────────────────────────────
+# IMPORTANTE: debe coincidir exactamente con FONT_STACKS en editor.html,
+# para que la vista previa del editor y el PDF final se vean igual.
+FONT_STACKS = {
+    "segoe":     "'Segoe UI', 'Segoe UI Variable', Arial, sans-serif",
+    "arial":     "Arial, Helvetica, sans-serif",
+    "calibri":   "Calibri, 'Segoe UI', sans-serif",
+    "georgia":   "Georgia, 'Times New Roman', serif",
+    "times":     "'Times New Roman', Times, serif",
+    "verdana":   "Verdana, Geneva, sans-serif",
+    "trebuchet": "'Trebuchet MS', sans-serif",
+}
+
+
+def _font_stack(clave: str, custom_fonts: dict | None = None) -> str:
+    """
+    Resuelve la pila CSS font-family para una clave de fuente.
+    Si la clave corresponde a una fuente personalizada (subida por el
+    usuario), usa su nombre real declarado en @font-face; si no, cae a
+    las fuentes del sistema (FONT_STACKS).
+    """
+    custom_fonts = custom_fonts or {}
+    if clave in custom_fonts:
+        nombre = custom_fonts[clave]["name"]
+        return f"'{nombre}', 'Segoe UI', sans-serif"
+    return FONT_STACKS.get(clave, FONT_STACKS["segoe"])
+
+
+def _font_faces_css(custom_fonts: dict | None = None) -> str:
+    """Genera los bloques @font-face para todas las fuentes personalizadas
+    cargadas, para que WeasyPrint pueda usarlas en el PDF."""
+    if not custom_fonts:
+        return ""
+    bloques = []
+    for datos in custom_fonts.values():
+        nombre = datos["name"]
+        if datos.get("regular_path"):
+            uri = Path(datos["regular_path"]).resolve().as_uri()
+            bloques.append(f"""
+@font-face {{
+    font-family: '{nombre}';
+    src: url('{uri}');
+    font-weight: 400;
+}}""")
+        if datos.get("bold_path"):
+            uri = Path(datos["bold_path"]).resolve().as_uri()
+            bloques.append(f"""
+@font-face {{
+    font-family: '{nombre}';
+    src: url('{uri}');
+    font-weight: 700;
+}}""")
+    return "\n".join(bloques)
+
 
 def _img_b64(path: Path) -> str:
     with open(path, "rb") as f:
@@ -122,6 +176,7 @@ def _css_base(company: dict = None) -> str:
         )
 
     company = company or {}
+    custom_fonts = company.get("_custom_fonts") or {}
 
     # Color para el contenido interior:
     # 1. Si la empresa tiene content_color explícito en BD → usarlo
@@ -150,9 +205,13 @@ def _css_base(company: dict = None) -> str:
     _cuerpo_cfg = _pc.get("cuerpo") or {}
     banner_size      = _banner_cfg.get("size",    26)
     banner_weight    = _banner_cfg.get("weight",  700)
+    banner_font      = _font_stack(_banner_cfg.get("font", "segoe"), custom_fonts)
+    banner_line_height = _banner_cfg.get("line_height", 1.1)
     banner_y_pct     = _banner_cfg.get("y_start", 45)   # % desde top de la página interior
     cuerpo_size      = _cuerpo_cfg.get("size",    10.5)
     cuerpo_weight    = _cuerpo_cfg.get("weight",  400)
+    cuerpo_font      = _font_stack(_cuerpo_cfg.get("font", "segoe"), custom_fonts)
+    cuerpo_line_height = _cuerpo_cfg.get("line_height", 1.55)
     cuerpo_y_pct     = _cuerpo_cfg.get("y_start", 75)   # % desde top de la página interior
     cuerpo_x_mm      = _cuerpo_cfg.get("x_start", 38)   # mm desde la izquierda
     # Convertir % a mm (página interior = 297mm)
@@ -200,12 +259,16 @@ def _css_base(company: dict = None) -> str:
     titulo_weight = _get("titulo",       "weight", 700)
     titulo_align  = _get("titulo",       "align",  "left")
     titulo_width  = _get("titulo",       "width",  150)
+    titulo_font        = _font_stack(_get("titulo", "font", "segoe"), custom_fonts)
+    titulo_line_height = _get("titulo", "line_height", 1.15)
 
     objetivo_x      = max(0,  _get("objetivo",   "x",      28))
     objetivo_y      = max(10, _get("objetivo",   "y",      210))  # mínimo 10mm
     objetivo_size   = _get("objetivo",   "size",   11)
     objetivo_weight = _get("objetivo",   "weight", 400)
     objetivo_align  = _get("objetivo",   "align",  "left")
+    objetivo_font        = _font_stack(_get("objetivo", "font", "segoe"), custom_fonts)
+    objetivo_line_height = _get("objetivo", "line_height", 1.4)
 
     logo_x = _get("logo_cliente", "x", 28)
     logo_y = _get("logo_cliente", "y", 248)
@@ -213,7 +276,8 @@ def _css_base(company: dict = None) -> str:
     logo_h = _get("logo_cliente", "height", 34)
 
     return f"""
-    
+{_font_faces_css(custom_fonts)}
+
 /* ── Tipografía corporativa ──────────────────────────────────────────────
    Century Gothic  → logotipo CP (en imagen base, no en HTML)
    Segoe UI        → TODO el texto del documento
@@ -269,11 +333,11 @@ body {{
     left:{titulo_x}mm;
     top:{titulo_y}mm;
     max-width: {titulo_width}mm;
-    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-family:   {titulo_font};
     font-size:     {titulo_size}pt;
     font-weight:   {titulo_weight};
     color:         {primary_color};
-    line-height:   1.15;
+    line-height:   {titulo_line_height};
     text-align:    {titulo_align};
     margin-bottom: 0;
 }}
@@ -301,9 +365,10 @@ body {{
     left: {objetivo_x}mm;
     top: {objetivo_y}mm;
     max-width: 120mm;
+    font-family: {objetivo_font};
     font-size: {objetivo_size}pt;
     font-weight: {objetivo_weight};
-    line-height: 1.4;
+    line-height: {objetivo_line_height};
     text-align: {objetivo_align};
     color: {primary_color};
 }}
@@ -366,7 +431,7 @@ body {{
 /* Posición del banner (bloque verde con título) */
 /* Banner título — posicionado absolutamente con dimensiones exactas */
 .banner-titulo {{
-    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-family:   {banner_font};
     background:    {secondary_color};
     color:         {content_color};
     font-size:     {banner_size}pt;
@@ -374,7 +439,7 @@ body {{
     padding:       3mm 8mm;
     display:       block;
     width:         160mm;
-    line-height:   1.1;
+    line-height:   {banner_line_height};
     position:      absolute;
     left:          32mm;
     top:           {banner_top_mm}mm;
@@ -448,11 +513,11 @@ h3 {{
 /* Body — párrafos de cuerpo general
    Fuente: Segoe UI Regular, 10.5pt, justificado */
 p {{
-    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-family:   {cuerpo_font};
     font-size:     {cuerpo_size}pt;
     font-weight:   {cuerpo_weight};
     color:         {content_color};
-    line-height:   1.55;
+    line-height:   {cuerpo_line_height};
     text-align:    justify;
     margin-bottom: 3mm;
 }}
@@ -1441,8 +1506,11 @@ def sec_planes(total_uf_mes: float, data: dict) -> str:
 
 
 def sec_condiciones(data: dict) -> str:
+    condiciones = data.get("conditions", [])
+    if not any(linea.strip() for linea in condiciones):
+        return ""
     html = ''
-    for linea in data.get("conditions", []):
+    for linea in condiciones:
         if linea.strip():
             html += f'<div class="condicion-linea">{linea}</div>'
         else:
@@ -1511,9 +1579,10 @@ def categorizar_servicios(servicios, usar_ia=True):
                       f"Servicios:\n{lista}\n\n"
                        "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}")
             "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}"
+            from app.services.ollama_service import MODEL as _OLLAMA_MODEL
             r = _requests.post(
                 "http://localhost:11434/api/generate",
-                json={"model": "gemma3:4b", "prompt": prompt,
+                json={"model": _OLLAMA_MODEL, "prompt": prompt,
                       "stream": False, "options": {"temperature": 0.1}},
                 timeout=60)
             raw = r.json().get("response", "").replace("```json","").replace("```","").strip()

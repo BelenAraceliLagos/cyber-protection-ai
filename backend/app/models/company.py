@@ -31,3 +31,16 @@ class Company(Base):
     portada_config = Column(JSON, nullable=True, default=dict)
 
     active = Column(Boolean, default=True)
+
+    # ── Condiciones comerciales (por empresa emisora) ───────────────
+    rut = Column(String)
+    direccion = Column(String)
+    telefono = Column(String)
+
+    notas_valores = Column(String)          # ej. "Los valores son netos y no incluyen IVA."
+    formas_pago = Column(String)            # ej. "Contado, Transferencia Electrónica."
+    modalidad_proyecto = Column(String)      # texto libre, párrafo completo
+    modalidad_consultoria = Column(String)   # texto libre, párrafo completo
+
+    banco = Column(String)                  # ej. "Banco Estado"
+    datos_bancarios = Column(String)        # ej. "Chequera Electrónica Empresa N° ..."

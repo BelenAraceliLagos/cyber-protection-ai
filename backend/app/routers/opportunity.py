@@ -38,7 +38,7 @@ def _enrich(opp: Opportunity, db: Session) -> dict:
                 "fecha_inicio":   h.fecha_inicio.isoformat() if h.fecha_inicio else None,
                 "fecha_fin":      h.fecha_fin.isoformat()    if h.fecha_fin    else None,
             }
-            for h in opp.hitos
+            for h in opp.milestones
         ],
     }
     return data
