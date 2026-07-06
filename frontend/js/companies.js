@@ -210,6 +210,17 @@ function openEditModal(id) {
   setColorValue('fc-primary',   c.primary_color   || '#155FCF')
   setColorValue('fc-secondary', c.secondary_color || '#8EE3C8')
   setColorValue('fc-content',   c.content_color   || '#1A2B5F')
+
+  document.getElementById('fc-rut').value                    = c.rut || ''
+  document.getElementById('fc-direccion').value               = c.direccion || ''
+  document.getElementById('fc-telefono').value                = c.telefono || ''
+  document.getElementById('fc-notas-valores').value           = c.notas_valores || ''
+  document.getElementById('fc-formas-pago').value              = c.formas_pago || ''
+  document.getElementById('fc-modalidad-proyecto').value       = c.modalidad_proyecto || ''
+  document.getElementById('fc-modalidad-consultoria').value    = c.modalidad_consultoria || ''
+  document.getElementById('fc-banco').value                    = c.banco || ''
+  document.getElementById('fc-datos-bancarios').value          = c.datos_bancarios || ''
+
   openModal('modal-company')
 }
 
@@ -229,7 +240,18 @@ async function submitCompanyForm(e) {
 
   if (!name) { showAlert('El nombre es obligatorio', 'error'); return }
 
-  const payload = { name, primary_color: primary, secondary_color: secondary, content_color: content }
+  const payload = {
+    name, primary_color: primary, secondary_color: secondary, content_color: content,
+    rut:                    document.getElementById('fc-rut').value.trim() || null,
+    direccion:              document.getElementById('fc-direccion').value.trim() || null,
+    telefono:               document.getElementById('fc-telefono').value.trim() || null,
+    notas_valores:          document.getElementById('fc-notas-valores').value.trim() || null,
+    formas_pago:            document.getElementById('fc-formas-pago').value.trim() || null,
+    modalidad_proyecto:     document.getElementById('fc-modalidad-proyecto').value.trim() || null,
+    modalidad_consultoria:  document.getElementById('fc-modalidad-consultoria').value.trim() || null,
+    banco:                  document.getElementById('fc-banco').value.trim() || null,
+    datos_bancarios:        document.getElementById('fc-datos-bancarios').value.trim() || null,
+  }
   try {
     if (editingId) {
       await api('PUT', `/companies/${editingId}`, payload)

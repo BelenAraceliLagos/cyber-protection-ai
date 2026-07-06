@@ -418,6 +418,18 @@
         <div class="ed-card" id="ed-typo-panel">
           <div class="ed-card__title">🔤 Tipografía</div>
           <div class="ed-field">
+            <label class="ed-field__lbl">Fuente</label>
+            <select id="ed-font" class="ed-select">
+              <option value="segoe">Segoe UI</option>
+              <option value="arial">Arial</option>
+              <option value="calibri">Calibri</option>
+              <option value="georgia">Georgia</option>
+              <option value="times">Times New Roman</option>
+              <option value="verdana">Verdana</option>
+              <option value="trebuchet">Trebuchet MS</option>
+            </select>
+          </div>
+          <div class="ed-field">
             <label class="ed-field__lbl">Tamaño de fuente</label>
             <div class="ed-range-row">
               <input type="range" id="ed-size" min="7" max="60" step="0.5" value="34">
@@ -434,6 +446,13 @@
               <option value="700" selected>Negrita</option>
               <option value="900">Extra negrita</option>
             </select>
+          </div>
+          <div class="ed-field">
+            <label class="ed-field__lbl">Interlineado</label>
+            <div class="ed-range-row">
+              <input type="range" id="ed-lh" min="0.9" max="2.2" step="0.05" value="1.15">
+              <input type="number" id="ed-lh-num" class="ed-num" min="0.9" max="2.2" step="0.05" value="1.15">
+            </div>
           </div>
           <div class="ed-field">
             <label class="ed-field__lbl">Alineación</label>
@@ -583,6 +602,18 @@
           <div class="ed-card">
             <div class="ed-card__title">🔤 Tipografía del banner</div>
             <div class="ed-field">
+              <label class="ed-field__lbl">Fuente</label>
+              <select id="ed-b-font" class="ed-select">
+                <option value="segoe">Segoe UI</option>
+                <option value="arial">Arial</option>
+                <option value="calibri">Calibri</option>
+                <option value="georgia">Georgia</option>
+                <option value="times">Times New Roman</option>
+                <option value="verdana">Verdana</option>
+                <option value="trebuchet">Trebuchet MS</option>
+              </select>
+            </div>
+            <div class="ed-field">
               <label class="ed-field__lbl">Tamaño (pt)</label>
               <div class="ed-range-row">
                 <input type="range" id="ed-b-size" min="12" max="40" step="0.5" value="26">
@@ -597,6 +628,13 @@
                 <option value="600">Semi-negrita</option>
                 <option value="700" selected>Negrita</option>
               </select>
+            </div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Interlineado</label>
+              <div class="ed-range-row">
+                <input type="range" id="ed-b-lh" min="0.9" max="2.2" step="0.05" value="1.1">
+                <input type="number" id="ed-b-lh-num" class="ed-num" min="0.9" max="2.2" step="0.05" value="1.1">
+              </div>
             </div>
           </div>
           <div class="ed-card">
@@ -654,6 +692,18 @@
           <div class="ed-card">
             <div class="ed-card__title">🔤 Tipografía del cuerpo</div>
             <div class="ed-field">
+              <label class="ed-field__lbl">Fuente</label>
+              <select id="ed-c-font" class="ed-select">
+                <option value="segoe">Segoe UI</option>
+                <option value="arial">Arial</option>
+                <option value="calibri">Calibri</option>
+                <option value="georgia">Georgia</option>
+                <option value="times">Times New Roman</option>
+                <option value="verdana">Verdana</option>
+                <option value="trebuchet">Trebuchet MS</option>
+              </select>
+            </div>
+            <div class="ed-field">
               <label class="ed-field__lbl">Tamaño (pt)</label>
               <div class="ed-range-row">
                 <input type="range" id="ed-c-size" min="7" max="16" step="0.5" value="10.5">
@@ -668,6 +718,14 @@
                 <option value="400" selected>Normal</option>
                 <option value="600">Semi-negrita</option>
               </select>
+            </div>
+            <div class="ed-field">
+              <label class="ed-field__lbl">Interlineado</label>
+              <div class="ed-range-row">
+                <input type="range" id="ed-c-lh" min="0.9" max="2.2" step="0.05" value="1.55">
+                <input type="number" id="ed-c-lh-num" class="ed-num" min="0.9" max="2.2" step="0.05" value="1.55">
+              </div>
+              <span class="ed-hint">Más alto = más aire entre líneas, mejor lectura en párrafos largos</span>
             </div>
           </div>
           <div class="ed-card">
@@ -700,6 +758,7 @@
 <script type="module">
 import { BASE_URL } from '../js/config.js'
 import { requireAuth, showAlert, escapeHtml } from '../js/utils.js'
+import { fontsAPI } from '../js/api.js'
 
 requireAuth()
 
@@ -710,14 +769,26 @@ let section = 'banner'
 
 let cfg = {
   portada: {
-    titulo:       {x:28,  y:148, size:34,   weight:700, align:'left', color:null, width:150},
-    objetivo:     {x:28,  y:210, size:11,   weight:400, align:'left', color:null},
+    titulo:       {x:28,  y:148, size:34,   weight:700, align:'left', color:null, width:150, font:'segoe', line_height:1.15},
+    objetivo:     {x:28,  y:210, size:11,   weight:400, align:'left', color:null, font:'segoe', line_height:1.4},
     logo_cliente: {x:130, y:240, width:60, height:34},
   },
   contenido: {
-    banner: {y_start:45, size:26, weight:700, bg_color:null, text_color:null},
-    cuerpo: {y_start:75, size:10.5, weight:400, color:null},
+    banner: {y_start:45, size:26, weight:700, bg_color:null, text_color:null, font:'segoe', line_height:1.1},
+    cuerpo: {y_start:75, size:10.5, weight:400, color:null, font:'segoe', line_height:1.55},
   }
+}
+
+// Mapeo de clave de fuente -> pila CSS real (debe coincidir con FONT_STACKS
+// en generate_proposal.py para que el PDF final se vea igual que el editor)
+const FONT_STACKS = {
+  segoe:     "'Segoe UI', 'Segoe UI Variable', Arial, sans-serif",
+  arial:     "Arial, Helvetica, sans-serif",
+  calibri:   "Calibri, 'Segoe UI', sans-serif",
+  georgia:   "Georgia, 'Times New Roman', serif",
+  times:     "'Times New Roman', Times, serif",
+  verdana:   "Verdana, Geneva, sans-serif",
+  trebuchet: "'Trebuchet MS', sans-serif",
 }
 
 // ── Cargar empresa desde URL param ───────────────────────────────
@@ -737,7 +808,50 @@ async function api(method, path, body=null) {
   return res.text().then(t => t ? JSON.parse(t) : null)
 }
 
+// ── Fuentes personalizadas (subidas en Gestión de Datos) ───────────────
+async function loadCustomFonts() {
+  let fonts = []
+  try {
+    fonts = await fontsAPI.list()
+  } catch {
+    return // si falla (ej. sin conexión), seguimos solo con fuentes del sistema
+  }
+  if (!fonts.length) return
+
+  let fontFaceCss = ''
+  const selects = ['ed-font', 'ed-b-font', 'ed-c-font']
+    .map(id => document.getElementById(id))
+    .filter(Boolean)
+
+  fonts.forEach(f => {
+    // Misma clave que usa el backend (CustomFont.css_key) — deben coincidir
+    // exactamente para que generate_proposal.py resuelva la fuente correcta.
+    const key = f.css_key
+    FONT_STACKS[key] = `'${f.name}', 'Segoe UI', sans-serif`
+
+    if (f.has_regular) {
+      fontFaceCss += `@font-face { font-family:'${f.name}'; src:url('${fontsAPI.fileUrl(f.id,'regular')}'); font-weight:400; }\n`
+    }
+    if (f.has_bold) {
+      fontFaceCss += `@font-face { font-family:'${f.name}'; src:url('${fontsAPI.fileUrl(f.id,'bold')}'); font-weight:700; }\n`
+    }
+
+    selects.forEach(sel => {
+      const opt = document.createElement('option')
+      opt.value = key
+      opt.textContent = `${f.name} (personalizada)`
+      sel.appendChild(opt)
+    })
+  })
+
+  const styleTag = document.createElement('style')
+  styleTag.textContent = fontFaceCss
+  document.head.appendChild(styleTag)
+}
+
 async function load() {
+  await loadCustomFonts()
+
   company = await api('GET', `/companies/${compId}`)
   document.getElementById('ed-company-name').textContent = company.name
 
@@ -821,10 +935,11 @@ function styleBlock(key) {
   const pxMm = canvas.offsetWidth / A4W
   content.style.fontSize   = (c.size * pxMm * 0.3528).toFixed(1) + 'px'
   content.style.fontWeight = c.weight
+  content.style.fontFamily = FONT_STACKS[c.font || 'segoe']
   content.style.textAlign  = c.align
   const wMm = cfg.portada[key]?.width || 150
   content.style.maxWidth   = Math.round(pxMm * wMm) + 'px'
-  content.style.lineHeight = '1.15'
+  content.style.lineHeight = String(c.line_height || 1.15)
   const col = c.color || company?.primary_color || '#ffffff'
   content.style.color = col
   const lum = _lum(col)
@@ -881,6 +996,8 @@ function syncControls() {
     sv('ed-size', c.size)
     sv('ed-width', c.width || 150)
     const w = document.getElementById('ed-weight'); if(w) w.value = c.weight
+    const f = document.getElementById('ed-font'); if(f) f.value = c.font || 'segoe'
+    sv('ed-lh', c.line_height || 1.15)
     document.querySelectorAll('.ed-align-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.align === (c.align||'left')))
     sc('ed-block-color', c.color || company?.primary_color || '#ffffff')
@@ -920,6 +1037,8 @@ function renderContent() {
     bannerText.style.color      = btxt
     bannerText.style.fontSize   = (b.size * pxMm * 0.3528).toFixed(1) + 'px'
     bannerText.style.fontWeight = b.weight
+    bannerText.style.fontFamily = FONT_STACKS[b.font || 'segoe']
+    bannerText.style.lineHeight = String(b.line_height || 1.1)
     bannerText.style.padding    = '6px 12px'
     bannerText.style.display    = 'block'
     bannerText.style.width      = '100%'
@@ -938,6 +1057,8 @@ function renderContent() {
     cuerpoText.style.color      = ctxt
     cuerpoText.style.fontSize   = (c.size * pxMm * 0.3528).toFixed(1) + 'px'
     cuerpoText.style.fontWeight = c.weight
+    cuerpoText.style.fontFamily = FONT_STACKS[c.font || 'segoe']
+    cuerpoText.style.lineHeight = String(c.line_height || 1.55)
   }
 }
 
@@ -963,12 +1084,16 @@ function setSection(sec) {
     const b=cfg.contenido.banner
     sv('ed-b-y',b.y_start||45); sv('ed-b-size',b.size)
     const w=document.getElementById('ed-b-weight');if(w)w.value=b.weight
+    const f=document.getElementById('ed-b-font');if(f)f.value=b.font||'segoe'
+    sv('ed-b-lh', b.line_height || 1.1)
     sc('ed-b-bg',b.bg_color||company?.secondary_color||'#8EE3C8')
     sc('ed-b-text',b.text_color||company?.content_color||'#1A2B5F')
   } else {
     const c=cfg.contenido.cuerpo
     sv('ed-c-y',c.y_start||75); sv('ed-c-x',c.x_start||38); sv('ed-c-size',c.size)
     const w=document.getElementById('ed-c-weight');if(w)w.value=c.weight
+    const f=document.getElementById('ed-c-font');if(f)f.value=c.font||'segoe'
+    sv('ed-c-lh', c.line_height || 1.55)
     sc('ed-c-color',c.color||company?.content_color||'#1A2B5F')
   }
 }
@@ -1106,6 +1231,8 @@ br('ed-x',    v=>{cfg.portada[block].x=v; posBlock(block)})
 br('ed-y',    v=>{cfg.portada[block].y=v; posBlock(block)})
 br('ed-size', v=>{if(block!=='logo_cliente'){cfg.portada[block].size=v; styleBlock(block)}})
 document.getElementById('ed-weight')?.addEventListener('change',e=>{if(block!=='logo_cliente'){cfg.portada[block].weight=Number(e.target.value);styleBlock(block)}})
+document.getElementById('ed-font')?.addEventListener('change',e=>{if(block!=='logo_cliente'){cfg.portada[block].font=e.target.value;styleBlock(block)}})
+br('ed-lh', v=>{if(block!=='logo_cliente'){cfg.portada[block].line_height=v; styleBlock(block)}})
 document.querySelectorAll('.ed-align-btn').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.ed-align-btn').forEach(x=>x.classList.remove('active'))
   b.classList.add('active')
@@ -1119,12 +1246,16 @@ br('ed-logo-h', v=>{cfg.portada.logo_cliente.height=v; posBlock('logo_cliente')}
 br('ed-b-y',    v=>{cfg.contenido.banner.y_start=v;  renderContent()})
 br('ed-b-size', v=>{cfg.contenido.banner.size=v;     renderContent()})
 document.getElementById('ed-b-weight')?.addEventListener('change',e=>{cfg.contenido.banner.weight=Number(e.target.value);renderContent()})
+document.getElementById('ed-b-font')?.addEventListener('change',e=>{cfg.contenido.banner.font=e.target.value;renderContent()})
+br('ed-b-lh', v=>{cfg.contenido.banner.line_height=v; renderContent()})
 bc('ed-b-bg',   v=>{cfg.contenido.banner.bg_color=v;   renderContent()})
 bc('ed-b-text', v=>{cfg.contenido.banner.text_color=v; renderContent()})
 br('ed-c-y',    v=>{cfg.contenido.cuerpo.y_start=v;  renderContent()})
 br('ed-c-x',    v=>{cfg.contenido.cuerpo.x_start=v;  renderContent()})
 br('ed-c-size', v=>{cfg.contenido.cuerpo.size=v;     renderContent()})
 document.getElementById('ed-c-weight')?.addEventListener('change',e=>{cfg.contenido.cuerpo.weight=Number(e.target.value);renderContent()})
+document.getElementById('ed-c-font')?.addEventListener('change',e=>{cfg.contenido.cuerpo.font=e.target.value;renderContent()})
+br('ed-c-lh', v=>{cfg.contenido.cuerpo.line_height=v; renderContent()})
 bc('ed-c-color',v=>{cfg.contenido.cuerpo.color=v;    renderContent()})
 
 document.querySelectorAll('.ed-ctab').forEach(t=>t.addEventListener('click',()=>setSection(t.dataset.section)))
@@ -1141,8 +1272,8 @@ document.getElementById('ed-reset-btn')?.addEventListener('click', () => {
 })
 document.getElementById('ed-reset-block')?.addEventListener('click', () => {
   const DEF = {
-    titulo:       {x:28,y:148,size:34,weight:700,align:'left',color:null},
-    objetivo:     {x:28,y:210,size:11,weight:400,align:'left',color:null},
+    titulo:       {x:28,y:148,size:34,weight:700,align:'left',color:null,font:'segoe',line_height:1.15},
+    objetivo:     {x:28,y:210,size:11,weight:400,align:'left',color:null,font:'segoe',line_height:1.4},
     logo_cliente: {x:130,y:240},
   }
   cfg.portada[block] = {...DEF[block]}

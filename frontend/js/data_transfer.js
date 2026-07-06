@@ -14,6 +14,7 @@ const MODULES = [
   { key: 'clients',       label: 'Clientes' },
   { key: 'opportunities', label: 'Oportunidades' },
   { key: 'quotations',    label: 'Cotizaciones' },
+  { key: 'fonts',         label: 'Fuentes de texto' },
 ]
 
 function downloadJson(filename, obj) {

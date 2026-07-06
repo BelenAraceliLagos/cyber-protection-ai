@@ -31,6 +31,11 @@
     .import-sync-table th, .import-sync-table td { text-align:left; padding:.6rem .5rem; border-bottom:1px solid var(--cp-border); font-size:.9rem; }
     .import-sync-table .btn--sm { padding:.35rem .6rem; }
     .sync-result { color: var(--cp-text-muted); }
+    .fonts-upload-card { background: var(--cp-bg-soft); border: 1px solid var(--cp-border); border-radius: 10px; padding: 14px 16px; }
+    .fonts-upload-card__title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+    .fonts-upload-card__row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 720px) { .fonts-upload-card__row { grid-template-columns: 1fr; } }
+    .fonts-field .form__label { font-size: 12px; }
   </style>
 </head>
 <body>
@@ -95,6 +100,9 @@
         </button>
         <button type="button" class="data-tabs__btn" data-tab="sync" role="tab" aria-selected="false">
           <i class="ti ti-database-cog"></i> Sincronización por módulo
+        </button>
+        <button type="button" class="data-tabs__btn" data-tab="fonts" role="tab" aria-selected="false">
+          <i class="ti ti-typography"></i> Fuentes de texto para el informe de preventa
         </button>
       </div>
 
@@ -201,6 +209,21 @@
           </div>
         </div>
       </section>
+
+      <section id="tab-fonts" class="data-tab-panel" hidden>
+        <div class="page-header page-enter" style="margin-top:0;">
+          <div>
+            <h1 class="page-header__title">Fuentes de texto para el informe de preventa</h1>
+            <p class="page-header__sub">Sube fuentes personalizadas (.ttf / .otf) para usarlas en el Editor de diseño. Se comparten automáticamente con quien sincronice datos contigo.</p>
+          </div>
+        </div>
+
+        <div class="card page-enter page-enter--d3">
+          <div class="card__body">
+            <div id="fonts-panel"></div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 </div>
@@ -214,6 +237,7 @@
   import { initProfileModal } from '../js/profile.js'
   import { initImportServices } from '../js/import_services.js'
   import { initDataTransfer } from '../js/data_transfer.js'
+  import { initFontsAdmin } from '../js/fonts_admin.js'
   import { requireAuth }      from '../js/utils.js'
   requireAuth()
   loadUserInfo()
@@ -221,10 +245,11 @@
   initProfileModal()
   initImportServices()
   initDataTransfer()
+  initFontsAdmin()
 
-  // Tabs: Importar servicios (Excel) <-> Sincronización por módulo
+  // Tabs: Importar servicios (Excel) <-> Sincronización por módulo <-> Fuentes
   const tabButtons = document.querySelectorAll('.data-tabs__btn')
-  const tabPanels = { excel: document.getElementById('tab-excel'), sync: document.getElementById('tab-sync') }
+  const tabPanels = { excel: document.getElementById('tab-excel'), sync: document.getElementById('tab-sync'), fonts: document.getElementById('tab-fonts') }
   tabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       tabButtons.forEach(b => { b.classList.remove('data-tabs__btn--active'); b.setAttribute('aria-selected', 'false') })

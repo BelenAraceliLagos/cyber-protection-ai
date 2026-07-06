@@ -106,6 +106,24 @@ export const dataTransferAPI = {
   importAll(data)             { return request('POST', '/data-transfer/import', data) },
 }
 
+/* ── FUENTES PERSONALIZADAS ── */
+export const fontsAPI = {
+  list() { return request('GET', '/fonts') },
+  upload(formData) {
+    const token = getToken()
+    return fetch(`${BASE_URL}/fonts/upload`, {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData
+    }).then(async r => {
+      if (!r.ok) { const d = await r.json().catch(()=>({})); throw new Error(d.detail || `Error ${r.status}`) }
+      return r.json()
+    })
+  },
+  remove(id) { return request('DELETE', `/fonts/${id}`) },
+  fileUrl(id, weight) { return `${BASE_URL}/fonts/${id}/file/${weight}` },
+}
+
 export { getToken, setToken, removeToken }
 
 /* ── PROPOSALS ── */
