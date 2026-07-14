@@ -43,7 +43,7 @@
       <a href="report.html"        class="sidebar__item sidebar__item--active"  aria-current="page"><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
       <div class="sidebar__divider"></div>
       <a href="companies.html"     class="sidebar__item"  ><i class="ti ti-building" aria-hidden="true"></i><span class="sidebar__label">Empresas</span></a>
-      <a href="import.html"        class="sidebar__item"  ><i class="ti ti-upload" aria-hidden="true"></i><span class="sidebar__label">Importar datos</span></a>
+      <a href="data.html"        class="sidebar__item"  ><i class="ti ti-database-cog" aria-hidden="true"></i><span class="sidebar__label">Gestión de Datos</span></a>
       <a href="ingestion.html"     class="sidebar__item"  ><i class="ti ti-database-import" aria-hidden="true"></i><span class="sidebar__label">Historial</span></a>
     </div>
     <div class="sidebar__user">
@@ -73,172 +73,150 @@
         </div>
       </div>
 
-      <div class="report-grid">
+      <div class="report-toprow">
 
-        <!-- ── Columna izquierda ── -->
-        <div class="report-column page-enter page-enter--d1">
-
-          <!-- Cliente -->
-          <div class="card">
-            <div class="card__header">
-              <div class="card__title"><i class="ti ti-user report-card-icon"></i> Cliente</div>
-            </div>
-            <div class="card__body">
-              <div class="form__group">
-                <label class="form__label">Buscar</label>
-                <input type="search" id="r-cliente-search" class="form__input" placeholder="Nombre de empresa...">
-              </div>
-              <div class="form__group report-form-group--flush">
-                <label class="form__label">Seleccionar</label>
-                <select id="r-cliente" class="form__input report-select-list" size="4">
-                  <option value="">Cargando...</option>
-                </select>
-              </div>
-              <div class="form-group">
-  <label for="r-company">
-    Empresa emisora
-  </label>
-
-  <select id="r-company">
-    <option value="">
-      — Selecciona empresa —
-    </option>
-  </select>
-</div>
-            </div>
-          </div>
-
-          <!-- Contexto adicional -->
-          <div class="card">
-            <div class="card__header">
-              <div class="card__title"><i class="ti ti-info-circle report-card-icon"></i> Contexto para la IA</div>
-            </div>
-            <div class="card__body">
-              <div class="form__group">
-                <label class="form__label">Título del informe</label>
-                <input type="text" id="r-titulo" class="form__input"
-                  value="Propuesta de Servicios de Ciberseguridad"
-                  readonly
-                  style="background:#f0f4ff;color:#155FCF;font-weight:600;cursor:default;">
-              </div>
-              <div class="form__group report-form-group--flush">
-                <label class="form__label">
-                  Antecedente o contexto del cliente
-                  <span class="report-label-note">(opcional pero recomendado)</span>
-                </label>
-                <textarea id="r-antecedente" class="form__input"
-                  placeholder="Ej: La empresa sufrió un intento de phishing en marzo 2025. Su equipo de TI es de 3 personas. Tienen servidores en AWS y oficinas en Santiago y Concepción."></textarea>
-              </div>
-            </div>
-          </div>
-
-          <!-- Catálogo de servicios -->
-          <div class="card">
-            <div class="card__header">
-              <div class="card__title"><i class="ti ti-briefcase report-card-icon"></i> Servicios a incluir</div>
-            </div>
-            <div class="card__body report-card-body--compact">
-              <div id="r-catalogo">
-                <div class="report-loading">
-                  <i class="ti ti-loader report-loading__icon"></i>
-                  <p>Cargando...</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
+        <!-- Caja 1: Cliente -->
+        <div class="report-box">
+          <div class="report-box__header"><i class="ti ti-user"></i> Cliente</div>
+          <input type="search" id="r-cliente-search" class="form__input report-box__input" placeholder="Buscar empresa...">
+          <select id="r-cliente" class="form__input report-select-list report-box__list" size="3">
+            <option value="">Cargando...</option>
+          </select>
         </div>
 
-        <!-- ── Columna derecha ── -->
-        <div class="r-panel page-enter page-enter--d2">
-          <div class="card">
-            <div class="card__header">
-              <div class="card__title">
-                <i class="ti ti-sparkles report-card-icon--ai"></i>
-                Configurar informe
-              </div>
+        <!-- Caja 2: Empresa emisora -->
+        <div class="report-box">
+          <div class="report-box__header"><i class="ti ti-building"></i> Empresa emisora</div>
+          <select id="r-company" class="form__input report-box__input">
+            <option value="">— Selecciona empresa —</option>
+          </select>
+        </div>
+
+        <!-- Caja 3: Servicios (resumen clicable, abre modal) -->
+        <div class="report-box report-box--clickable" id="r-servicios-box" role="button" tabindex="0">
+          <div class="report-box__header"><i class="ti ti-briefcase"></i> Servicios</div>
+          <div class="report-box__summary" id="r-servicios-box-summary">Ningún servicio seleccionado</div>
+          <div class="report-box__hint">Clic para elegir <i class="ti ti-chevron-right"></i></div>
+        </div>
+
+        <!-- Caja 4: Logo del cliente (compacto) -->
+        <div class="report-box">
+          <div class="report-box__header"><i class="ti ti-photo"></i> Logo del cliente</div>
+          <div class="logo-drop-area" id="logo-drop-area">
+            <div class="logo-empty-state" id="logo-empty">
+              <label class="logo-select-btn">
+                <i class="ti ti-photo-up"></i>
+                <span>Clic o arrastra</span>
+                <input type="file" id="r-logo-input" accept="image/png,image/jpeg,image/jpg,image/svg+xml" style="display:none">
+              </label>
             </div>
-            <div class="card__body">
-
-              <!-- Contador servicios -->
-              <div class="report-counter">
-                <i class="ti ti-checkbox"></i>
-                <span id="r-contador">Ningún servicio seleccionado</span>
-              </div>
-
-              <!-- Secciones IA — chips compactos -->
-              <div class="form__label report-section-title">Secciones IA</div>
-              <div class="ia-chips">
-                <label class="ia-chip"><input type="checkbox" id="sec-intro" checked><span>📝 Introducción</span></label>
-                <label class="ia-chip"><input type="checkbox" id="sec-riesgo" checked><span>⚠️ Riesgo</span></label>
-                <label class="ia-chip"><input type="checkbox" id="sec-justif" checked><span>🎯 Justificación</span></label>
-                <label class="ia-chip"><input type="checkbox" id="sec-valor" checked><span>💼 Valor</span></label>
-                <label class="ia-chip"><input type="checkbox" id="sec-conclusion" checked><span>✍️ Cierre</span></label>
-              </div>
-
-              <!-- Logo del cliente -->
-              <div class="logo-upload-section">
-                <div class="form__label">Logo del cliente <span class="logo-upload-hint">(opcional — se incluye en portada PDF)</span></div>
-                <div class="logo-drop-area" id="logo-drop-area">
-                  <div class="logo-empty-state" id="logo-empty">
-                    <i class="ti ti-photo-up"></i>
-                    <span>Arrastra aquí o</span>
-                    <label class="btn btn--xs btn--secondary logo-select-btn">
-                      Seleccionar imagen
-                      <input type="file" id="r-logo-input" accept="image/png,image/jpeg,image/jpg,image/svg+xml" style="display:none">
-                    </label>
-                    <span class="logo-hint-format">PNG, JPG o SVG · máx 2MB</span>
-                  </div>
-                  <div class="logo-preview-state" id="logo-preview" style="display:none">
-                    <img id="logo-img-preview" src="" alt="Logo cliente">
-                    <button class="logo-remove-btn" id="logo-remove" title="Quitar logo">
-                      <i class="ti ti-x"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Progreso de generación -->
-              <div class="ia-progress" id="r-progress">
-                <div class="report-progress-title">Generando con IA...</div>
-                <div id="r-steps">
-                  <div class="ia-step" id="step-intro">
-                    <span class="ia-step__icon">📝</span> Introducción
-                  </div>
-                  <div class="ia-step" id="step-riesgo">
-                    <span class="ia-step__icon">⚠️</span> Análisis de riesgo
-                  </div>
-                  <div class="ia-step" id="step-justif">
-                    <span class="ia-step__icon">🎯</span> Justificación de servicios
-                  </div>
-                  <div class="ia-step" id="step-valor">
-                    <span class="ia-step__icon">💼</span> Valor estratégico
-                  </div>
-                  <div class="ia-step" id="step-conclusion">
-                    <span class="ia-step__icon">✍️</span> Conclusión
-                  </div>
-                  <div class="ia-step" id="step-pdf">
-                    <span class="ia-step__icon">📄</span> Generando PDF...
-                  </div>
-                </div>
-              </div>
-
-              <!-- Botón generar -->
-              <button class="btn btn--primary report-generate-button" id="r-generar-btn"
-                disabled>
-                <i class="ti ti-sparkles btn__icon"></i>
-                Generar informe con IA
+            <div class="logo-preview-state" id="logo-preview" style="display:none">
+              <img id="logo-img-preview" src="" alt="Logo cliente">
+              <button class="logo-remove-btn" id="logo-remove" title="Quitar logo">
+                <i class="ti ti-x"></i>
               </button>
-
-              <p class="report-helper-text">
-                La IA puede tardar 20–40 segundos según la cantidad de servicios
-              </p>
-
             </div>
           </div>
         </div>
 
       </div>
+
+      <!-- Vista previa de lo que se va a generar -->
+      <div class="report-preview page-enter page-enter--d2" id="r-preview">
+        <div class="report-preview__header">
+          <span><i class="ti ti-eye"></i> Vista previa de lo que se va a generar</span>
+          <span class="report-preview__count" id="r-preview-count">0 servicios</span>
+        </div>
+        <div class="report-preview__route">
+          <i class="ti ti-building-bank"></i>
+          <span id="r-preview-cliente">Selecciona un cliente</span>
+          <i class="ti ti-arrow-right"></i>
+          <span id="r-preview-empresa">Empresa emisora</span>
+        </div>
+        <div class="report-preview__chips" id="r-preview-chips">
+          <span class="report-chip report-chip--muted">Ningún servicio seleccionado</span>
+        </div>
+        <button type="button" class="report-preview__toggle" id="r-preview-toggle" style="display:none">
+          <i class="ti ti-chevron-down"></i> Ver servicios seleccionados
+        </button>
+        <div class="report-preview__detail" id="r-preview-detail" style="display:none"></div>
+      </div>
+
+      <!-- Contexto para la IA -->
+      <div class="card page-enter page-enter--d3">
+        <div class="card__header">
+          <div class="card__title"><i class="ti ti-info-circle report-card-icon"></i> Contexto para la IA</div>
+        </div>
+        <div class="card__body">
+          <div class="form__group">
+            <label class="form__label">Título del informe</label>
+            <input type="text" id="r-titulo" class="form__input"
+              value="Propuesta de Servicios de Ciberseguridad"
+              readonly
+              style="background:#f0f4ff;color:#155FCF;font-weight:600;cursor:default;">
+          </div>
+          <div class="form__group report-form-group--flush">
+            <label class="form__label">
+              Antecedente o contexto del cliente
+              <span class="report-label-note">(opcional pero recomendado — incide directamente en el resultado)</span>
+            </label>
+            <textarea id="r-antecedente" class="form__input report-context-textarea"
+              placeholder="Ej: La empresa sufrió un intento de phishing en marzo 2025. Su equipo de TI es de 3 personas. Tienen servidores en AWS y oficinas en Santiago y Concepción."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progreso + Generar -->
+      <div class="report-generate-row page-enter page-enter--d4">
+        <div class="ia-progress" id="r-progress">
+          <div class="report-progress-circle report-progress-circle--spin">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="23" fill="none" stroke="var(--cp-border)" stroke-width="5"></circle>
+              <circle cx="28" cy="28" r="23" fill="none" stroke="var(--cp-blue-main)" stroke-width="5"
+                stroke-linecap="round" id="r-progress-bar"
+                stroke-dasharray="36 108"></circle>
+            </svg>
+          </div>
+          <div class="report-progress-text">
+            <span class="report-progress-time" id="r-progress-time">00:00</span>
+            <span class="report-progress-label" id="r-progress-label">Generando con IA — puede tardar varios minutos</span>
+          </div>
+        </div>
+
+        <button class="btn btn--primary report-generate-button" id="r-generar-btn" disabled>
+          <i class="ti ti-sparkles btn__icon"></i>
+          Generar informe
+        </button>
+      </div>
+      <p class="report-helper-text">
+        El tiempo depende de la cantidad de servicios y su nivel de detalle — no cierres esta pestaña mientras genera
+      </p>
+
+      <!-- Modal: catálogo completo de servicios -->
+      <div class="modal-overlay" id="r-modal-overlay" style="display:none">
+        <div class="modal-panel">
+          <div class="modal-panel__header">
+            <span>Seleccionar servicios</span>
+            <button class="modal-panel__close" id="r-modal-close" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-panel__search">
+            <input type="search" id="r-modal-search" class="form__input" placeholder="Buscar servicio...">
+          </div>
+          <div class="modal-panel__body">
+            <div id="r-catalogo">
+              <div class="report-loading">
+                <i class="ti ti-loader report-loading__icon"></i>
+                <p>Cargando...</p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-panel__footer">
+            <span id="r-contador">Ningún servicio seleccionado</span>
+            <button class="btn btn--primary btn--sm" id="r-modal-done">Listo</button>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>

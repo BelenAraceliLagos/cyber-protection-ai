@@ -51,6 +51,60 @@ AZUL  = "#155FCF"
 VERDE = "#8EE3C8"
 GRIS  = "#4a4a4a"
 
+# ── Mapeo de clave de fuente -> pila CSS real ───────────────────────────────
+# IMPORTANTE: debe coincidir exactamente con FONT_STACKS en editor.html,
+# para que la vista previa del editor y el PDF final se vean igual.
+FONT_STACKS = {
+    "segoe":     "'Segoe UI', 'Segoe UI Variable', Arial, sans-serif",
+    "arial":     "Arial, Helvetica, sans-serif",
+    "calibri":   "Calibri, 'Segoe UI', sans-serif",
+    "georgia":   "Georgia, 'Times New Roman', serif",
+    "times":     "'Times New Roman', Times, serif",
+    "verdana":   "Verdana, Geneva, sans-serif",
+    "trebuchet": "'Trebuchet MS', sans-serif",
+}
+
+
+def _font_stack(clave: str, custom_fonts: dict | None = None) -> str:
+    """
+    Resuelve la pila CSS font-family para una clave de fuente.
+    Si la clave corresponde a una fuente personalizada (subida por el
+    usuario), usa su nombre real declarado en @font-face; si no, cae a
+    las fuentes del sistema (FONT_STACKS).
+    """
+    custom_fonts = custom_fonts or {}
+    if clave in custom_fonts:
+        nombre = custom_fonts[clave]["name"]
+        return f"'{nombre}', 'Segoe UI', sans-serif"
+    return FONT_STACKS.get(clave, FONT_STACKS["segoe"])
+
+
+def _font_faces_css(custom_fonts: dict | None = None) -> str:
+    """Genera los bloques @font-face para todas las fuentes personalizadas
+    cargadas, para que WeasyPrint pueda usarlas en el PDF."""
+    if not custom_fonts:
+        return ""
+    bloques = []
+    for datos in custom_fonts.values():
+        nombre = datos["name"]
+        if datos.get("regular_path"):
+            uri = Path(datos["regular_path"]).resolve().as_uri()
+            bloques.append(f"""
+@font-face {{
+    font-family: '{nombre}';
+    src: url('{uri}');
+    font-weight: 400;
+}}""")
+        if datos.get("bold_path"):
+            uri = Path(datos["bold_path"]).resolve().as_uri()
+            bloques.append(f"""
+@font-face {{
+    font-family: '{nombre}';
+    src: url('{uri}');
+    font-weight: 700;
+}}""")
+    return "\n".join(bloques)
+
 
 def _img_b64(path: Path) -> str:
     with open(path, "rb") as f:
@@ -122,6 +176,7 @@ def _css_base(company: dict = None) -> str:
         )
 
     company = company or {}
+    custom_fonts = company.get("_custom_fonts") or {}
 
     # Color para el contenido interior:
     # 1. Si la empresa tiene content_color explícito en BD → usarlo
@@ -150,13 +205,23 @@ def _css_base(company: dict = None) -> str:
     _cuerpo_cfg = _pc.get("cuerpo") or {}
     banner_size      = _banner_cfg.get("size",    26)
     banner_weight    = _banner_cfg.get("weight",  700)
+    banner_font      = _font_stack(_banner_cfg.get("font", "segoe"), custom_fonts)
+    banner_line_height = _banner_cfg.get("line_height", 1.1)
     banner_y_pct     = _banner_cfg.get("y_start", 45)   # % desde top de la página interior
     cuerpo_size      = _cuerpo_cfg.get("size",    10.5)
     cuerpo_weight    = _cuerpo_cfg.get("weight",  400)
+    cuerpo_font      = _font_stack(_cuerpo_cfg.get("font", "segoe"), custom_fonts)
+    cuerpo_line_height = _cuerpo_cfg.get("line_height", 1.55)
     cuerpo_y_pct     = _cuerpo_cfg.get("y_start", 75)   # % desde top de la página interior
+    cuerpo_x_mm      = _cuerpo_cfg.get("x_start", 38)   # mm desde la izquierda
     # Convertir % a mm (página interior = 297mm)
-    banner_top_mm = round(banner_y_pct * 297 / 100, 1)
-    cuerpo_top_mm = round(cuerpo_y_pct * 297 / 100, 1)
+    # Mapear y_start% al rango real del área de contenido interior (45mm-270mm)
+    _CONTENT_START = 45   # mm desde donde empieza el área útil
+    _CONTENT_END   = 270  # mm hasta donde termina el área útil  
+    _CONTENT_RANGE = _CONTENT_END - _CONTENT_START  # 225mm
+    banner_top_mm = round((banner_y_pct / 100) * 280, 1)
+    cuerpo_top_mm = round((cuerpo_y_pct  / 100) * 280, 1)
+
 
     if company.get("portada"):
         portada_path = Path(company["portada"])
@@ -185,25 +250,34 @@ def _css_base(company: dict = None) -> str:
         "logo_cliente": {"x": 28, "y": 248},
     }
     def _get(key, field, default):
-        return layout.get(key, {}).get(field) or _DEFAULT[key].get(field, default)
+        val = layout.get(key, {}).get(field)
+        return val if val is not None else _DEFAULT[key].get(field, default)
 
-    titulo_x      = _get("titulo",       "x",      28)
-    titulo_y      = _get("titulo",       "y",      148)
+    titulo_x      = max(0,  _get("titulo",       "x",      28))
+    titulo_y      = max(5,  _get("titulo",       "y",      148))  # mínimo 5mm desde arriba
     titulo_size   = _get("titulo",       "size",   34)
     titulo_weight = _get("titulo",       "weight", 700)
     titulo_align  = _get("titulo",       "align",  "left")
+    titulo_width  = _get("titulo",       "width",  150)
+    titulo_font        = _font_stack(_get("titulo", "font", "segoe"), custom_fonts)
+    titulo_line_height = _get("titulo", "line_height", 1.15)
 
-    objetivo_x      = _get("objetivo",   "x",      28)
-    objetivo_y      = _get("objetivo",   "y",      210)
+    objetivo_x      = max(0,  _get("objetivo",   "x",      28))
+    objetivo_y      = max(10, _get("objetivo",   "y",      210))  # mínimo 10mm
     objetivo_size   = _get("objetivo",   "size",   11)
     objetivo_weight = _get("objetivo",   "weight", 400)
     objetivo_align  = _get("objetivo",   "align",  "left")
+    objetivo_font        = _font_stack(_get("objetivo", "font", "segoe"), custom_fonts)
+    objetivo_line_height = _get("objetivo", "line_height", 1.4)
 
     logo_x = _get("logo_cliente", "x", 28)
     logo_y = _get("logo_cliente", "y", 248)
+    logo_w = _get("logo_cliente", "width",  60)
+    logo_h = _get("logo_cliente", "height", 34)
 
     return f"""
-    
+{_font_faces_css(custom_fonts)}
+
 /* ── Tipografía corporativa ──────────────────────────────────────────────
    Century Gothic  → logotipo CP (en imagen base, no en HTML)
    Segoe UI        → TODO el texto del documento
@@ -258,12 +332,12 @@ body {{
     position:absolute;
     left:{titulo_x}mm;
     top:{titulo_y}mm;
-    max-width: 140mm;
-    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    max-width: {titulo_width}mm;
+    font-family:   {titulo_font};
     font-size:     {titulo_size}pt;
     font-weight:   {titulo_weight};
     color:         {primary_color};
-    line-height:   1.15;
+    line-height:   {titulo_line_height};
     text-align:    {titulo_align};
     margin-bottom: 0;
 }}
@@ -291,9 +365,10 @@ body {{
     left: {objetivo_x}mm;
     top: {objetivo_y}mm;
     max-width: 120mm;
+    font-family: {objetivo_font};
     font-size: {objetivo_size}pt;
     font-weight: {objetivo_weight};
-    line-height: 1.4;
+    line-height: {objetivo_line_height};
     text-align: {objetivo_align};
     color: {primary_color};
 }}
@@ -303,7 +378,7 @@ body {{
     position: absolute;
     left: {logo_x}mm;
     top: {logo_y}mm;
-    width: 60mm;
+    width: {logo_w}mm;
     font-family:     'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
     font-size:       10pt;
     font-weight:     700;
@@ -356,7 +431,7 @@ body {{
 /* Posición del banner (bloque verde con título) */
 /* Banner título — posicionado absolutamente con dimensiones exactas */
 .banner-titulo {{
-    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-family:   {banner_font};
     background:    {secondary_color};
     color:         {content_color};
     font-size:     {banner_size}pt;
@@ -364,29 +439,29 @@ body {{
     padding:       3mm 8mm;
     display:       block;
     width:         160mm;
-    line-height:   1.1;
+    line-height:   {banner_line_height};
     position:      absolute;
     left:          32mm;
     top:           {banner_top_mm}mm;
 }}
 .banner-titulo.banner-alcance-pos {{
-    top: 45mm;
+    top: {banner_top_mm}mm;
 }}
 .banner-titulo.banner-costos-pos {{
-    top: 64mm;
+    top: {banner_top_mm}mm;
 }}
 
 /* Body independiente del banner — posicionado exactamente donde empieza el texto real */
 .banner-body-alcance {{
     position: absolute;
-    left:     38mm;
-    top:      119mm;
-    width:    152mm;
+    left:     {cuerpo_x_mm}mm;
+    top:      {cuerpo_top_mm}mm;
+    width:    {round(190 - cuerpo_x_mm)}mm;
 }}
 .banner-body-costos {{
     position: absolute;
-    left:     38mm;
-    top:      91mm;
+    left:     {cuerpo_x_mm}mm;
+    top:      {cuerpo_top_mm}mm;
     width:    158mm;
 }}
 
@@ -438,11 +513,11 @@ h3 {{
 /* Body — párrafos de cuerpo general
    Fuente: Segoe UI Regular, 10.5pt, justificado */
 p {{
-    font-family:   'Segoe UI', 'Segoe UI Variable', Arial, sans-serif;
+    font-family:   {cuerpo_font};
     font-size:     {cuerpo_size}pt;
     font-weight:   {cuerpo_weight};
     color:         {content_color};
-    line-height:   1.55;
+    line-height:   {cuerpo_line_height};
     text-align:    justify;
     margin-bottom: 3mm;
 }}
@@ -816,6 +891,11 @@ def sec_portada(data: dict) -> str:
         data.get("logo_cliente") or ""
     )
 
+    # Tamaño del logo desde portada_config
+    _pc_logo = (company.get("portada_config") or {}).get("logo_cliente") or {}
+    logo_w = _pc_logo.get("width",  60)
+    logo_h = _pc_logo.get("height", 34)
+
     cliente_html = (
 
         f'''
@@ -824,7 +904,7 @@ def sec_portada(data: dict) -> str:
             <div style="
                 font-size:9pt;
                 font-weight:700;
-                color:{content_color};
+                color:{primary_color};
                 letter-spacing:0.5pt;
             ">
                 Elaborado para:
@@ -832,8 +912,8 @@ def sec_portada(data: dict) -> str:
 
             <img src="{logo_cliente}"
                 style="
-                max-width:60mm;
-                max-height:34mm;
+                max-width:{logo_w}mm;
+                max-height:{logo_h}mm;
                 object-fit:contain;
                 ">
         </div>
@@ -847,15 +927,15 @@ def sec_portada(data: dict) -> str:
     return f'''
     <section class="page-portada">
 
+        <h1 class="portada-titulo">
+            {titulo}
+        </h1>
+
+        <p class="portada-objetivo">
+            {obj}
+        </p>
+
         <div class="portada-content">
-
-            <h1 class="portada-titulo">
-                {titulo}
-            </h1>
-
-            <p class="portada-objetivo">
-                {obj}
-            </p>
 
         </div>
 
@@ -867,8 +947,6 @@ def sec_portada(data: dict) -> str:
 
 def sec_introduccion(data: dict) -> str:
     html = f'''
-<h1>Introducción</h1>
-<div class="hr"></div>
 <p>{data.get("introduccion", "")}</p>
 <p class="cita">"{data.get("frase_clave", "")}"</p>
 <p>{data.get("cierre_intro", "")}</p>
@@ -877,21 +955,19 @@ def sec_introduccion(data: dict) -> str:
   <div class="firma-nombre">Andrés Barrientos Cisternas</div>
   <div class="firma-cargo">CTO / CYBERPROTECTION.CL</div>
 </div>'''
-    return _page_std(html)
+    return _page_banner("Introducción", html)
 
 
 def sec_alcance(data: dict) -> str:
-    html = '<h1>Alcance</h1><div class="hr"></div>'
-    html += f'<p>{data.get("alcance_intro", "")}</p>'
+    html = f'<p>{data.get("alcance_intro", "")}</p>'
     if data.get("antecedente_titulo"):
-        html += f'<h3>{data["antecedente_titulo"]}</h3>'
         html += f'<h3>{data["antecedente_titulo"]}</h3>'
         for par in (data.get("antecedente_descripcion") or "").split("\n\n"):
             if par.strip():
                 html += f"<p>{par.strip()}</p>"
     for b in (data.get("antecedente_bullets") or []):
         html += f"<ul><li>{b}</li></ul>"
-    return _page_std(html)
+    return _page_banner("Alcance", html)
 
 
 def _render_desc_estructurada(desc_obj: dict) -> str:
@@ -956,6 +1032,42 @@ def _estimar_alto_estructurado(desc_obj: dict, chars_por_linea: int) -> int:
             total += len(item.get("subitems", []))  # subitems
         total += 1  # margen entre secciones
     return max(total, 2)
+
+
+def _parse_texto_estructurado(texto: str, nombre_srv: str = "") -> dict:
+    """Convierte texto con numeraciones/guiones a dict estructurado para renderizar con viñetas."""
+    import re
+    if not texto or len(texto) < 50:
+        return None
+    lineas = [l.strip() for l in texto.split("\n") if l.strip()]
+    if len(lineas) < 3:
+        return None
+    tiene_num = sum(1 for l in lineas if re.match(r"^\d+\.|^Fase\s+\d|^Etapa\s+\d|^Paso\s+\d", l, re.I)) >= 2
+    tiene_gui = sum(1 for l in lineas if l.startswith(("-","–","•"))) >= 3
+    if not tiene_num and not tiene_gui:
+        return None
+    intro_lines, resto = [], list(lineas)
+    for l in lineas:
+        if re.match(r"^\d+\.|^Fase\s+\d|^Etapa\s+\d|^Paso\s+\d|^[-–•]", l, re.I):
+            break
+        intro_lines.append(l); resto = resto[1:]
+    intro = " ".join(intro_lines).strip()
+    items, cur_label, cur_subs = [], None, []
+    for l in resto:
+        m = re.match(r"^(\d+\.|Fase\s+\d+:?|Etapa\s+\d+:?|Paso\s+\d+:?)\s*(.+)", l, re.I)
+        if m:
+            if cur_label: items.append({"label": cur_label, "subitems": cur_subs})
+            cur_label, cur_subs = m.group(2).strip(), []
+        elif l.startswith(("-","–","•")) and cur_label:
+            sub = re.sub(r"^[-–•]\s*", "", l).strip()
+            if sub: cur_subs.append(sub)
+        elif not cur_label and (l.startswith(("-","–","•")) or tiene_gui):
+            sub = re.sub(r"^[-–•]\s*", "", l).strip()
+            if sub: items.append({"label": sub, "subitems": []})
+    if cur_label: items.append({"label": cur_label, "subitems": cur_subs})
+    if not items:
+        return None
+    return {"intro": intro or nombre_srv, "secciones": [{"titulo": "Componentes del Servicio", "items": items}]}
 
 
 def _srv_bloques(srv: dict, chars_por_linea: int, lineas_por_pagina: int) -> list:
@@ -1023,6 +1135,17 @@ def _srv_bloques(srv: dict, chars_por_linea: int, lineas_por_pagina: int) -> lis
 
         bloques.append((pagina_html, unidades, True))
         return bloques
+
+    # ── Intentar parsear texto estructurado como fallback ──
+    desc_raw_str = str(desc_raw).strip() if desc_raw else ""
+    parsed = _parse_texto_estructurado(desc_raw_str, srv.get("nombre", ""))
+    if parsed:
+        alto = _estimar_alto_estructurado(parsed, chars_por_linea)
+        contenido = _render_desc_estructurada(parsed)
+        html = f'<p class="srv-seccion-titulo">{nombre}</p>{contenido}'
+        if alto <= lineas_por_pagina:
+            return [(html, alto, False)]
+        return [(html, lineas_por_pagina, False)]  # simplificado para textos muy largos
 
     # ── Descripción como texto plano ──
     desc = ""
@@ -1150,8 +1273,6 @@ def sec_servicios(data: dict, agrupado: dict) -> str:
     total = sum(len(v) for v in agrupado.values())
 
     encabezado_html = (
-        '<h1>Servicios Propuestos:</h1>'
-        '<div class="hr"></div>'
         f'<p>Suite de {total} servicio{"s" if total != 1 else ""} especializados '
         f'en {len(agrupado)} área{"s" if len(agrupado) != 1 else ""} de cobertura, '
         f'diseñados para proteger integralmente su organización.</p>'
@@ -1168,7 +1289,7 @@ def sec_servicios(data: dict, agrupado: dict) -> str:
         if lista_abierta:
             pagina_html += '</ul>'
             lista_abierta = False
-        paginas.append(_page_std(pagina_html))
+        paginas.append(_page_banner("Servicios Propuestos", pagina_html))
         pagina_html = ''
         unidades_usadas = 0
 
@@ -1212,30 +1333,24 @@ def sec_servicios(data: dict, agrupado: dict) -> str:
                 unidades_usadas += bloque_cost
 
     _cerrar_lista()
+    paginas.append(_page_banner("Servicios Propuestos", pagina_html))
 
-    # Valor estratégico — página nueva si no cabe
+    # Valor estratégico — siempre en página propia con banner
     valor_est = data.get("valor_estrategico", "")
     if valor_est:
-        lineas_ve = max(2, -(-len(valor_est) // CHARS_POR_LINEA)) + 3
-        if (unidades_usadas + lineas_ve) > LINEAS_POR_PAG:
-            paginas.append(_page_std(pagina_html))
-            pagina_html = f'<h2>Valor Estratégico</h2><p>{valor_est}</p>'
-        else:
-            pagina_html += f'<h2>Valor Estratégico</h2><p>{valor_est}</p>'
+        paginas.append(_page_banner("Valor Estratégico", f'<p>{valor_est}</p>'))
 
-    paginas.append(_page_std(pagina_html))
     return "".join(paginas)
 
 
 def sec_cumplimiento(data: dict) -> str:
     """Página propia: Cumplimiento Normativo."""
     cum = data.get("cumplimiento", {})
-    html = '<h1>Cumplimiento Normativo</h1><div class="hr"></div>'
-    html += f'<p><strong>{cum.get("intro", "")}</strong></p><ul>'
+    html = f'<p><strong>{cum.get("intro", "")}</strong></p><ul>'
     for b in cum.get("bullets", []):
         html += f"<li>{b}</li>"
     html += "</ul>"
-    return _page_std(html)
+    return _page_banner("Cumplimiento Normativo", html)
 
 
 def sec_matriz(data: dict) -> str:
@@ -1243,7 +1358,7 @@ def sec_matriz(data: dict) -> str:
     MAX_FILAS = 10
     filas = data.get("matriz_valor", [])
     if not filas:
-        return _page_std('<h1>Matriz de Valor</h1><div class="hr"></div>')
+        return _page_banner("Matriz de Valor", "")
 
     TH = '''<table class="tabla-matriz">
         <tr>
@@ -1256,7 +1371,7 @@ def sec_matriz(data: dict) -> str:
     for i in range(0, len(filas), MAX_FILAS):
         chunk = filas[i:i + MAX_FILAS]
         es_primera = (i == 0)
-        titulo = '<h1>Matriz de Valor</h1><div class="hr"></div><p><strong>Áreas que cubre el servicio y aporta a la organización</strong></p>' if es_primera else '<h1>Matriz de Valor </h1><div class="hr"></div>'
+        titulo = '<p><strong>Áreas que cubre el servicio y aporta a la organización</strong></p>' if es_primera else ''
         tabla = TH
         for f in chunk:
             tabla += f'''<tr>
@@ -1265,7 +1380,7 @@ def sec_matriz(data: dict) -> str:
               <td>{f.get("valor_agregado","")}</td>
             </tr>'''
         tabla += "</table>"
-        paginas.append(_page_std(titulo + tabla))
+        paginas.append(_page_banner("Matriz de Valor", titulo + tabla))
 
     return "".join(paginas)
 
@@ -1291,7 +1406,7 @@ def sec_metodologia(data: dict) -> str:
             html += f"<li>{item}</li>"
         html += "</ul>"
         
-    return _page_std(html)
+    return _page_banner("Metodología", html)
 
 
 def sec_costos(agrupado: dict, data: dict) -> tuple:
@@ -1310,13 +1425,10 @@ def sec_costos(agrupado: dict, data: dict) -> tuple:
     for cat, srvs in agrupado.items():
         filas.append(('cat', f'<tr class="cat-row"><td>&#9632; {cat}</td><td></td></tr>'))
         for srv in srvs:
-            filas.append(('cat', f'<tr class="cat-row"><td>&#9632; {cat}</td><td></td></tr>'))
-        for srv in srvs:
             precio = srv.get("base_price", 0)
             total += precio if isinstance(precio, (int, float)) else 0
             precio_str = f"{precio:.1f}" if isinstance(precio, (int, float)) and precio > 0 else "A convenir"
             filas.append(('srv', f'<tr class="srv-row"><td>&nbsp;&nbsp;{srv["nombre"]}</td><td class="right">{precio_str}</td></tr>'))
-            precio_str = f"{precio:.1f}" if isinstance(precio, (int, float)) and precio > 0 else "A convenir"
 
     total_str = f"{total:.1f} UF/mes" if total > 0 else "A convenir"
     fila_total = f'''<tr class="total-row"><td>TOTAL SUITE</td><td class="right">{total_str}</td></tr>'''
@@ -1336,7 +1448,7 @@ def sec_costos(agrupado: dict, data: dict) -> tuple:
         tabla += "</table>"
         if es_ultima and data.get("nota_costos"):
             tabla += f'<div class="nota-pie">{data["nota_costos"]}</div>'
-        paginas.append(_page_std(titulo + tabla))
+        paginas.append(_page_banner("Centro de Costos", tabla))
 
     return "".join(paginas), total
 
@@ -1369,7 +1481,7 @@ def sec_planes(total_uf_mes: float, data: dict) -> str:
         )
         filas.append(fila)
 
-    html = '<h1>Planes de Contratacion:</h1><div class="hr"></div>'
+    html = ''
     html += (
         '<p>La suite de servicios puede contratarse bajo distintos plazos de permanencia, '
         'segun las necesidades de planificacion y presupuesto de la organizacion. '
@@ -1390,17 +1502,20 @@ def sec_planes(total_uf_mes: float, data: dict) -> str:
         '<div class="nota-pie">Valores netos, no incluyen IVA. Facturacion mensual durante '
         'la vigencia del plan contratado.</div>'
     )
-    return _page_std(html)
+    return _page_banner("Planes de Contratación", html)
 
 
 def sec_condiciones(data: dict) -> str:
-    html = '<h1>Condiciones Comerciales:</h1><div class="hr"></div>'
-    for linea in data.get("conditions", []):
+    condiciones = data.get("conditions", [])
+    if not any(linea.strip() for linea in condiciones):
+        return ""
+    html = ''
+    for linea in condiciones:
         if linea.strip():
             html += f'<div class="condicion-linea">{linea}</div>'
         else:
             html += "<br>"
-    return _page_std(html)
+    return _page_banner("Condiciones Comerciales", html)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1464,9 +1579,10 @@ def categorizar_servicios(servicios, usar_ia=True):
                       f"Servicios:\n{lista}\n\n"
                        "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}")
             "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}"
+            from app.services.ollama_service import MODEL as _OLLAMA_MODEL
             r = _requests.post(
                 "http://localhost:11434/api/generate",
-                json={"model": "gemma3:4b", "prompt": prompt,
+                json={"model": _OLLAMA_MODEL, "prompt": prompt,
                       "stream": False, "options": {"temperature": 0.1}},
                 timeout=60)
             raw = r.json().get("response", "").replace("```json","").replace("```","").strip()

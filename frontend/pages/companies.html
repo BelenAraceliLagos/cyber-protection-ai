@@ -55,7 +55,7 @@
       <a href="companies.html"     class="sidebar__item sidebar__item--active" aria-current="page">
         <i class="ti ti-building"></i><span class="sidebar__label">Empresas</span>
       </a>
-      <a href="import.html"        class="sidebar__item"><i class="ti ti-upload"></i><span class="sidebar__label">Importar datos</span></a>
+      <a href="data.html"        class="sidebar__item"><i class="ti ti-database-cog"></i><span class="sidebar__label">Gestión de Datos</span></a>
       <a href="ingestion.html"     class="sidebar__item"><i class="ti ti-database-import"></i><span class="sidebar__label">Historial</span></a>
     </div>
     <div class="sidebar__user">
@@ -146,6 +146,51 @@
           </div>
         </div>
       </div>
+
+      <div class="form-group">
+        <label class="form-label"><i class="ti ti-file-invoice"></i> Condiciones comerciales</label>
+        <span class="color-hint" style="display:block;margin-bottom:0.75rem;">
+          Se incluyen en la última página de los informes generados con esta empresa como emisora. Deja en blanco lo que no aplique — esa sección simplemente no aparecerá.
+        </span>
+
+        <div class="form-group">
+          <label class="form-label" for="fc-rut">RUT</label>
+          <input class="form-input" id="fc-rut" type="text" placeholder="Ej: 76.771.397-5">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fc-direccion">Dirección</label>
+          <input class="form-input" id="fc-direccion" type="text" placeholder="Ej: La Capitanía 80, oficina 108, Las Condes, Santiago – Chile">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fc-telefono">Teléfono</label>
+          <input class="form-input" id="fc-telefono" type="text" placeholder="Ej: +56 9 4951 2772">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fc-notas-valores">Notas sobre valores</label>
+          <textarea class="form-input" id="fc-notas-valores" rows="2" placeholder="Ej: Los valores son netos y no incluyen IVA."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fc-formas-pago">Formas de pago</label>
+          <input class="form-input" id="fc-formas-pago" type="text" placeholder="Ej: Contado, Transferencia Electrónica.">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fc-modalidad-proyecto">Modalidad Proyecto</label>
+          <textarea class="form-input" id="fc-modalidad-proyecto" rows="2" placeholder="Ej: 50% al inicio de los trabajos.&#10;50% a la entrega de la implementación funcional."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fc-modalidad-consultoria">Modalidad Consultoría / Servicios Recurrentes</label>
+          <textarea class="form-input" id="fc-modalidad-consultoria" rows="2" placeholder="Ej: Facturación mensual, pago a 30 días desde la emisión de la factura (mes vencido)."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fc-banco">Banco</label>
+          <input class="form-input" id="fc-banco" type="text" placeholder="Ej: Banco Estado">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fc-datos-bancarios">Datos bancarios</label>
+          <textarea class="form-input" id="fc-datos-bancarios" rows="2" placeholder="Ej: Chequera Electrónica Empresa N° 20470014891"></textarea>
+        </div>
+      </div>
+
       <div class="modal__footer">
         <button type="button" class="btn btn--ghost" data-close-modal="modal-company">Cancelar</button>
         <button type="submit" class="btn btn--primary">Guardar empresa</button>

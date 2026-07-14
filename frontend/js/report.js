@@ -2,7 +2,7 @@
 
 import { clientsAPI, servicesAPI, proposalsAPI } from './api.js'
 import { showAlert, showSpinner, hideSpinner, requireAuth, escapeHtml, escapeAttr } from './utils.js'
-import { CATEGORIAS_ORDEN, agrupar } from './categories.js'
+import { CATEGORIAS_ORDEN, agrupar, categorizar } from './categories.js'
 
 // ── Estado ────────────────────────────────────────────────────────────
 let clientes      = []
@@ -30,6 +30,9 @@ export async function initReport() {
   bindCompany()
   bindLogo()
   bindGenerar()
+  bindServiciosModal()
+  bindPreviewToggle()
+  updatePreview()
 }
 
 async function cargarClientes() {
@@ -103,7 +106,7 @@ function bindCompany(){
       companySel =
         companies.find(c=>c.id===id)
         || null
-
+      updatePreview()
     }
   )
 }
@@ -117,6 +120,7 @@ function bindCliente() {
     const id = parseInt(sel.value)
     clienteSel = clientes.find(c => c.id === id) || null
     actualizarBoton()
+    updatePreview()
   })
   search?.addEventListener('input', () => {
     const q = search.value.toLowerCase()
@@ -185,6 +189,114 @@ window.rCheck = function(id, on) {
     ? `${seleccionados.size} servicio${seleccionados.size > 1 ? 's' : ''} seleccionado${seleccionados.size > 1 ? 's' : ''}`
     : 'Ningún servicio seleccionado'
   actualizarBoton()
+  updateServiciosBoxSummary()
+  updatePreview()
+}
+
+// ── Caja resumen de servicios (abre el modal) ──────────────────────────
+function updateServiciosBoxSummary() {
+  const el = document.getElementById('r-servicios-box-summary')
+  if (!el) return
+  el.textContent = seleccionados.size > 0
+    ? `${seleccionados.size} servicio${seleccionados.size > 1 ? 's' : ''} seleccionado${seleccionados.size > 1 ? 's' : ''}`
+    : 'Ningún servicio seleccionado'
+}
+
+function bindServiciosModal() {
+  const box     = document.getElementById('r-servicios-box')
+  const overlay = document.getElementById('r-modal-overlay')
+  const closeBtn = document.getElementById('r-modal-close')
+  const doneBtn  = document.getElementById('r-modal-done')
+  const search   = document.getElementById('r-modal-search')
+  if (!box || !overlay) return
+
+  const open  = () => { overlay.style.display = 'flex' }
+  const close = () => { overlay.style.display = 'none' }
+
+  box.addEventListener('click', open)
+  box.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open() } })
+  closeBtn?.addEventListener('click', close)
+  doneBtn?.addEventListener('click', close)
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close() })
+
+  search?.addEventListener('input', () => {
+    const q = search.value.toLowerCase().trim()
+    document.querySelectorAll('#r-catalogo .r-categoria').forEach(bloque => {
+      let anyVisible = false
+      bloque.querySelectorAll('.r-servicio').forEach(row => {
+        const match = !q || row.textContent.toLowerCase().includes(q)
+        row.style.display = match ? '' : 'none'
+        if (match) anyVisible = true
+      })
+      bloque.style.display = anyVisible ? '' : 'none'
+      if (q && anyVisible) {
+        bloque.querySelector('.r-categoria__body')?.classList.add('r-categoria__body--open')
+        const icon = bloque.querySelector('.r-categoria__header i')
+        icon?.classList.add('ti-chevron-up')
+        icon?.classList.remove('ti-chevron-down')
+      }
+    })
+  })
+}
+
+// ── Vista previa de lo que se va a generar ─────────────────────────────
+function updatePreview() {
+  const clienteEl  = document.getElementById('r-preview-cliente')
+  const empresaEl  = document.getElementById('r-preview-empresa')
+  const countEl    = document.getElementById('r-preview-count')
+  const chipsEl    = document.getElementById('r-preview-chips')
+  const toggleEl   = document.getElementById('r-preview-toggle')
+  const detailEl   = document.getElementById('r-preview-detail')
+  if (!clienteEl) return
+
+  clienteEl.textContent = clienteSel ? clienteSel.company_name : 'Selecciona un cliente'
+  empresaEl.textContent = companySel ? companySel.name : 'Empresa emisora'
+  countEl.textContent = `${seleccionados.size} servicio${seleccionados.size !== 1 ? 's' : ''}`
+
+  if (!seleccionados.size) {
+    chipsEl.innerHTML = '<span class="report-chip report-chip--muted">Ningún servicio seleccionado</span>'
+    toggleEl.style.display = 'none'
+    detailEl.style.display = 'none'
+    detailEl.innerHTML = ''
+    return
+  }
+
+  // Agrupar seleccionados por categoría (para los chips resumen y el detalle)
+  const grupos = {} // { categoria: [servicio, ...] }
+  seleccionados.forEach(id => {
+    const s = servicios.find(x => Number(x.id) === id)
+    if (!s) return
+    const catRaw = categorizar(s.name, s.description)
+    const cat = catRaw.replace(/^\S+\s+/, '') // quita el emoji inicial
+    if (!grupos[cat]) grupos[cat] = []
+    grupos[cat].push(s)
+  })
+
+  chipsEl.innerHTML = Object.entries(grupos)
+    .map(([cat, list]) => `<span class="report-chip">${escapeHtml(cat)} · ${list.length}</span>`)
+    .join('')
+
+  toggleEl.style.display = 'inline-flex'
+  detailEl.innerHTML = Object.entries(grupos).map(([cat, list]) => `
+    <div class="report-preview__detail-group">
+      <div class="report-preview__detail-cat">${escapeHtml(cat)}</div>
+      ${list.map(s => `<div class="report-preview__detail-item"><i class="ti ti-check"></i> ${escapeHtml(s.name || '')}</div>`).join('')}
+    </div>
+  `).join('')
+}
+
+function bindPreviewToggle() {
+  const toggleEl = document.getElementById('r-preview-toggle')
+  const detailEl = document.getElementById('r-preview-detail')
+  if (!toggleEl || !detailEl) return
+  toggleEl.addEventListener('click', () => {
+    const open = detailEl.style.display !== 'none'
+    detailEl.style.display = open ? 'none' : 'block'
+    toggleEl.classList.toggle('report-preview__toggle--open', !open)
+    toggleEl.innerHTML = open
+      ? '<i class="ti ti-chevron-down"></i> Ver servicios seleccionados'
+      : '<i class="ti ti-chevron-up"></i> Ocultar servicios seleccionados'
+  })
 }
 
 function actualizarBoton() {
@@ -194,20 +306,39 @@ function actualizarBoton() {
   const ok = clienteSel && seleccionados.size > 0
   btn.disabled = !ok
   btn.innerHTML = ok
-    ? `<i class="ti ti-${sinIA ? 'file-download' : 'sparkles'} btn__icon"></i> ${sinIA ? 'Generar PDF' : 'Generar con IA'}`
-    : '<i class="ti ti-sparkles btn__icon"></i> Generar informe con IA'
+    ? `<i class="ti ti-${sinIA ? 'file-download' : 'sparkles'} btn__icon"></i> ${sinIA ? 'Generar PDF' : 'Generar informe'}`
+    : '<i class="ti ti-sparkles btn__icon"></i> Generar informe'
 }
 
-// ── Pasos de progreso ─────────────────────────────────────────────────
-function setStep(id, estado) {
-  // estado: 'active' | 'done' | ''
-  const el = document.getElementById(id)
-  if (!el) return
-  el.className = 'ia-step' + (estado ? ` ia-step--${estado}` : '')
+// ── Cronómetro real (no simula etapas ni porcentajes inventados) ──────
+let progressTimerInterval = null
+let progressStartTime = null
+
+function startProgressTimer() {
+  progressStartTime = Date.now()
+  const timeEl = document.getElementById('r-progress-time')
+  if (timeEl) timeEl.textContent = '00:00'
+  progressTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - progressStartTime) / 1000)
+    const mm = String(Math.floor(elapsed / 60)).padStart(2, '0')
+    const ss = String(elapsed % 60).padStart(2, '0')
+    if (timeEl) timeEl.textContent = `${mm}:${ss}`
+  }, 1000)
 }
-function resetSteps() {
-  ['step-intro','step-riesgo','step-justif','step-valor','step-conclusion','step-pdf']
-    .forEach(id => setStep(id, ''))
+
+function stopProgressTimer(finalLabel) {
+  if (progressTimerInterval) clearInterval(progressTimerInterval)
+  progressTimerInterval = null
+  const labelEl = document.getElementById('r-progress-label')
+  if (labelEl && finalLabel) labelEl.textContent = finalLabel
+
+  const totalSeconds = progressStartTime ? Math.floor((Date.now() - progressStartTime) / 1000) : 0
+  const mm = Math.floor(totalSeconds / 60)
+  const ss = totalSeconds % 60
+  return {
+    seconds: totalSeconds,
+    text: mm > 0 ? `${mm}m ${ss}s` : `${ss}s`,
+  }
 }
 
 // ── Generar ───────────────────────────────────────────────────────────
@@ -282,29 +413,8 @@ function bindGenerar() {
 
     showSpinner(btn, usarIA ? 'Iniciando IA...' : 'Generando...')
     if (usarIA) {
-      prog.style.display = 'block'
-      resetSteps()
-    }
-
-    // Simular progreso visual (el backend procesa en secuencia)
-    let stepTimer = null
-    if (usarIA) {
-      const pasos = [
-        ['step-intro',      1500],
-        ['step-riesgo',     7000],
-        ['step-justif',    13000],
-        ['step-valor',     19000],
-        ['step-conclusion',24000],
-        ['step-pdf',       29000],
-      ]
-      let prev = null
-      pasos.forEach(([id, delay]) => {
-        setTimeout(() => {
-          if (prev) setStep(prev, 'done')
-          setStep(id, 'active')
-          prev = id
-        }, delay)
-      })
+      prog.style.display = 'flex'
+      startProgressTimer()
     }
 
     try {
@@ -331,11 +441,9 @@ function bindGenerar() {
         throw new Error(err.detail || `Error ${resp.status}`)
       }
 
-      // Marcar todos como done
-      if (usarIA) {
-        ['step-intro','step-riesgo','step-justif','step-valor','step-conclusion','step-pdf']
-          .forEach(id => setStep(id, 'done'))
-      }
+      // Marcar completado
+      let tiempoInfo = { seconds: 0, text: '' }
+      if (usarIA) tiempoInfo = stopProgressTimer('Completado')
 
       // Descargar PDF
       const blob   = await resp.blob()
@@ -347,14 +455,28 @@ function bindGenerar() {
       a.click()
       URL.revokeObjectURL(url)
 
+      const sufijoTiempo = usarIA ? ` — generado en ${tiempoInfo.text}` : ''
       showAlert(
-        `✅ Informe generado${usarIA ? ' con IA' : ''} para ${clienteSel.company_name}`,
-        'success', 6000
+        `✅ Informe generado${usarIA ? ' con IA' : ''} para ${clienteSel.company_name}${sufijoTiempo}`,
+        'success', 8000
       )
 
+      if (usarIA) {
+        console.log(
+          `[Generar Informe] Completado en ${tiempoInfo.seconds}s (${tiempoInfo.text}) — ` +
+          `cliente: ${clienteSel.company_name}, servicios: ${seleccionados.size}, modelo backend: ver terminal uvicorn`
+        )
+      }
+
     } catch (err) {
-      showAlert('Error: ' + err.message, 'error')
-      resetSteps()
+      const tiempoInfo = usarIA ? stopProgressTimer('Error') : { seconds: 0, text: '' }
+      showAlert(
+        `Error: ${err.message}${usarIA ? ` (tras ${tiempoInfo.text})` : ''}`,
+        'error'
+      )
+      if (usarIA) {
+        console.log(`[Generar Informe] Falló tras ${tiempoInfo.seconds}s (${tiempoInfo.text}) — error: ${err.message}`)
+      }
     } finally {
       hideSpinner(btn)
       if (!sinIA?.checked) prog.style.display = 'none'

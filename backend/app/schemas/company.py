@@ -12,6 +12,17 @@ class CompanyCreate(BaseModel):
     secondary_color: str | None = None
     content_color: str | None = None
 
+    # Condiciones comerciales
+    rut: str | None = None
+    direccion: str | None = None
+    telefono: str | None = None
+    notas_valores: str | None = None
+    formas_pago: str | None = None
+    modalidad_proyecto: str | None = None
+    modalidad_consultoria: str | None = None
+    banco: str | None = None
+    datos_bancarios: str | None = None
+
 
 class CompanyUpdate(BaseModel):
     name: Optional[str] = None
@@ -25,6 +36,17 @@ class CompanyUpdate(BaseModel):
     portada_config: Optional[Dict[str, Any]] = None
     active: Optional[bool] = None
 
+    # Condiciones comerciales
+    rut: Optional[str] = None
+    direccion: Optional[str] = None
+    telefono: Optional[str] = None
+    notas_valores: Optional[str] = None
+    formas_pago: Optional[str] = None
+    modalidad_proyecto: Optional[str] = None
+    modalidad_consultoria: Optional[str] = None
+    banco: Optional[str] = None
+    datos_bancarios: Optional[str] = None
+
 
 class CompanyResponse(BaseModel):
     id: int
@@ -36,7 +58,19 @@ class CompanyResponse(BaseModel):
     primary_color: str | None
     secondary_color: str | None
     content_color: str | None
+    portada_config: Optional[Dict[str, Any]] = None
     active: bool
+
+    # Condiciones comerciales
+    rut: str | None = None
+    direccion: str | None = None
+    telefono: str | None = None
+    notas_valores: str | None = None
+    formas_pago: str | None = None
+    modalidad_proyecto: str | None = None
+    modalidad_consultoria: str | None = None
+    banco: str | None = None
+    datos_bancarios: str | None = None
 
     class Config:
         from_attributes = True

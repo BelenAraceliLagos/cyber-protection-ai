@@ -13,13 +13,15 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL      = "gemma3:4b"
 
 INSTRUCCION_TONO = """
-Instrucciones de redacción (SIEMPRE respetar):
-- Español chileno formal. Tratar a la empresa con "usted".
-- Tono ejecutivo: directo, seguro, sin rodeos.
-- No uses tecnicismos innecesarios. Si mencionas algo técnico, explícalo en una frase simple.
-- Nada de viñetas, listas ni títulos dentro del texto.
-- Sin frases genéricas como "en el mundo actual" o "en la era digital".
-- Sin saludos, firmas ni meta-comentarios. Solo el texto pedido.
+Eres un consultor senior de ciberseguridad redactando una propuesta comercial profesional.
+Reglas OBLIGATORIAS — no negociables:
+- Español formal chileno. Tratar siempre con "usted" y "su empresa/organización".
+- Tono ejecutivo: concreto, seguro, orientado al negocio. Sin rodeos.
+- PROHIBIDO: frases genéricas como "en el mundo actual", "en la era digital", "es fundamental destacar", "en conclusión", "en resumen".
+- PROHIBIDO: viñetas, listas con guiones, títulos o subtítulos dentro del texto.
+- PROHIBIDO: saludos, despedidas, firmas, comillas al inicio/final, ni comentarios sobre la tarea.
+- PROHIBIDO: repetir el nombre de la empresa más de 2 veces en el mismo párrafo.
+- Solo escribe el texto pedido. Nada más.
 """.strip()
 
 
@@ -34,14 +36,20 @@ def _ollama(prompt: str, tokens: int = 300) -> str:
                 "stream": False,
                 "options": {
                     "num_predict": tokens,
-                    "temperature": 0.72,
-                    "top_p": 0.9,
+                    "temperature": 0.65,
+                    "top_p": 0.88,
+                    "repeat_penalty": 1.15,
                 }
             },
             timeout=300
         )
         r.raise_for_status()
-        return r.json().get("response", "").strip()
+        text = r.json().get("response", "").strip()
+        # Limpiar artefactos comunes del modelo
+        for prefix in ['```', '**', '##', '# ']:
+            if text.startswith(prefix):
+                text = text.lstrip('#* `\n')
+        return text
     except requests.exceptions.ConnectionError:
         raise RuntimeError(
             "Ollama no está disponible. "
@@ -60,57 +68,54 @@ def generar_introduccion(
     servicios,
     antecedente=""
 ):
-    srvs = ", ".join(servicios[:8])
+    srvs = ", ".join(servicios[:6])
     n = len(servicios)
 
     ctx = (
-        f"Contexto importante del cliente: {antecedente}"
+        f"\nContexto específico del cliente (úsalo para personalizar):\n{antecedente}"
         if antecedente else ""
     )
 
     prompt = f"""{INSTRUCCION_TONO}
 
-Escribe el párrafo de introducción de una propuesta comercial de ciberseguridad.
+TAREA: Escribe el párrafo introductorio de una propuesta de ciberseguridad.
 
-Datos:
-- Empresa cliente: {empresa}
-- Empresa emisora: {empresa_emisora}
-- Industria: {industria}
-- Cantidad de servicios propuestos: {n}
-- Servicios principales: {srvs}
-
+DATOS:
+- Cliente: {empresa} (sector {industria})
+- Empresa que emite la propuesta: {empresa_emisora}
+- Servicios propuestos ({n}): {srvs}
 {ctx}
 
-El párrafo debe:
-- Presentar a {empresa_emisora} como aliado estratégico especializado en ciberseguridad
-- Mencionar el contexto de amenazas específico de la industria
-- Referirse brevemente a los servicios propuestos como un conjunto cohesionado
-- Entre 100 y 140 palabras
-- Comenzar directamente con el texto
-- Sin encabezados
+ESTRUCTURA DEL PÁRRAFO (en este orden):
+1. Primera oración: presentar a {empresa_emisora} como aliado estratégico especializado en ciberseguridad para el sector {industria}.
+2. Segunda y tercera oración: describir el desafío específico de ciberseguridad que enfrenta {empresa} dado su tipo de operación, SIN mencionar el nombre de la empresa dos veces seguidas.
+3. Cuarta y quinta oración: conectar ese desafío con los servicios propuestos como solución cohesionada, mencionando al menos 2 servicios específicos.
 
-Solo escribe el párrafo.
+EXTENSIÓN: entre 120 y 150 palabras exactas.
 """
 
-    return _ollama(prompt, 280)
+    return _ollama(prompt, 300)
+
 
 def generar_analisis_riesgo(empresa, industria, antecedente=""):
-    ctx = f"Antecedente específico del cliente: {antecedente}" if antecedente else ""
+    ctx = f"\nContexto específico del cliente:\n{antecedente}" if antecedente else ""
+
     prompt = f"""{INSTRUCCION_TONO}
 
-Escribe un análisis de riesgo cibernético para la empresa "{empresa}" del sector "{industria}".
+TAREA: Escribe el análisis de riesgo cibernético para {empresa} del sector {industria}.
 {ctx}
 
-El texto debe:
-- Describir los 3 riesgos más relevantes para su industria en Chile
-- Para cada riesgo: nombrarlo y explicar en UNA frase por qué impacta a este tipo de empresa
-- Mencionar alguna regulación chilena si aplica (Ley 21.459, Ley 19.628, etc.)
-- Tono de alerta moderada: serio pero no alarmista
-- Entre 120 y 160 palabras
-- Sin títulos ni listas. Todo en párrafo corrido.
+ESTRUCTURA (párrafo corrido, sin títulos ni viñetas):
+1. Primera oración: enunciar que el análisis identifica los riesgos principales para este tipo de organización.
+2. Riesgo 1: nombrar el riesgo y explicar en una oración cómo impacta operacionalmente a {empresa}.
+3. Riesgo 2: nombrar el riesgo y explicar su impacto regulatorio o de reputación.
+4. Riesgo 3: nombrar el riesgo y explicar su impacto en continuidad operativa.
+5. Última oración: mencionar UNA regulación chilena aplicable (Ley 21.459, Ley 19.628 u otra según industria) y qué obliga a hacer.
 
-Solo escribe el análisis."""
-    return _ollama(prompt, 320)
+TONO: Analítico y objetivo. Serio sin ser alarmista.
+EXTENSIÓN: entre 140 y 170 palabras.
+"""
+    return _ollama(prompt, 340)
 
 
 def generar_justificacion_servicios(empresa, industria, servicios):
@@ -118,70 +123,80 @@ def generar_justificacion_servicios(empresa, industria, servicios):
         srvs = ", ".join(servicios)
     else:
         srvs = ", ".join(servicios[:-1]) + f" y {servicios[-1]}"
+
     prompt = f"""{INSTRUCCION_TONO}
 
-Escribe la sección de justificación de servicios para una propuesta dirigida a "{empresa}" ({industria}).
-Servicios propuestos: {srvs}
+TAREA: Escribe la justificación de por qué estos servicios son los adecuados para {empresa}.
 
-El texto debe:
-- Explicar POR QUÉ estos servicios son los adecuados para este cliente
-- Conectar cada grupo de servicios con un beneficio concreto para el negocio
-- Usar lenguaje que entienda el gerente general, no solo el equipo de TI
-- Entre 130 y 180 palabras
-- Sin listas ni viñetas. Párrafo corrido.
+DATOS:
+- Cliente: {empresa} (sector {industria})
+- Servicios: {srvs}
 
-Solo escribe la justificación."""
-    return _ollama(prompt, 350)
+ESTRUCTURA:
+1. Primera oración: afirmar que el conjunto de servicios fue seleccionado específicamente para las necesidades de {empresa}.
+2. Por cada grupo temático de servicios (máx. 2 grupos): una oración que conecte los servicios con un beneficio concreto de negocio (no técnico).
+3. Última oración: mencionar que la implementación fortalece el cumplimiento normativo y la confianza de clientes/usuarios.
+
+EXTENSIÓN: entre 130 y 160 palabras.
+"""
+    return _ollama(prompt, 320)
 
 
 def generar_valor_estrategico(empresa, industria, servicios):
     prompt = f"""{INSTRUCCION_TONO}
 
-Escribe el párrafo de valor estratégico para convencer a "{empresa}" ({industria})
-de implementar los {len(servicios)} servicios de ciberseguridad propuestos.
+TAREA: Escribe el párrafo de valor estratégico para {empresa} ({industria}).
+Servicios propuestos: {len(servicios)}.
 
-El texto debe:
-- Hablar del retorno estratégico: reputación, continuidad operativa, confianza de clientes
-- Mencionar que la ciberseguridad no es un gasto sino una ventaja competitiva
-- Hacer referencia al costo de NO actuar (sin ser dramático)
-- Sonar como un consejo de un asesor de confianza, no como una venta agresiva
-- Entre 80 y 110 palabras
+ESTRUCTURA:
+1. Primera oración: enmarcar la ciberseguridad como inversión estratégica, no como gasto.
+2. Segunda oración: mencionar qué protege concretamente (reputación, continuidad, datos de clientes/usuarios).
+3. Tercera oración: plantear el costo de NO actuar de forma objetiva (interrupción operativa, multas, pérdida de confianza).
+4. Última oración: cerrar con una afirmación de confianza hacia {empresa} y su capacidad de tomar la decisión correcta.
 
-Solo escribe el párrafo."""
-    return _ollama(prompt, 220)
+TONO: Consultor de confianza. Persuasivo sin presión.
+EXTENSIÓN: entre 90 y 120 palabras.
+"""
+    return _ollama(prompt, 240)
 
 
 def generar_conclusion(empresa, empresa_emisora, contacto, servicios):
     prompt = f"""{INSTRUCCION_TONO}
 
-Escribe el párrafo de cierre de una propuesta de ciberseguridad para "{empresa}".
-Contacto: {contacto}. Servicios propuestos: {len(servicios)}.
+TAREA: Escribe el párrafo de cierre de la propuesta de ciberseguridad.
 
-El texto debe:
-- Agradecer la confianza y el tiempo dedicado a revisar la propuesta
-- Invitar a una reunión de alcance para afinar detalles y costos
-- Expresar disponibilidad y compromiso de {empresa_emisora}
-- Sonar cálido pero profesional
-- Entre 60 y 90 palabras
+DATOS:
+- Cliente: {empresa}
+- Empresa emisora: {empresa_emisora}
+- Contacto del cliente: {contacto}
+- Cantidad de servicios: {len(servicios)}
 
-Solo escribe el párrafo de cierre."""
-    return _ollama(prompt, 180)
+ESTRUCTURA:
+1. Primera oración: agradecer la confianza y el tiempo dedicado, sin ser excesivamente formal.
+2. Segunda oración: reconocer la importancia del proceso de evaluación y reiterar el compromiso de {empresa_emisora}.
+3. Tercera oración: invitar a una reunión de alcance con {contacto} para afinar detalles técnicos y costos.
+4. Última oración: expresar disponibilidad inmediata para avanzar.
+
+EXTENSIÓN: entre 70 y 100 palabras.
+"""
+    return _ollama(prompt, 200)
 
 
 def generar_frase_clave(empresa, industria):
     prompt = f"""{INSTRUCCION_TONO}
 
-Escribe UNA frase corta e impactante para destacar en una propuesta de ciberseguridad
-para "{empresa}" del sector "{industria}".
+TAREA: Escribe UNA sola frase impactante para destacar en la propuesta de {empresa} ({industria}).
 
-La frase debe:
-- Transmitir que proteger la organización es proteger su futuro
-- Sonar memorable, no genérica
-- Máximo 35 palabras
-- Sin comillas
+REQUISITOS:
+- Debe transmitir que proteger la organización es proteger su misión y futuro.
+- Específica para el sector {industria}, no genérica.
+- Entre 15 y 30 palabras exactas.
+- Sin comillas, sin puntos al final si termina con impacto.
+- No usar palabras como "fundamental", "crucial", "esencial" ni "clave".
 
-Solo escribe la frase."""
-    return _ollama(prompt, 70)
+Solo escribe la frase.
+"""
+    return _ollama(prompt, 80)
 
 
 def generar_textos_completos(
@@ -233,62 +248,96 @@ def generar_textos_completos(
         "antecedente_bullets":     [],
     }
 
+
+def _reparar_json_comillas(bruto: str) -> str:
+    """
+    Repara comillas dobles rectas embebidas dentro de un valor de texto
+    (la causa más común de JSON inválido generado por el modelo, ej. al
+    citar una ley o norma entre comillas). Escapa cualquier comilla que no
+    esté cumpliendo el rol estructural de abrir/cerrar una clave o valor
+    JSON (es decir, que no esté junto a los separadores típicos : , { } [ ]).
+    Respeta las secuencias que ya vienen correctamente escapadas (\\").
+    """
+    resultado = []
+    n = len(bruto)
+    i = 0
+    while i < n:
+        ch = bruto[i]
+        if ch == '\\' and i + 1 < n:
+            # Ya viene escapado en el texto original -> se respeta tal cual
+            resultado.append(ch)
+            resultado.append(bruto[i + 1])
+            i += 2
+            continue
+        if ch == '"':
+            k = len(resultado) - 1
+            while k >= 0 and resultado[k] in ' \t\n':
+                k -= 1
+            prev = resultado[k] if k >= 0 else ''
+            j = i + 1
+            while j < n and bruto[j] in ' \t\n':
+                j += 1
+            nxt = bruto[j] if j < n else ''
+            es_estructural = (
+                prev in ('', '{', '[', ':', ',') or
+                nxt in (':', ',', '}', ']', '')
+            )
+            if not es_estructural:
+                resultado.append('\\"')
+                i += 1
+                continue
+        resultado.append(ch)
+        i += 1
+    return ''.join(resultado)
+
+
 def generar_descripcion_servicio(nombre: str, descripcion_base: str, empresa: str, industria: str) -> dict:
     """
     Genera una descripción estructurada (JSON) para un servicio usando Ollama.
-    Retorna dict con formato:
-    {
-        "intro": "...",
-        "secciones": [
-            {
-                "titulo": "...",
-                "items": [
-                    {"label": "...", "subitems": ["...", "..."]}
-                ]
-            }
-        ]
-    }
-    Si Ollama falla o el JSON es inválido, retorna la descripción base como texto plano.
     """
     import json
 
-    prompt = f"""Eres un experto en ciberseguridad. Debes estructurar la descripción de un servicio para una propuesta comercial profesional.
+    # Truncar descripción base solo si es extremadamente larga (evita
+    # desbordar el contexto del modelo); 6000 caracteres cubre servicios
+    # con descripciones muy detalladas de varias fases/actividades/entregables
+    # sin perder contenido, como ocurría con el límite anterior de 800.
+    desc_truncada = descripcion_base[:6000] if len(descripcion_base) > 6000 else descripcion_base
 
-Servicio: {nombre}
-Empresa cliente: {empresa}
-Industria: {industria}
+    prompt = f"""Eres un experto en ciberseguridad redactando una propuesta comercial para {empresa} ({industria}).
+
+Servicio a describir: {nombre}
 Descripción base del servicio:
-{descripcion_base}
+{desc_truncada}
 
-Genera una descripción estructurada en formato JSON estricto. El JSON debe tener exactamente esta estructura:
+Genera una descripción estructurada en JSON con exactamente esta estructura:
 {{
-  "intro": "Párrafo introductorio del servicio, 2-3 oraciones, tono ejecutivo formal en español",
+  "intro": "2-3 oraciones que introduzcan el servicio adaptadas a {empresa} del sector {industria}. Tono ejecutivo formal. Sin mencionar el nombre del servicio al inicio.",
   "secciones": [
     {{
-      "titulo": "Título de la sección (ej: Fases del Servicio, Actividades, Entregables)",
+      "titulo": "Título de la sección (ejemplo: Fases del Servicio, Actividades Incluidas, Entregables)",
       "items": [
         {{
-          "label": "Nombre del item o fase",
-          "subitems": ["actividad o detalle 1", "actividad o detalle 2"]
+          "label": "Nombre de la fase o componente",
+          "subitems": ["descripción de actividad 1", "descripción de actividad 2", "descripción de actividad 3"]
         }}
       ]
     }}
   ]
 }}
 
-Reglas estrictas:
-- Responde SOLO con el JSON, sin texto antes ni después, sin bloques de código, sin markdown
-- El campo "intro" es obligatorio
-- Mínimo 1 sección con mínimo 2 items
-- Cada item debe tener entre 2 y 5 subitems
-- Máximo 3 secciones
-- Todo en español formal chileno
-- Adaptar el contenido a la empresa {empresa} del sector {industria}"""
+REGLAS ESTRICTAS:
+- Responde ÚNICAMENTE con el JSON. Sin texto antes, sin texto después, sin bloques de código markdown.
+- El campo "intro" es obligatorio y debe estar adaptado a {empresa}.
+- Entre 2 y 3 secciones.
+- Cada sección debe tener entre 2 y 4 items.
+- Cada item debe tener entre 2 y 4 subitems específicos y concretos.
+- Todo en español formal chileno.
+- Los subitems deben ser descripciones concretas de actividades, no frases genéricas.
+- MUY IMPORTANTE PARA QUE EL JSON SEA VÁLIDO: si necesitas citar una ley, norma o nombre propio, NUNCA uses comillas dobles ("). Usa comillas simples (') o directamente sin comillas (ej: Ley 21.663, NERC CIP-002). Las comillas dobles dentro de un texto rompen el formato JSON."""
 
     try:
-        raw = _ollama(prompt, tokens=1200)
+        raw = _ollama(prompt, tokens=1400)
 
-        # Limpiar posibles bloques markdown que el modelo añada
         raw = raw.strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
@@ -296,15 +345,28 @@ Reglas estrictas:
                 raw = raw[4:]
         raw = raw.strip().rstrip("```").strip()
 
-        # Buscar el primer { y último } para extraer JSON válido
         inicio = raw.find("{")
         fin    = raw.rfind("}") + 1
         if inicio == -1 or fin == 0:
             raise ValueError("No se encontró JSON en la respuesta")
 
-        data = json.loads(raw[inicio:fin])
+        bruto = raw[inicio:fin]
+        try:
+            data = json.loads(bruto)
+        except json.JSONDecodeError:
+            try:
+                # Intento 1: comillas "tipográficas" (comillas curvas de
+                # autocorrección) en vez de comillas simples.
+                reparado = (
+                    bruto.replace('“', "'").replace('”', "'")
+                         .replace('‘', "'").replace('’', "'")
+                )
+                data = json.loads(reparado)
+            except json.JSONDecodeError:
+                # Intento 2: comillas dobles rectas embebidas dentro de un
+                # valor de texto (ej. citando una ley entre comillas).
+                data = json.loads(_reparar_json_comillas(bruto))
 
-        # Validar estructura mínima
         if "intro" not in data or "secciones" not in data:
             raise ValueError("JSON incompleto")
         if not isinstance(data["secciones"], list) or len(data["secciones"]) == 0:
@@ -314,5 +376,4 @@ Reglas estrictas:
 
     except Exception as e:
         print(f"  ⚠️  generar_descripcion_servicio falló para '{nombre}': {e}. Usando texto plano.")
-        # Fallback: retornar None para que _srv_bloques use texto plano
         return None
