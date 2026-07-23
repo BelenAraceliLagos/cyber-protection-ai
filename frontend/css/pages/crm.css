@@ -1,0 +1,46 @@
+/* ── Tarjetas resumen ─────────────────────────────────────────────── */
+.crm-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media (max-width: 960px) { .crm-metrics-row { grid-template-columns: repeat(2, 1fr); } }
+
+.crm-metric-box {
+  background: var(--cp-white, #fff);
+  border: 1px solid var(--cp-border, #E2E4F0);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  border-top: 3px solid var(--cp-blue-main, #155FCF);
+}
+.crm-metric-box__val { font-size: 1.7rem; font-weight: 700; color: var(--cp-text-main, #1A2340); }
+.crm-metric-box__lbl { font-size: .78rem; color: var(--cp-text-muted, #7B80A8); margin-top: 4px; }
+
+.crm-metric-box--lead     { border-top-color: #94A3B8; }
+.crm-metric-box--opp      { border-top-color: #F5A623; }
+.crm-metric-box--cliente  { border-top-color: #22C9C6; }
+.crm-metric-box--promotor { border-top-color: #10B981; }
+
+/* ── Gráficos ─────────────────────────────────────────────────────── */
+.crm-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+@media (max-width: 960px) { .crm-charts-grid { grid-template-columns: 1fr; } }
+
+/* ── Pills de etapa en la tabla de contactos ─────────────────────── */
+.crm-pill {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.crm-pill--lead      { background: #F1F5F9; color: #64748B; }
+.crm-pill--opp       { background: #FEF3C7; color: #B45309; }
+.crm-pill--cliente   { background: #CCFBF1; color: #0F766E; }
+.crm-pill--promotor  { background: #D1FAE5; color: #047857; }

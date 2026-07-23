@@ -16,6 +16,7 @@ from app.routers.quotation import router as quotation_router
 from app.routers.proposal import router as proposal_router
 from app.routers.user import router as user_router
 from app.routers.opportunity import router as opportunity_router
+from app.routers.crm import router as crm_router
 from app.routers.company import router as company_router
 from app.routers.data_transfer import router as data_transfer_router
 from app.routers.fonts import router as fonts_router
@@ -40,6 +41,7 @@ app.include_router(quotation_router)
 app.include_router(proposal_router)
 app.include_router(user_router)
 app.include_router(opportunity_router)
+app.include_router(crm_router)
 app.include_router(company_router)
 app.include_router(data_transfer_router)
 app.include_router(fonts_router)

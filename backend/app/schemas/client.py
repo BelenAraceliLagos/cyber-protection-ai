@@ -1,5 +1,6 @@
 from pydantic import BaseModel, field_validator
 from typing import Optional
+from datetime import datetime
 
 
 def clean_rut(value: str) -> str:
@@ -53,6 +54,8 @@ class ClientCreate(BaseModel):
     contact_phone: Optional[str] = None
     industry: Optional[str] = None
     notes: Optional[str] = None
+    lifecycle_stage: Optional[str] = "lead"
+    origen: Optional[str] = None
 
     @field_validator("rut")
     @classmethod
@@ -80,6 +83,7 @@ class ClientCreate(BaseModel):
 
 class ClientResponse(ClientCreate):
     id: int
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

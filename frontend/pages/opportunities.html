@@ -44,6 +44,7 @@
       <a href="clients.html"       class="sidebar__item"><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
       <a href="services.html"      class="sidebar__item"><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
       <a href="opportunities.html" class="sidebar__item sidebar__item--active" aria-current="page"><i class="ti ti-trending-up" aria-hidden="true"></i><span class="sidebar__label">Oportunidades</span></a>
+      <a href="crm.html" class="sidebar__item"><i class="ti ti-chart-arrows" aria-hidden="true"></i><span class="sidebar__label">CRM</span></a>
       <a href="report.html"        class="sidebar__item"><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
       <div class="sidebar__divider"></div>
       <a href="companies.html"     class="sidebar__item"  ><i class="ti ti-building" aria-hidden="true"></i><span class="sidebar__label">Empresas</span></a>
@@ -132,6 +133,9 @@
 
       <!-- ── KANBAN ─────────────────────────────── -->
       <section id="tab-kanban" class="opp-tab-panel--hidden">
+        <div class="kanban-company-filter" id="kanban-company-filter">
+          <button type="button" class="kcf-pill kcf-pill--active" data-company="">Todas las empresas</button>
+        </div>
         <div class="card page-enter">
           <div class="kanban-wrap" id="kanban-board">
             <div class="empty-state">Cargando...</div>
@@ -195,6 +199,12 @@
         <div class="form__group">
           <label for="f-cliente">Cliente *</label>
           <select id="f-cliente"></select>
+        </div>
+        <div class="form__group">
+          <label for="f-company">Empresa emisora</label>
+          <select id="f-company">
+            <option value="">— Sin asignar —</option>
+          </select>
         </div>
         <div class="form__group">
           <label for="f-etapa">Etapa</label>
