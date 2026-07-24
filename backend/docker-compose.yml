@@ -1,0 +1,31 @@
+services:
+  # Servidor de Base de Datos PostgreSQL
+  db:
+    image: postgres:16-alpine
+    container_name: cyber_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: cyber_protection_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Backend FastAPI
+  backend:
+    build: .
+    container_name: cyber_backend
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app  # Sincroniza tu código local con el contenedor en tiempo real
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/cyber_protection_db
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

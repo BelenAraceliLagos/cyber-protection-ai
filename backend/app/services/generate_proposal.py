@@ -1193,62 +1193,6 @@ def _srv_bloques(srv: dict, chars_por_linea: int, lineas_por_pagina: int) -> lis
         bloques.append((f'<li>{parte}</li>', lineas, True))
 
     return bloques
-    """
-    Genera uno o más bloques HTML para un servicio.
-    Si la descripción es larga la divide en chunks que caben en una página.
-    Cada bloque es (html, unidades_alto, es_continuacion).
-    Los bloques de continuación no repiten el nombre — texto continuo.
-    """
-    nombre = srv.get("nombre", "")
-    desc = ""
-    if srv.get("descripcion"):
-        desc = srv["descripcion"].split("|")[0].strip()
-    elif srv.get("bullets"):
-        b0 = srv["bullets"][0] if srv["bullets"] else ""
-        desc = b0.replace("Descripción: ", "").strip()
-
-    if not desc:
-        lineas = max(1, -(-len(nombre) // chars_por_linea))
-        return [(f'<li><strong>{nombre}</strong></li>', lineas, False)]
-
-    # Espacio disponible en primer bloque (descontando prefijo "Nombre: ")
-    prefijo = f"{nombre}: "
-    chars_primer_bloque = max(chars_por_linea - len(prefijo), 20) + (chars_por_linea * (lineas_por_pagina - 1))
-
-    if len(desc) <= chars_primer_bloque:
-        texto_total = len(prefijo) + len(desc)
-        lineas = max(1, -(-texto_total // chars_por_linea))
-        return [(f'<li><strong>{nombre}:</strong> {desc}</li>', lineas, False)]
-
-    bloques = []
-
-    # Primer bloque
-    corte = desc.rfind(" ", 0, chars_primer_bloque)
-    if corte == -1:
-        corte = chars_primer_bloque
-    primera_desc = desc[:corte].strip()
-    resto = desc[corte:].strip()
-
-    texto_total = len(prefijo) + len(primera_desc)
-    lineas = max(1, -(-texto_total // chars_por_linea))
-    bloques.append((f'<li><strong>{nombre}:</strong> {primera_desc}</li>', lineas, False))
-
-    # Bloques de continuación — sin encabezado, texto continuo
-    chars_bloque_cont = chars_por_linea * lineas_por_pagina
-    while resto:
-        if len(resto) <= chars_bloque_cont:
-            lineas = max(1, -(-len(resto) // chars_por_linea))
-            bloques.append((f'<li>{resto}</li>', lineas, True))
-            break
-        corte = resto.rfind(" ", 0, chars_bloque_cont)
-        if corte == -1:
-            corte = chars_bloque_cont
-        parte = resto[:corte].strip()
-        resto = resto[corte:].strip()
-        lineas = max(1, -(-len(parte) // chars_por_linea))
-        bloques.append((f'<li>{parte}</li>', lineas, True))
-
-    return bloques
 
 
 def sec_servicios(data: dict, agrupado: dict) -> str:

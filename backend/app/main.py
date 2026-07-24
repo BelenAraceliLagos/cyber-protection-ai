@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.database import Base, engine
 
 # Importar modelos antes que routers para que SQLAlchemy resuelva relaciones
 from app.models.client import Client
@@ -21,6 +22,8 @@ from app.routers.company import router as company_router
 from app.routers.data_transfer import router as data_transfer_router
 from app.routers.fonts import router as fonts_router
 
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(
     title="Cyber Protection AI",
     version="1.0.0"
@@ -28,7 +31,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # para desarrollo
+    allow_origins=[
+        "http://localhost:5500",
+        "http://127.0.0.1:5500",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "*"],  # para desarrollo
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
