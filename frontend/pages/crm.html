@@ -72,6 +72,12 @@
           <h1 class="page-header__title">Panel de Análisis CRM</h1>
           <p class="page-header__sub" id="crm-subtitle">Ciclo de vida de contactos, oportunidades y fuentes de origen</p>
         </div>
+        <div class="crm-refresh-wrap">
+          <span class="crm-last-update" id="crm-last-update">Cargando...</span>
+          <button type="button" class="btn btn--sm btn--ghost" id="crm-refresh-btn" title="Actualizar ahora">
+            <i class="ti ti-refresh btn__icon" aria-hidden="true"></i> Actualizar
+          </button>
+        </div>
       </div>
 
       <!-- ── Tarjetas resumen ─────────────────────── -->
@@ -114,6 +120,158 @@
           </div>
           <div class="card__body">
             <canvas id="crm-chart-fuente" height="220"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Embudo + Tasa de victoria + Forecast ─────────────────── -->
+      <div class="crm-funnel-grid page-enter page-enter--d2">
+        <div class="card crm-funnel-card">
+          <div class="card__header">
+            <span class="card__title"><i class="ti ti-filter" aria-hidden="true"></i> Embudo de conversión</span>
+          </div>
+          <div class="card__body">
+            <div id="crm-embudo"></div>
+            <p class="crm-hint">Foto actual: cuántas oportunidades están hoy en cada etapa o más adelante (no incluye perdidas)</p>
+          </div>
+        </div>
+        <div class="crm-stat-stack">
+          <div class="card crm-stat-card">
+            <div class="crm-stat-card__val" id="crm-winrate">—</div>
+            <div class="crm-stat-card__lbl">Tasa de victoria</div>
+            <div class="crm-stat-card__sub" id="crm-winrate-sub">—</div>
+          </div>
+          <div class="card crm-stat-card">
+            <div class="crm-stat-card__val" id="crm-forecast">—</div>
+            <div class="crm-stat-card__lbl">Forecast ponderado</div>
+            <div class="crm-stat-card__sub">Suma de valor × probabilidad, oportunidades activas</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Valor ganado: total, por empresa, cliente y plazo ────── -->
+      <div class="card page-enter page-enter--d2">
+        <div class="card__header">
+          <span class="card__title"><i class="ti ti-trophy" aria-hidden="true"></i> Valor ganado</span>
+        </div>
+        <div class="card__body">
+          <div class="crm-valor-total" id="crm-valor-total">— UF</div>
+          <p class="crm-hint">Total de contratos ganados (valor mensual × plazo contratado)</p>
+
+          <div class="crm-valor-grid">
+            <div class="crm-valor-col">
+              <div class="crm-valor-col__title">Por empresa emisora</div>
+              <div id="crm-valor-empresa"></div>
+            </div>
+            <div class="crm-valor-col">
+              <div class="crm-valor-col__title">Por cliente</div>
+              <div id="crm-valor-cliente"></div>
+            </div>
+            <div class="crm-valor-col">
+              <div class="crm-valor-col__title">Por plazo contratado</div>
+              <div id="crm-valor-plazo"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Conversión entre etapas + LTV ─────────────────────────── -->
+      <div class="crm-funnel-grid page-enter page-enter--d2">
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title"><i class="ti ti-arrows-right" aria-hidden="true"></i> Conversión entre etapas</span>
+          </div>
+          <div class="card__body">
+            <div id="crm-conversion-etapas"></div>
+            <p class="crm-hint">De las oportunidades que llegan a una etapa, qué porcentaje avanza a la siguiente</p>
+          </div>
+        </div>
+        <div class="crm-stat-stack">
+          <div class="card crm-stat-card">
+            <div class="crm-stat-card__val" id="crm-ltv-promedio">—</div>
+            <div class="crm-stat-card__lbl">LTV promedio por cliente</div>
+            <div class="crm-stat-card__sub" id="crm-ltv-sub">—</div>
+          </div>
+          <div class="card crm-stat-card">
+            <div class="crm-stat-card__val" id="crm-ciclo-venta">—</div>
+            <div class="crm-stat-card__lbl">Ciclo de venta promedio</div>
+            <div class="crm-stat-card__sub">Días desde creación hasta cierre (ganado o perdido)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Top clientes por LTV ─────────────────────────────────── -->
+      <div class="card page-enter page-enter--d2">
+        <div class="card__header">
+          <span class="card__title"><i class="ti ti-crown" aria-hidden="true"></i> Top clientes por valor histórico (LTV)</span>
+        </div>
+        <div class="card__body">
+          <div id="crm-ltv-lista"></div>
+        </div>
+      </div>
+
+      <!-- ── Ingresos y ciclo de venta por vertical ────────────────── -->
+      <div class="crm-funnel-grid page-enter page-enter--d2">
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title"><i class="ti ti-building-community" aria-hidden="true"></i> Ingresos por vertical</span>
+          </div>
+          <div class="card__body">
+            <div id="crm-vertical-ingresos"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title"><i class="ti ti-hourglass" aria-hidden="true"></i> Ciclo de venta por vertical</span>
+          </div>
+          <div class="card__body dashboard-card-body--flush">
+            <div class="table-wrapper dashboard-table-wrapper--flush">
+              <table class="table" aria-label="Ciclo de venta por vertical">
+                <thead><tr><th>Vertical</th><th>Días promedio</th><th>Deals</th></tr></thead>
+                <tbody id="crm-vertical-ciclo-tbody">
+                  <tr><td colspan="3" class="empty-state">Cargando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Comparativo por empresa emisora ──────────────────────── -->
+      <div class="card page-enter page-enter--d3">
+        <div class="card__header">
+          <span class="card__title"><i class="ti ti-building-bank" aria-hidden="true"></i> Comparativo por empresa emisora</span>
+        </div>
+        <div class="card__body dashboard-card-body--flush">
+          <div class="table-wrapper dashboard-table-wrapper--flush">
+            <table class="table" aria-label="Comparativo por empresa emisora">
+              <thead>
+                <tr><th>Empresa</th><th>Total</th><th>Ganadas</th><th>Tasa de victoria</th><th>Valor ganado (UF)</th></tr>
+              </thead>
+              <tbody id="crm-empresa-tbody">
+                <tr><td colspan="5" class="empty-state">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Alertas de oportunidades estancadas ──────────────────── -->
+      <div class="card page-enter page-enter--d3" id="crm-alertas-card">
+        <div class="card__header">
+          <span class="card__title"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Oportunidades estancadas</span>
+          <span class="crm-alert-badge" id="crm-alertas-count">0</span>
+        </div>
+        <div class="card__body dashboard-card-body--flush">
+          <div class="table-wrapper dashboard-table-wrapper--flush">
+            <table class="table" aria-label="Oportunidades estancadas">
+              <thead>
+                <tr><th>Oportunidad</th><th>Cliente</th><th>Etapa</th><th>Sin movimiento</th><th>Valor (UF)</th></tr>
+              </thead>
+              <tbody id="crm-estancadas-tbody">
+                <tr><td colspan="5" class="empty-state">Cargando...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

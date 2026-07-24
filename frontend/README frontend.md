@@ -51,7 +51,7 @@ Abre http://localhost:3000
 Edita `js/api.js` y cambia `BASE_URL`:
 
 ```js
-const BASE_URL = 'http://localhost:8000'  // URL del backend FastAPI
+const BASE_URL = 'http://localhost:8080'  // URL del backend FastAPI
 ```
 
 ## Endpoints que consume

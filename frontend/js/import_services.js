@@ -287,7 +287,7 @@ export function initImportServices() {
       } else {
         showAlert(
           `Importados ${result.creados} de ${result.total}. ${result.errores} fallaron.${msgDup}`,
-          'warning', 8000
+          'warning', 8080
         )
       }
 

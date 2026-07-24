@@ -226,6 +226,7 @@ function bindForm() {
       contact_phone:     document.getElementById('f-contact-phone').value.trim() || null,
       industry:          document.getElementById('f-industry').value.trim() || null,
       lifecycle_stage:   document.getElementById('f-lifecycle')?.value || 'lead',
+      lifecycle_auto:    document.getElementById('f-lifecycle-auto')?.checked ?? true,
       origen:            document.getElementById('f-origen')?.value || null,
       notes:             document.getElementById('f-notes').value.trim() || null,
     }
@@ -291,6 +292,7 @@ window.editClient = function(id) {
   document.getElementById('f-contact-phone').value    = client.contact_phone || ''
   document.getElementById('f-industry').value         = client.industry || ''
   if (document.getElementById('f-lifecycle')) document.getElementById('f-lifecycle').value = client.lifecycle_stage || 'lead'
+  if (document.getElementById('f-lifecycle-auto')) document.getElementById('f-lifecycle-auto').checked = client.lifecycle_auto !== false
   if (document.getElementById('f-origen'))    document.getElementById('f-origen').value    = client.origen || ''
   document.getElementById('f-notes').value            = client.notes || ''
   openModal('client-modal')

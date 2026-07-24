@@ -20,10 +20,59 @@ async function apiFetch(path, opts = {}) {
 
 let chartTiempo = null
 let chartFuente = null
+let refreshInterval = null
+const REFRESH_MS = 45000  // refresco automático cada 45s mientras la pestaña esté visible
 
 export async function initCrm() {
   if (!requireAuth()) return
+  await cargarTodo()
+  bindAutoRefresh()
+  bindBotonActualizar()
+}
+
+async function cargarTodo() {
   await loadDashboard()
+  await loadAnalytics()
+  marcarUltimaActualizacion()
+}
+
+function marcarUltimaActualizacion() {
+  const el = document.getElementById('crm-last-update')
+  if (el) el.textContent = `Actualizado ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+}
+
+function bindBotonActualizar() {
+  const btn = document.getElementById('crm-refresh-btn')
+  if (!btn) return
+  btn.addEventListener('click', async () => {
+    btn.classList.add('crm-refresh-btn--spinning')
+    await cargarTodo()
+    btn.classList.remove('crm-refresh-btn--spinning')
+  })
+}
+
+function bindAutoRefresh() {
+  // Al volver a esta pestaña (después de estar en otra), refresca al toque
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      cargarTodo()
+      _iniciarIntervalo()
+    } else {
+      _detenerIntervalo()
+    }
+  })
+  // Mientras la pestaña esté visible, refresca cada REFRESH_MS
+  if (document.visibilityState === 'visible') _iniciarIntervalo()
+}
+
+function _iniciarIntervalo() {
+  _detenerIntervalo()
+  refreshInterval = setInterval(cargarTodo, REFRESH_MS)
+}
+
+function _detenerIntervalo() {
+  if (refreshInterval) clearInterval(refreshInterval)
+  refreshInterval = null
 }
 
 async function loadDashboard() {
@@ -165,6 +214,179 @@ function renderContactos(rows) {
       <td>${escapeHtml(c.origen || '—')}</td>
       <td>${escapeHtml(c.country || '—')}</td>
       <td>${fmtFecha(c.created_at)}</td>
+    </tr>
+  `).join('')
+}
+
+// ── Analítica avanzada: embudo, tasa de victoria, forecast, empresas, alertas ──
+async function loadAnalytics() {
+  try {
+    const data = await apiFetch('/crm/analytics')
+    if (!data) return
+    renderEmbudo(data.embudo || [])
+    renderWinrate(data.tasa_victoria || {})
+    renderForecast(data.forecast_ponderado_uf || 0)
+    renderPorEmpresa(data.por_empresa || [])
+    renderEstancadas(data.estancadas || [], data.dias_umbral_estancamiento || 14)
+    renderValorGanado(data.valor_ganado || {})
+    renderConversionEtapas(data.conversion_entre_etapas || [])
+    renderLtv(data.ltv || {})
+    renderIngresosVertical(data.ingresos_por_vertical || [])
+    renderCicloVentaVertical(data.ciclo_venta_por_vertical || [], data.ciclo_venta_promedio_general_dias || 0)
+  } catch (e) {
+    console.error('loadAnalytics CRM', e)
+  }
+}
+
+function renderConversionEtapas(rows) {
+  const cont = document.getElementById('crm-conversion-etapas')
+  if (!cont) return
+  if (!rows.length) { cont.innerHTML = '<div class="empty-state empty-state--compact">Sin datos todavía</div>'; return }
+  cont.innerHTML = rows.map(r => `
+    <div class="crm-conv-row">
+      <span class="crm-conv-row__lbl">${escapeHtml(r.de_etapa)} → ${escapeHtml(r.a_etapa)}</span>
+      <span class="crm-conv-row__pct ${r.pct >= 50 ? 'crm-conv-row__pct--good' : 'crm-conv-row__pct--bad'}">${r.pct}%</span>
+    </div>
+  `).join('')
+}
+
+function renderLtv(ltv) {
+  setText('crm-ltv-promedio', `${ltv.promedio_uf ?? 0} UF`)
+  setText('crm-ltv-sub', `sobre ${ltv.clientes_con_ventas ?? 0} cliente(s) con al menos una venta ganada`)
+
+  const cont = document.getElementById('crm-ltv-lista')
+  if (!cont) return
+  const rows = ltv.por_cliente || []
+  if (!rows.length) { cont.innerHTML = '<div class="empty-state">Sin ventas ganadas todavía</div>'; return }
+  const max = Math.max(...rows.map(r => r.valor_uf), 1)
+  cont.innerHTML = rows.map(r => `
+    <div class="crm-valor-row">
+      <span class="crm-valor-row__lbl">${escapeHtml(r.cliente_nombre || '—')}</span>
+      <div class="crm-valor-row__bar-wrap">
+        <div class="crm-valor-row__bar" style="width:${Math.max(6, r.valor_uf / max * 100)}%"></div>
+      </div>
+      <span class="crm-valor-row__val">${r.valor_uf} UF</span>
+    </div>
+  `).join('')
+}
+
+function renderIngresosVertical(rows) {
+  const cont = document.getElementById('crm-vertical-ingresos')
+  if (!cont) return
+  if (!rows.length) { cont.innerHTML = '<div class="empty-state empty-state--compact">Sin datos todavía</div>'; return }
+  const max = Math.max(...rows.map(r => r.valor_uf), 1)
+  cont.innerHTML = rows.map(r => `
+    <div class="crm-valor-row">
+      <span class="crm-valor-row__lbl">${escapeHtml(r.industria || 'Sin especificar')}</span>
+      <div class="crm-valor-row__bar-wrap">
+        <div class="crm-valor-row__bar" style="width:${Math.max(6, r.valor_uf / max * 100)}%"></div>
+      </div>
+      <span class="crm-valor-row__val">${r.valor_uf} UF</span>
+    </div>
+  `).join('')
+}
+
+function renderCicloVentaVertical(rows, promedioGeneral) {
+  setText('crm-ciclo-venta', promedioGeneral ? `${promedioGeneral} días` : '—')
+  const tbody = document.getElementById('crm-vertical-ciclo-tbody')
+  if (!tbody) return
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Sin oportunidades cerradas todavía</td></tr>'
+    return
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${escapeHtml(r.industria || 'Sin especificar')}</td>
+      <td>${r.dias_promedio} días</td>
+      <td>${r.cantidad_deals}</td>
+    </tr>
+  `).join('')
+}
+
+function renderValorGanado(v) {
+  setText('crm-valor-total', `${v.total_uf ?? 0} UF`)
+  renderValorLista('crm-valor-empresa', v.por_empresa || [], r => r.company_nombre || 'Sin asignar')
+  renderValorLista('crm-valor-cliente', v.por_cliente || [], r => r.cliente_nombre || '—')
+  renderValorLista('crm-valor-plazo',   v.por_plazo   || [], r => r.plazo_label || 'Sin especificar')
+}
+
+function renderValorLista(contId, rows, getLabel) {
+  const cont = document.getElementById(contId)
+  if (!cont) return
+  if (!rows.length) { cont.innerHTML = '<div class="empty-state empty-state--compact">Sin datos todavía</div>'; return }
+  const max = Math.max(...rows.map(r => r.valor_uf), 1)
+  cont.innerHTML = rows.map(r => `
+    <div class="crm-valor-row">
+      <span class="crm-valor-row__lbl">${escapeHtml(getLabel(r))}</span>
+      <div class="crm-valor-row__bar-wrap">
+        <div class="crm-valor-row__bar" style="width:${Math.max(6, r.valor_uf / max * 100)}%"></div>
+      </div>
+      <span class="crm-valor-row__val">${r.valor_uf} UF</span>
+    </div>
+  `).join('')
+}
+
+function renderEmbudo(rows) {
+  const cont = document.getElementById('crm-embudo')
+  if (!cont) return
+  if (!rows.length) { cont.innerHTML = '<div class="empty-state">Sin datos todavía</div>'; return }
+
+  const max = Math.max(...rows.map(r => r.cantidad), 1)
+  cont.innerHTML = rows.map(r => `
+    <div class="crm-funnel-row">
+      <span class="crm-funnel-row__lbl">${escapeHtml(r.etapa_label)}</span>
+      <div class="crm-funnel-row__bar-wrap">
+        <div class="crm-funnel-row__bar" style="width:${Math.max(6, r.cantidad / max * 100)}%"></div>
+      </div>
+      <span class="crm-funnel-row__val">${r.cantidad} <small>(${r.pct}%)</small></span>
+    </div>
+  `).join('')
+}
+
+function renderWinrate(w) {
+  setText('crm-winrate', `${w.tasa_pct ?? 0}%`)
+  setText('crm-winrate-sub', `${w.ganadas ?? 0} ganadas · ${w.perdidas ?? 0} perdidas`)
+}
+
+function renderForecast(valor) {
+  setText('crm-forecast', `${valor} UF/mes`)
+}
+
+function renderPorEmpresa(rows) {
+  const tbody = document.getElementById('crm-empresa-tbody')
+  if (!tbody) return
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Sin datos todavía</td></tr>'
+    return
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${escapeHtml(r.company_nombre || 'Sin asignar')}</td>
+      <td>${r.total}</td>
+      <td>${r.ganadas}</td>
+      <td>${r.tasa_victoria_pct}%</td>
+      <td>${r.valor_ganado_uf}</td>
+    </tr>
+  `).join('')
+}
+
+function renderEstancadas(rows, umbral) {
+  const tbody = document.getElementById('crm-estancadas-tbody')
+  const badge = document.getElementById('crm-alertas-count')
+  if (badge) badge.textContent = rows.length
+  if (!tbody) return
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Ninguna oportunidad lleva ${umbral}+ días sin movimiento 🎉</td></tr>`
+    return
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${escapeHtml(r.titulo || '')}</td>
+      <td>${escapeHtml(r.cliente_nombre || '')}</td>
+      <td><span class="crm-pill crm-pill--opp">${escapeHtml(r.etapa_label || '')}</span></td>
+      <td class="crm-dias-estancada">${r.dias_sin_movimiento} días</td>
+      <td>${r.valor_uf ?? 0}</td>
     </tr>
   `).join('')
 }

@@ -468,6 +468,13 @@ function bindGenerar() {
         )
       }
 
+      if (usarIA) {
+        console.log(
+          `[Generar Informe] Completado en ${tiempoInfo.seconds}s (${tiempoInfo.text}) — ` +
+          `cliente: ${clienteSel.company_name}, servicios: ${seleccionados.size}, modelo backend: ver terminal uvicorn`
+        )
+      }
+
     } catch (err) {
       const tiempoInfo = usarIA ? stopProgressTimer('Error') : { seconds: 0, text: '' }
       showAlert(
