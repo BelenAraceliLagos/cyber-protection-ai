@@ -178,21 +178,29 @@ def _css_base(company: dict = None) -> str:
     company = company or {}
     custom_fonts = company.get("_custom_fonts") or {}
 
-    # Color para el contenido interior:
-    # 1. Si la empresa tiene content_color explícito en BD → usarlo
-    # 2. Si no, calcular automáticamente por luminancia de primary_color
-    # content_color: 1) portada_config.banner.text_color, 2) content_color BD, 3) auto-luminancia
+    # Color para el contenido interior (cuerpo, tablas, notas al pie — SIEMPRE
+    # sobre fondo blanco): prioriza cuerpo.color, luego content_color de BD,
+    # y como último recurso calcula por luminancia de primary_color.
+    # IMPORTANTE: nunca usar banner.text_color aquí — ese color está pensado
+    # para contrastar contra el FONDO DEL BANNER (que puede ser oscuro), no
+    # contra la página blanca del interior. Confundir ambos deja el texto
+    # del cuerpo invisible cuando el banner usa texto blanco (ej. Atcom).
     _pc = company.get("portada_config") or {}
-    explicit_content = (
-        (_pc.get("banner") or {}).get("text_color")
-        or company.get("content_color")
-    ) if company else None
+    _cuerpo_cfg_temp = _pc.get("cuerpo") or {}
+    explicit_content = _cuerpo_cfg_temp.get("color") or company.get("content_color")
     if explicit_content:
         content_color = explicit_content
     elif _luminance(primary_color) > 0.5:
         content_color = "#1A2B5F"
     else:
         content_color = primary_color
+
+    # Color del texto DEL BANNER específicamente (puede ser blanco sobre un
+    # banner oscuro) — variable separada de content_color a propósito.
+    banner_text_color = (
+        (_pc.get("banner") or {}).get("text_color")
+        or content_color
+    )
 
     # secondary_color: puede venir de portada_config.banner.bg_color
     _banner_bg = (_pc.get("banner") or {}).get("bg_color")
@@ -433,7 +441,7 @@ body {{
 .banner-titulo {{
     font-family:   {banner_font};
     background:    {secondary_color};
-    color:         {content_color};
+    color:         {banner_text_color};
     font-size:     {banner_size}pt;
     font-weight:   {banner_weight};
     padding:       3mm 8mm;

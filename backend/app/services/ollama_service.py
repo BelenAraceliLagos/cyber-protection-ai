@@ -6,10 +6,15 @@ Tono: Español chileno, formal-ejecutivo, directo.
       sin ahondar en detalles de implementación.
 """
 
+import os
 import requests
 from typing import List
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
+# En Docker, esta variable viene del docker-compose.yml (host.docker.internal
+# apunta a tu Windows, donde corre Ollama nativo con tu GPU).
+# Corriendo nativo (sin Docker), OLLAMA_URL no existe y usa localhost como antes.
+OLLAMA_BASE_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
+OLLAMA_URL = f"{OLLAMA_BASE_URL}/api/generate"
 MODEL      = "gemma3:4b"
 
 INSTRUCCION_TONO = """

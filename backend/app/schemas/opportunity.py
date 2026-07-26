@@ -22,24 +22,29 @@ class MilestoneResponse(MilestoneCreate):
 
 class OpportunityCreate(BaseModel):
     cliente_id:   int
+    company_id:   Optional[int] = None   # empresa emisora (marca) — opcional
     titulo:       str
     etapa:        str = "prospecto"
     probabilidad: int = 30
     valor_uf:     float = 0.0
+    plazo_meses:  Optional[int] = None
     notas:        str = ""
 
 
 class OpportunityPatch(BaseModel):
     titulo:       Optional[str]   = None
+    company_id:   Optional[int]   = None
     etapa:        Optional[str]   = None
     probabilidad: Optional[int]   = None
     valor_uf:     Optional[float] = None
+    plazo_meses:  Optional[int]   = None
     notas:        Optional[str]   = None
 
 
 class OpportunityResponse(OpportunityCreate):
     id:             int
     cliente_nombre: Optional[str] = None
+    company_nombre: Optional[str] = None
     hitos:          List[MilestoneResponse] = []
 
     class Config:
