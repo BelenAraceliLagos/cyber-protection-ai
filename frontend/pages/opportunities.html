@@ -44,6 +44,7 @@
       <a href="clients.html"       class="sidebar__item"><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
       <a href="services.html"      class="sidebar__item"><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
       <a href="opportunities.html" class="sidebar__item sidebar__item--active" aria-current="page"><i class="ti ti-trending-up" aria-hidden="true"></i><span class="sidebar__label">Oportunidades</span></a>
+      <a href="crm.html" class="sidebar__item"><i class="ti ti-chart-arrows" aria-hidden="true"></i><span class="sidebar__label">CRM</span></a>
       <a href="report.html"        class="sidebar__item"><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
       <div class="sidebar__divider"></div>
       <a href="companies.html"     class="sidebar__item"  ><i class="ti ti-building" aria-hidden="true"></i><span class="sidebar__label">Empresas</span></a>
@@ -132,6 +133,9 @@
 
       <!-- ── KANBAN ─────────────────────────────── -->
       <section id="tab-kanban" class="opp-tab-panel--hidden">
+        <div class="kanban-company-filter" id="kanban-company-filter">
+          <button type="button" class="kcf-pill kcf-pill--active" data-company="">Todas las empresas</button>
+        </div>
         <div class="card page-enter">
           <div class="kanban-wrap" id="kanban-board">
             <div class="empty-state">Cargando...</div>
@@ -197,6 +201,12 @@
           <select id="f-cliente"></select>
         </div>
         <div class="form__group">
+          <label for="f-company">Empresa emisora</label>
+          <select id="f-company">
+            <option value="">— Sin asignar —</option>
+          </select>
+        </div>
+        <div class="form__group">
           <label for="f-etapa">Etapa</label>
           <select id="f-etapa">
             <option value="prospecto">Prospecto</option>
@@ -214,6 +224,16 @@
         <div class="form__group">
           <label for="f-valor">Valor estimado (UF/mes)</label>
           <input type="number" id="f-valor" min="0" step="0.5" value="0">
+        </div>
+        <div class="form__group">
+          <label for="f-plazo">Plazo contratado</label>
+          <select id="f-plazo">
+            <option value="">Sin especificar</option>
+            <option value="3">3 meses (Plan Flexible)</option>
+            <option value="6">6 meses (Plan Semestral)</option>
+            <option value="9">9 meses (Plan Extendido)</option>
+            <option value="12">12 meses (Plan Anual)</option>
+          </select>
         </div>
         <div class="form__group opp-form-group--full">
           <label for="f-notas">Notas internas</label>

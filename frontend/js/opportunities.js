@@ -33,6 +33,8 @@ const state = {
   metricas:  {},
   allOpps:   [],
   clientes:  [],
+  companies: [],
+  companyFilter: null,   // null = todas las empresas
   selOppId:  null,
   editingId: null,
 }
@@ -60,9 +62,11 @@ const TIPO_LABEL  = {
 export async function initOpportunities() {
   if (!requireAuth()) return
   await loadClientes()
+  await loadCompanies()
   await loadPipeline()
   bindTabs()
   bindButtons()
+  bindCompanyFilter()
 }
 
 async function loadClientes() {
@@ -75,9 +79,40 @@ async function loadClientes() {
   } catch (e) { console.error('loadClientes', e) }
 }
 
+async function loadCompanies() {
+  try {
+    state.companies = await apiFetch('/companies/') || []
+    const sel = document.getElementById('f-company')
+    if (sel) sel.innerHTML = '<option value="">— Sin asignar —</option>' + state.companies
+      .map(c => `<option value="${Number(c.id)}">${escapeHtml(c.name || '')}</option>`)
+      .join('')
+
+    const filterBar = document.getElementById('kanban-company-filter')
+    if (filterBar) {
+      filterBar.innerHTML = `<button type="button" class="kcf-pill kcf-pill--active" data-company="">Todas las empresas</button>` +
+        state.companies.map(c => `<button type="button" class="kcf-pill" data-company="${Number(c.id)}">${escapeHtml(c.name || '')}</button>`).join('')
+    }
+  } catch (e) { console.error('loadCompanies', e) }
+}
+
+function bindCompanyFilter() {
+  const filterBar = document.getElementById('kanban-company-filter')
+  if (!filterBar) return
+  filterBar.addEventListener('click', (e) => {
+    const btn = e.target.closest('.kcf-pill')
+    if (!btn) return
+    filterBar.querySelectorAll('.kcf-pill').forEach(p => p.classList.remove('kcf-pill--active'))
+    btn.classList.add('kcf-pill--active')
+    const val = btn.dataset.company
+    state.companyFilter = val ? Number(val) : null
+    loadPipeline()
+  })
+}
+
 async function loadPipeline() {
   try {
-    const data = await apiFetch('/opportunities/pipeline')
+    const qs = state.companyFilter ? `?company_id=${state.companyFilter}` : ''
+    const data = await apiFetch(`/opportunities/pipeline${qs}`)
     if (!data) return
     state.pipeline = data.pipeline || {}
     state.metricas = data.metricas || {}
@@ -234,21 +269,61 @@ function renderKanban() {
       ? cards.map(dealCard).join('')
       : '<div class="empty-state empty-state--compact">Sin deals</div>'
     return `
-      <div class="kanban-col">
+      <div class="kanban-col" data-etapa="${etapa}">
         <div class="kanban-col-hdr">
           ${ETAPA_LABEL[etapa]}<span class="cnt">${cards.length}</span>
         </div>
-        ${cardsHtml}
+        <div class="kanban-col-body" data-etapa="${etapa}">
+          ${cardsHtml}
+        </div>
         <button class="kanban-add" data-etapa="${etapa}">+ Agregar</button>
       </div>`
   }).join('')
 
-  board.querySelectorAll('.deal-card').forEach(card =>
+  board.querySelectorAll('.deal-card').forEach(card => {
     card.addEventListener('click', () => selectDeal(Number(card.dataset.id)))
-  )
+    card.addEventListener('dragstart', (e) => {
+      card.classList.add('dragging')
+      e.dataTransfer.setData('text/plain', card.dataset.id)
+      e.dataTransfer.effectAllowed = 'move'
+    })
+    card.addEventListener('dragend', () => card.classList.remove('dragging'))
+  })
   board.querySelectorAll('.kanban-add').forEach(btn =>
     btn.addEventListener('click', () => openNewOppModalWithEtapa(btn.dataset.etapa))
   )
+
+  // ── Drop zones: cada columna acepta la tarjeta arrastrada ──
+  board.querySelectorAll('.kanban-col').forEach(col => {
+    col.addEventListener('dragover', (e) => {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+      col.classList.add('drag-over')
+    })
+    col.addEventListener('dragleave', () => col.classList.remove('drag-over'))
+    col.addEventListener('drop', async (e) => {
+      e.preventDefault()
+      col.classList.remove('drag-over')
+      const oppId    = Number(e.dataTransfer.getData('text/plain'))
+      const newEtapa = col.dataset.etapa
+      if (!oppId || !newEtapa) return
+      const opp = state.allOpps.find(o => o.id === oppId)
+      if (!opp || opp.etapa === newEtapa) return
+      await moveOpportunityToEtapa(oppId, newEtapa)
+    })
+  })
+}
+
+async function moveOpportunityToEtapa(oppId, newEtapa) {
+  try {
+    await apiFetch(`/opportunities/${oppId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ etapa: newEtapa }),
+    })
+    await loadPipeline()
+  } catch (e) {
+    showAlert('No se pudo mover la oportunidad: ' + e.message, 'error')
+  }
 }
 
 function dealCard(opp) {
@@ -264,9 +339,13 @@ function dealCard(opp) {
   const hitoTxt = prox
     ? `<i class="ti ti-calendar opp-icon--xs" aria-hidden="true"></i> ${escapeHtml(TIPO_LABEL[prox.tipo] || prox.tipo || '')} — ${fmtDate(prox.fecha_inicio)}`
     : 'Sin hito agendado'
+  const companyTag = opp.company_nombre
+    ? `<span class="dc-company">${escapeHtml(opp.company_nombre)}</span>`
+    : ''
   return `
-    <div class="deal-card${isSel ? ' sel' : ''}" data-id="${oppId}">
+    <div class="deal-card${isSel ? ' sel' : ''}" data-id="${oppId}" draggable="true">
       <div class="dc-nombre">${escapeHtml(opp.titulo || opp.cliente_nombre || '')}</div>
+      ${companyTag}
       <div class="dc-meta">${hitoTxt}</div>
       ${Number(opp.valor_uf) > 0
         ? `<div class="dc-uf"><i class="ti ti-currency-dollar opp-icon--xs" aria-hidden="true"></i> ${escapeHtml(String(opp.valor_uf))} UF/mes</div>`
@@ -297,6 +376,7 @@ function renderDealDetail(opp) {
     <div class="detail-grid">
       <div><div class="di-lbl">Cliente</div><div class="di-val">${escapeHtml(opp.cliente_nombre || '—')}</div></div>
       <div><div class="di-lbl">Valor</div><div class="di-val">${escapeHtml(String(opp.valor_uf || 0))} UF/mes</div></div>
+      <div><div class="di-lbl">Plazo</div><div class="di-val">${opp.plazo_meses ? escapeHtml(String(opp.plazo_meses)) + ' meses' : 'Sin especificar'}</div></div>
       <div><div class="di-lbl">Probabilidad</div><div class="di-val">${escapeHtml(String(opp.probabilidad || 0))}%</div></div>
       <div><div class="di-lbl">Contacto</div><div class="di-val">${escapeHtml(cli?.contact_name || '—')}</div></div>
       <div><div class="di-lbl">Email</div><div class="di-val">${escapeHtml(cli?.email || '—')}</div></div>
@@ -432,7 +512,8 @@ function openNewOppModal() {
   state.editingId = null
   setText('opp-modal-title', 'Nueva oportunidad')
   setVal('f-titulo', ''); setVal('f-notas', '')
-  setVal('f-etapa', 'prospecto'); setVal('f-prob', 30); setVal('f-valor', 0)
+  setVal('f-company', state.companyFilter || '')
+  setVal('f-etapa', 'prospecto'); setVal('f-prob', 30); setVal('f-valor', 0); setVal('f-plazo', '')
   openModal('opp-modal')
 }
 
@@ -448,9 +529,11 @@ function openEditOppModal(id) {
   setText('opp-modal-title', 'Editar oportunidad')
   setVal('f-titulo',  opp.titulo       || '')
   setVal('f-cliente', opp.cliente_id   || '')
+  setVal('f-company', opp.company_id   || '')
   setVal('f-etapa',   opp.etapa        || 'prospecto')
   setVal('f-prob',    opp.probabilidad || 30)
   setVal('f-valor',   opp.valor_uf     || 0)
+  setVal('f-plazo',   opp.plazo_meses  || '')
   setVal('f-notas',   opp.notas        || '')
   openModal('opp-modal')
 }
@@ -463,10 +546,12 @@ async function saveOpportunity() {
 
   const body = {
     cliente_id:   cliId,
+    company_id:   document.getElementById('f-company')?.value ? Number(document.getElementById('f-company').value) : null,
     titulo,
     etapa:        document.getElementById('f-etapa')?.value  || 'prospecto',
     probabilidad: parseInt(document.getElementById('f-prob')?.value)   || 30,
     valor_uf:     parseFloat(document.getElementById('f-valor')?.value) || 0,
+    plazo_meses:  document.getElementById('f-plazo')?.value ? Number(document.getElementById('f-plazo').value) : null,
     notas:        document.getElementById('f-notas')?.value.trim() || '',
   }
   try {

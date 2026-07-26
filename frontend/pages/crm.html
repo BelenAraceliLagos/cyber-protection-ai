@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clientes — Cyber-Protection</title>
+  <title>CRM — Cyber-Protection</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../css/animations.css">
   <link rel="stylesheet" href="../css/layout.css">
   <link rel="stylesheet" href="../css/components.css">
-  <link rel="stylesheet" href="../css/pages/clients.css">
+  <link rel="stylesheet" href="../css/pages/crm.css">
 </head>
 <body>
 
@@ -39,17 +39,17 @@
         <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-collapse-icon" aria-hidden="true"></i>
       </button>
     </div>
-        <div class="sidebar__nav">
-      <a href="dashboard.html"     class="sidebar__item" ><i class="ti ti-home" aria-hidden="true"></i><span class="sidebar__label">Dashboard</span></a>
-      <a href="clients.html"       class="sidebar__item sidebar__item--active"  aria-current="page"><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
-      <a href="services.html"      class="sidebar__item"  ><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
-      <a href="opportunities.html" class="sidebar__item"  ><i class="ti ti-trending-up" aria-hidden="true"></i><span class="sidebar__label">Oportunidades</span></a>
-      <a href="crm.html" class="sidebar__item"><i class="ti ti-chart-arrows" aria-hidden="true"></i><span class="sidebar__label">CRM</span></a>
-      <a href="report.html"        class="sidebar__item"  ><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
+    <div class="sidebar__nav">
+      <a href="dashboard.html"     class="sidebar__item"><i class="ti ti-home" aria-hidden="true"></i><span class="sidebar__label">Dashboard</span></a>
+      <a href="clients.html"       class="sidebar__item"><i class="ti ti-users" aria-hidden="true"></i><span class="sidebar__label">Clientes</span></a>
+      <a href="services.html"      class="sidebar__item"><i class="ti ti-briefcase" aria-hidden="true"></i><span class="sidebar__label">Servicios</span></a>
+      <a href="opportunities.html" class="sidebar__item"><i class="ti ti-trending-up" aria-hidden="true"></i><span class="sidebar__label">Oportunidades</span></a>
+      <a href="crm.html" class="sidebar__item sidebar__item--active" aria-current="page"><i class="ti ti-chart-arrows" aria-hidden="true"></i><span class="sidebar__label">CRM</span></a>
+      <a href="report.html"        class="sidebar__item"><i class="ti ti-robot" aria-hidden="true"></i><span class="sidebar__label">Generar informe</span></a>
       <div class="sidebar__divider"></div>
       <a href="companies.html"     class="sidebar__item"  ><i class="ti ti-building" aria-hidden="true"></i><span class="sidebar__label">Empresas</span></a>
-      <a href="data.html"        class="sidebar__item"  ><i class="ti ti-database-cog" aria-hidden="true"></i><span class="sidebar__label">Gestión de Datos</span></a>
-      <a href="ingestion.html"     class="sidebar__item"  ><i class="ti ti-database-import" aria-hidden="true"></i><span class="sidebar__label">Historial</span></a>
+      <a href="data.html"        class="sidebar__item"><i class="ti ti-database-cog" aria-hidden="true"></i><span class="sidebar__label">Gestión de Datos</span></a>
+      <a href="ingestion.html"     class="sidebar__item"><i class="ti ti-database-import" aria-hidden="true"></i><span class="sidebar__label">Historial</span></a>
     </div>
     <div class="sidebar__user">
       <div class="sidebar__avatar" id="sidebar-initials">??</div>
@@ -62,44 +62,244 @@
 
   <div class="main">
     <header class="main__topbar">
-      <span class="main__topbar-title">Clientes</span>
+      <span class="main__topbar-title">CRM</span>
     </header>
 
     <main class="main__content">
 
       <div class="page-header page-enter">
         <div>
-          <h1 class="page-header__title">Clientes</h1>
-          <p class="page-header__sub"><span id="clients-count">—</span></p>
+          <h1 class="page-header__title">Panel de Análisis CRM</h1>
+          <p class="page-header__sub" id="crm-subtitle">Ciclo de vida de contactos, oportunidades y fuentes de origen</p>
         </div>
-        <div class="page-header__actions">
-          <button class="btn btn--primary" onclick="openNewClientModal()">
-            <i class="ti ti-plus btn__icon" aria-hidden="true"></i>
-            Nuevo cliente
+        <div class="crm-refresh-wrap">
+          <span class="crm-last-update" id="crm-last-update">Cargando...</span>
+          <button type="button" class="btn btn--sm btn--ghost" id="crm-refresh-btn" title="Actualizar ahora">
+            <i class="ti ti-refresh btn__icon" aria-hidden="true"></i> Actualizar
           </button>
         </div>
       </div>
 
-      <div class="card page-enter page-enter--d1">
-        <div class="card__header">
-          <div class="search clients-search">
-            <i class="ti ti-search search__icon" aria-hidden="true"></i>
-            <input type="search" id="client-search" class="search__input" placeholder="Buscar empresa, contacto...">
+      <!-- ── Tarjetas resumen ─────────────────────── -->
+      <div class="crm-metrics-row page-enter page-enter--d1">
+        <div class="crm-metric-box">
+          <div class="crm-metric-box__val" id="crm-m-total">—</div>
+          <div class="crm-metric-box__lbl">Total contactos</div>
+        </div>
+        <div class="crm-metric-box crm-metric-box--lead">
+          <div class="crm-metric-box__val" id="crm-m-leads">—</div>
+          <div class="crm-metric-box__lbl">Leads</div>
+        </div>
+        <div class="crm-metric-box crm-metric-box--opp">
+          <div class="crm-metric-box__val" id="crm-m-opp">—</div>
+          <div class="crm-metric-box__lbl">En oportunidad</div>
+        </div>
+        <div class="crm-metric-box crm-metric-box--cliente">
+          <div class="crm-metric-box__val" id="crm-m-clientes">—</div>
+          <div class="crm-metric-box__lbl">Clientes</div>
+        </div>
+        <div class="crm-metric-box crm-metric-box--promotor">
+          <div class="crm-metric-box__val" id="crm-m-promotores">—</div>
+          <div class="crm-metric-box__lbl">Promotores</div>
+        </div>
+      </div>
+
+      <!-- ── Gráficos ─────────────────────────────── -->
+      <div class="crm-charts-grid page-enter page-enter--d2">
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title"><i class="ti ti-chart-line" aria-hidden="true"></i> Oportunidades en el tiempo</span>
+          </div>
+          <div class="card__body">
+            <canvas id="crm-chart-tiempo" height="220"></canvas>
           </div>
         </div>
-        <div class="table-wrapper clients-table-wrapper">
-          <table class="table" aria-label="Lista de clientes">
-            <thead>
-              <tr>
-                <th>Empresa</th>
-                <th>Contacto</th>
-                <th>Industria</th>
-                <th>Teléfono</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="clients-tbody"></tbody>
-          </table>
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title"><i class="ti ti-chart-bar" aria-hidden="true"></i> Oportunidades por fuente</span>
+          </div>
+          <div class="card__body">
+            <canvas id="crm-chart-fuente" height="220"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Embudo + Tasa de victoria + Forecast ─────────────────── -->
+      <div class="crm-funnel-grid page-enter page-enter--d2">
+        <div class="card crm-funnel-card">
+          <div class="card__header">
+            <span class="card__title"><i class="ti ti-filter" aria-hidden="true"></i> Embudo de conversión</span>
+          </div>
+          <div class="card__body">
+            <div id="crm-embudo"></div>
+            <p class="crm-hint">Foto actual: cuántas oportunidades están hoy en cada etapa o más adelante (no incluye perdidas)</p>
+          </div>
+        </div>
+        <div class="crm-stat-stack">
+          <div class="card crm-stat-card">
+            <div class="crm-stat-card__val" id="crm-winrate">—</div>
+            <div class="crm-stat-card__lbl">Tasa de victoria</div>
+            <div class="crm-stat-card__sub" id="crm-winrate-sub">—</div>
+          </div>
+          <div class="card crm-stat-card">
+            <div class="crm-stat-card__val" id="crm-forecast">—</div>
+            <div class="crm-stat-card__lbl">Forecast ponderado</div>
+            <div class="crm-stat-card__sub">Suma de valor × probabilidad, oportunidades activas</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Valor ganado: total, por empresa, cliente y plazo ────── -->
+      <div class="card page-enter page-enter--d2">
+        <div class="card__header">
+          <span class="card__title"><i class="ti ti-trophy" aria-hidden="true"></i> Valor ganado</span>
+        </div>
+        <div class="card__body">
+          <div class="crm-valor-total" id="crm-valor-total">— UF</div>
+          <p class="crm-hint">Total de contratos ganados (valor mensual × plazo contratado)</p>
+
+          <div class="crm-valor-grid">
+            <div class="crm-valor-col">
+              <div class="crm-valor-col__title">Por empresa emisora</div>
+              <div id="crm-valor-empresa"></div>
+            </div>
+            <div class="crm-valor-col">
+              <div class="crm-valor-col__title">Por cliente</div>
+              <div id="crm-valor-cliente"></div>
+            </div>
+            <div class="crm-valor-col">
+              <div class="crm-valor-col__title">Por plazo contratado</div>
+              <div id="crm-valor-plazo"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Conversión entre etapas + LTV ─────────────────────────── -->
+      <div class="crm-funnel-grid page-enter page-enter--d2">
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title"><i class="ti ti-arrows-right" aria-hidden="true"></i> Conversión entre etapas</span>
+          </div>
+          <div class="card__body">
+            <div id="crm-conversion-etapas"></div>
+            <p class="crm-hint">De las oportunidades que llegan a una etapa, qué porcentaje avanza a la siguiente</p>
+          </div>
+        </div>
+        <div class="crm-stat-stack">
+          <div class="card crm-stat-card">
+            <div class="crm-stat-card__val" id="crm-ltv-promedio">—</div>
+            <div class="crm-stat-card__lbl">LTV promedio por cliente</div>
+            <div class="crm-stat-card__sub" id="crm-ltv-sub">—</div>
+          </div>
+          <div class="card crm-stat-card">
+            <div class="crm-stat-card__val" id="crm-ciclo-venta">—</div>
+            <div class="crm-stat-card__lbl">Ciclo de venta promedio</div>
+            <div class="crm-stat-card__sub">Días desde creación hasta cierre (ganado o perdido)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Top clientes por LTV ─────────────────────────────────── -->
+      <div class="card page-enter page-enter--d2">
+        <div class="card__header">
+          <span class="card__title"><i class="ti ti-crown" aria-hidden="true"></i> Top clientes por valor histórico (LTV)</span>
+        </div>
+        <div class="card__body">
+          <div id="crm-ltv-lista"></div>
+        </div>
+      </div>
+
+      <!-- ── Ingresos y ciclo de venta por vertical ────────────────── -->
+      <div class="crm-funnel-grid page-enter page-enter--d2">
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title"><i class="ti ti-building-community" aria-hidden="true"></i> Ingresos por vertical</span>
+          </div>
+          <div class="card__body">
+            <div id="crm-vertical-ingresos"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title"><i class="ti ti-hourglass" aria-hidden="true"></i> Ciclo de venta por vertical</span>
+          </div>
+          <div class="card__body dashboard-card-body--flush">
+            <div class="table-wrapper dashboard-table-wrapper--flush">
+              <table class="table" aria-label="Ciclo de venta por vertical">
+                <thead><tr><th>Vertical</th><th>Días promedio</th><th>Deals</th></tr></thead>
+                <tbody id="crm-vertical-ciclo-tbody">
+                  <tr><td colspan="3" class="empty-state">Cargando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Comparativo por empresa emisora ──────────────────────── -->
+      <div class="card page-enter page-enter--d3">
+        <div class="card__header">
+          <span class="card__title"><i class="ti ti-building-bank" aria-hidden="true"></i> Comparativo por empresa emisora</span>
+        </div>
+        <div class="card__body dashboard-card-body--flush">
+          <div class="table-wrapper dashboard-table-wrapper--flush">
+            <table class="table" aria-label="Comparativo por empresa emisora">
+              <thead>
+                <tr><th>Empresa</th><th>Total</th><th>Ganadas</th><th>Tasa de victoria</th><th>Valor ganado (UF)</th></tr>
+              </thead>
+              <tbody id="crm-empresa-tbody">
+                <tr><td colspan="5" class="empty-state">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Alertas de oportunidades estancadas ──────────────────── -->
+      <div class="card page-enter page-enter--d3" id="crm-alertas-card">
+        <div class="card__header">
+          <span class="card__title"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Oportunidades estancadas</span>
+          <span class="crm-alert-badge" id="crm-alertas-count">0</span>
+        </div>
+        <div class="card__body dashboard-card-body--flush">
+          <div class="table-wrapper dashboard-table-wrapper--flush">
+            <table class="table" aria-label="Oportunidades estancadas">
+              <thead>
+                <tr><th>Oportunidad</th><th>Cliente</th><th>Etapa</th><th>Sin movimiento</th><th>Valor (UF)</th></tr>
+              </thead>
+              <tbody id="crm-estancadas-tbody">
+                <tr><td colspan="5" class="empty-state">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Contactos recientes ──────────────────── -->
+      <div class="card page-enter page-enter--d3">
+        <div class="card__header">
+          <span class="card__title"><i class="ti ti-users" aria-hidden="true"></i> Contactos recientes</span>
+          <a href="clients.html" class="btn btn--sm btn--ghost">Ver todos <i class="ti ti-arrow-right btn__icon" aria-hidden="true"></i></a>
+        </div>
+        <div class="card__body dashboard-card-body--flush">
+          <div class="table-wrapper dashboard-table-wrapper--flush">
+            <table class="table" aria-label="Contactos recientes">
+              <thead>
+                <tr><th>Empresa</th><th>Contacto</th><th>Etapa</th><th>Origen</th><th>País</th><th>Fecha</th></tr>
+              </thead>
+              <tbody id="crm-contactos-tbody">
+                <tr class="table--loading">
+                  <td><span class="table__skel skeleton skeleton--w-65"></span></td>
+                  <td><span class="table__skel skeleton skeleton--w-55"></span></td>
+                  <td><span class="table__skel skeleton skeleton--w-40"></span></td>
+                  <td><span class="table__skel skeleton skeleton--w-55"></span></td>
+                  <td><span class="table__skel skeleton skeleton--w-40"></span></td>
+                  <td><span class="table__skel skeleton skeleton--w-40"></span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -107,197 +307,17 @@
   </div>
 </div>
 
-<!-- MODAL CLIENTE -->
-<div class="modal-backdrop" id="client-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-  <div class="modal">
-    <div class="modal__header">
-      <h2 class="modal__title" id="modal-title">Nuevo cliente</h2>
-      <button class="modal__close" data-close-modal="client-modal" aria-label="Cerrar">
-        <i class="ti ti-x" aria-hidden="true"></i>
-      </button>
-    </div>
-    <div class="modal__body">
-      <form id="client-form" novalidate>
-        <section class="client-form-section" aria-labelledby="client-company-section">
-          <h3 class="client-form-section__title" id="client-company-section">Datos empresa</h3>
-          <div class="form__row form__row--2">
-            <div class="form__group">
-              <label for="f-company">Nombre comercial <span aria-hidden="true">*</span></label>
-              <input type="text" id="f-company" placeholder="Nombre de la empresa" required>
-            </div>
-            <div class="form__group">
-              <label for="f-rut">RUT empresa</label>
-              <input type="text" id="f-rut" placeholder="Ej: 761234567" inputmode="text" maxlength="12" autocomplete="off">
-              <span class="form__hint" id="f-rut-hint">
-                <i class="ti ti-info-circle"></i>
-                Ingresa sin puntos ni guión — el formato se aplica automáticamente.
-              </span>
-              <span class="form__hint form__hint--preview" id="f-rut-preview" style="display:none">
-                <i class="ti ti-check" style="color:#16a34a"></i>
-                <span id="f-rut-preview-text" style="color:#16a34a;font-weight:600"></span>
-              </span>
-              <span class="form__hint form__hint--error" id="f-rut-error" style="display:none">
-                <i class="ti ti-alert-circle" style="color:#dc2626"></i>
-                <span id="f-rut-error-text" style="color:#dc2626"></span>
-              </span>
-            </div>
-          </div>
-          <div class="form__row form__row--2">
-            <div class="form__group">
-              <label for="f-business-name">Razón social</label>
-              <input type="text" id="f-business-name" placeholder="Empresa SpA">
-            </div>
-            <div class="form__group">
-              <label for="f-website">Sitio web</label>
-              <input type="url" id="f-website" placeholder="https://empresa.cl">
-            </div>
-          </div>
-          <div class="form__row form__row--2">
-            <div class="form__group">
-              <label for="f-address">Dirección</label>
-              <input type="text" id="f-address" placeholder="Av. Apoquindo 1234">
-            </div>
-            <div class="form__group">
-              <label for="f-city">Comuna / ciudad</label>
-              <input type="text" id="f-city" placeholder="Las Condes">
-            </div>
-          </div>
-          <div class="form__row form__row--2">
-            <div class="form__group">
-              <label for="f-region">Región</label>
-              <select id="f-region">
-                <option value="">Seleccionar...</option>
-                <option>Arica y Parinacota</option>
-                <option>Tarapacá</option>
-                <option>Antofagasta</option>
-                <option>Atacama</option>
-                <option>Coquimbo</option>
-                <option>Valparaíso</option>
-                <option>Metropolitana de Santiago</option>
-                <option>O'Higgins</option>
-                <option>Maule</option>
-                <option>Ñuble</option>
-                <option>Biobío</option>
-                <option>La Araucanía</option>
-                <option>Los Ríos</option>
-                <option>Los Lagos</option>
-                <option>Aysén</option>
-                <option>Magallanes</option>
-              </select>
-            </div>
-            <div class="form__group">
-              <label for="f-country">País</label>
-              <input type="text" id="f-country" value="Chile" placeholder="Chile">
-            </div>
-          </div>
-          <div class="form__group">
-            <label for="f-industry">Industria</label>
-            <select id="f-industry">
-              <option value="">Seleccionar...</option>
-              <option>Construcción</option>
-              <option>Salud</option>
-              <option>Retail</option>
-              <option>Finanzas</option>
-              <option>Educación</option>
-              <option>Tecnología</option>
-              <option>Manufactura</option>
-              <option>Gobierno</option>
-              <option>Otro</option>
-            </select>
-          </div>
-        </section>
-
-        <section class="client-form-section" aria-labelledby="client-crm-section">
-          <h3 class="client-form-section__title" id="client-crm-section">CRM</h3>
-          <div class="form__row form__row--2">
-            <div class="form__group">
-              <label for="f-lifecycle">Etapa del ciclo de vida</label>
-              <select id="f-lifecycle">
-                <option value="lead">Lead</option>
-                <option value="oportunidad">Oportunidad</option>
-                <option value="cliente">Cliente</option>
-                <option value="promotor">Promotor</option>
-              </select>
-            </div>
-            <div class="form__group">
-              <label for="f-origen">Origen / fuente</label>
-              <select id="f-origen">
-                <option value="">Sin especificar</option>
-                <option value="referido">Referido</option>
-                <option value="busqueda_organica">Búsqueda orgánica</option>
-                <option value="redes_sociales">Redes sociales</option>
-                <option value="email_marketing">Email marketing</option>
-                <option value="trafico_directo">Tráfico directo</option>
-                <option value="evento">Evento</option>
-                <option value="otro">Otro</option>
-              </select>
-            </div>
-          </div>
-          <div class="form__group form__group--checkbox">
-            <label class="form__checkbox-label">
-              <input type="checkbox" id="f-lifecycle-auto" checked>
-              Actualizar automáticamente según sus oportunidades
-            </label>
-            <span class="form__hint">
-              Si se desactiva, la etapa queda fija en lo que elijas arriba — nada la va a mover sola.
-            </span>
-          </div>
-        </section>
-
-        <section class="client-form-section" aria-labelledby="client-contact-section">
-          <h3 class="client-form-section__title" id="client-contact-section">Datos contacto</h3>
-          <div class="form__row form__row--2">
-            <div class="form__group">
-              <label for="f-contact">Contacto <span aria-hidden="true">*</span></label>
-              <input type="text" id="f-contact" placeholder="Nombre del contacto" required>
-            </div>
-            <div class="form__group">
-              <label for="f-contact-position">Cargo</label>
-              <input type="text" id="f-contact-position" placeholder="Gerente de TI">
-            </div>
-          </div>
-          <div class="form__row form__row--2">
-            <div class="form__group">
-              <label for="f-email">Correo <span aria-hidden="true">*</span></label>
-              <input type="email" id="f-email" placeholder="correo@empresa.cl" required>
-            </div>
-            <div class="form__group">
-              <label for="f-phone">Teléfono principal</label>
-              <input type="tel" id="f-phone" placeholder="+56 2 ... / +56 9 ...">
-            </div>
-          </div>
-          <div class="form__group">
-            <label for="f-contact-phone">Teléfono directo contacto</label>
-            <input type="tel" id="f-contact-phone" placeholder="+56 9 ...">
-          </div>
-        </section>
-
-        <div class="form__group">
-          <label for="f-notes">Notas</label>
-          <textarea id="f-notes" placeholder="Contexto del cliente, oportunidad, observaciones..."></textarea>
-        </div>
-      </form>
-    </div>
-    <div class="modal__footer">
-      <button class="btn btn--secondary" data-close-modal="client-modal">Cancelar</button>
-      <button class="btn btn--primary" id="client-submit" form="client-form" type="submit">
-        <i class="ti ti-check btn__icon" aria-hidden="true"></i>
-        Guardar
-      </button>
-    </div>
-  </div>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script type="module">
-  import { initSidebar } from '../js/sidebar.js'
-  import { loadUserInfo } from '../js/auth.js'
+  import { initSidebar }      from '../js/sidebar.js'
+  import { loadUserInfo }     from '../js/auth.js'
   import { initProfileModal } from '../js/profile.js'
-  import { initClients } from '../js/clients.js'
+  import { initCrm }          from '../js/crm.js'
 
   loadUserInfo()
   initSidebar()
   initProfileModal()
-  initClients()
+  initCrm()
 </script>
 
 </body>

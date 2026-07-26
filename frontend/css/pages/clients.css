@@ -25,3 +25,16 @@
 .client-form-section:last-of-type {
   border-bottom: 0;
 }
+
+/* ── Checkbox de actualización automática de etapa CRM ────────────── */
+.form__group--checkbox { margin-top: 4px; }
+.form__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--cp-text-main, #1A2340);
+  cursor: pointer;
+}
+.form__checkbox-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--cp-blue-main, #155FCF); }

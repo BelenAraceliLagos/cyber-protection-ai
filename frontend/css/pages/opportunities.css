@@ -84,8 +84,57 @@
 .deal-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
 .deal-card.sel { border-left: 3px solid #155FCF; }
 .deal-card .dc-nombre { font-size: .84rem; font-weight: 600; margin-bottom: 3px; }
+.deal-card .dc-company {
+  display: inline-block;
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--cp-blue-main, #155FCF);
+  background: var(--cp-info-bg, #eef2ff);
+  padding: 1px 7px;
+  border-radius: 999px;
+  margin-bottom: 4px;
+}
 .deal-card .dc-meta   { font-size: .74rem; color: #888; }
 .deal-card .dc-uf     { font-size: .74rem; color: #155FCF; font-weight: 500; margin-top: 2px; }
+
+/* ── Filtro por empresa emisora ── */
+.kanban-company-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.kcf-pill {
+  border: 1px solid var(--cp-border, #E2E4F0);
+  background: var(--cp-white, #fff);
+  color: var(--cp-text-muted, #7B80A8);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: .8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+}
+.kcf-pill:hover { border-color: var(--cp-blue-main, #155FCF); color: var(--cp-blue-main, #155FCF); }
+.kcf-pill--active {
+  background: var(--cp-blue-main, #155FCF);
+  border-color: var(--cp-blue-main, #155FCF);
+  color: #fff;
+}
+
+/* ── Drag & drop ── */
+.deal-card {
+  cursor: grab;
+}
+.deal-card:active { cursor: grabbing; }
+.deal-card.dragging {
+  opacity: .4;
+}
+.kanban-col.drag-over {
+  background: rgba(21, 95, 207, 0.06);
+  outline: 2px dashed var(--cp-blue-main, #155FCF);
+  outline-offset: -4px;
+}
 .prob-pill {
   display: inline-block; font-size: .68rem;
   padding: 2px 8px; border-radius: 20px; margin-top: 5px; font-weight: 500;
