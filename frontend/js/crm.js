@@ -18,10 +18,16 @@ async function apiFetch(path, opts = {}) {
   return res.json()
 }
 
+// Instancias globales de gráficos para permitir la destrucción y re-renderizado
 let chartTiempo = null
 let chartFuente = null
+let chartServiciosMes = null
+let chartServiciosTotal = null
+let chartContratadosMes = null
+let chartContratadosTotal = null
+
 let refreshInterval = null
-const REFRESH_MS = 45000  // refresco automático cada 45s mientras la pestaña esté visible
+const REFRESH_MS = 45000  // Refresco automático cada 45s
 
 export async function initCrm() {
   if (!requireAuth()) return
@@ -32,7 +38,6 @@ export async function initCrm() {
 
 async function cargarTodo() {
   await loadDashboard()
-  await loadAnalytics()
   marcarUltimaActualizacion()
 }
 
@@ -52,7 +57,6 @@ function bindBotonActualizar() {
 }
 
 function bindAutoRefresh() {
-  // Al volver a esta pestaña (después de estar en otra), refresca al toque
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       cargarTodo()
@@ -61,7 +65,6 @@ function bindAutoRefresh() {
       _detenerIntervalo()
     }
   })
-  // Mientras la pestaña esté visible, refresca cada REFRESH_MS
   if (document.visibilityState === 'visible') _iniciarIntervalo()
 }
 
@@ -83,6 +86,15 @@ async function loadDashboard() {
     renderMetricas(data.metricas || {})
     renderChartTiempo(data.oportunidades_por_mes || [])
     renderChartFuente(data.oportunidades_por_fuente || [])
+
+    // 1. Cotizados
+    renderChartServiciosMes('crm-chart-servicios-mes', data.servicios_mas_cotizados_por_mes || {})
+    renderChartServiciosTotal('crm-chart-servicios-total', data.servicios_mas_cotizados_total || [])
+
+    // 2. Contratados
+    renderChartContratadosMes('crm-chart-contratados-mes', data.servicios_mas_contratados_por_mes || {})
+    renderChartContratadosTotal('crm-chart-contratados-total', data.servicios_mas_contratados_total || [])
+
     renderContactos(data.contactos_recientes || [])
   } catch (e) {
     console.error('loadDashboard CRM', e)
@@ -110,14 +122,20 @@ function renderMetricas(m) {
   }
 }
 
-const MES_LABEL = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+const MES_LABEL = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
 function fmtMes(clave) {
-  // clave viene como "AAAA-MM"
   const [anio, mes] = (clave || '').split('-')
   const idx = parseInt(mes, 10) - 1
   return MES_LABEL[idx] ? `${MES_LABEL[idx]} ${anio}` : clave
 }
+
+const FUENTE_COLORS = ['#155FCF', '#22C9C6', '#F5A623', '#8B5CF6', '#EF4444', '#10B981', '#94A3B8']
+const SERVICIO_COLORS = [
+  '#155FCF', '#22C9C6', '#F5A623', '#8B5CF6',
+  '#EF4444', '#10B981', '#EC4899', '#6366F1',
+  '#14B8A6', '#F97316'
+]
 
 function renderChartTiempo(rows) {
   const canvas = document.getElementById('crm-chart-tiempo')
@@ -126,6 +144,7 @@ function renderChartTiempo(rows) {
   const valores = rows.map(r => r.cantidad)
 
   if (chartTiempo) chartTiempo.destroy()
+
   chartTiempo = new Chart(canvas, {
     type: 'line',
     data: {
@@ -148,8 +167,6 @@ function renderChartTiempo(rows) {
   })
 }
 
-const FUENTE_COLORS = ['#155FCF', '#22C9C6', '#F5A623', '#8B5CF6', '#EF4444', '#10B981', '#94A3B8']
-
 function renderChartFuente(rows) {
   const canvas = document.getElementById('crm-chart-fuente')
   if (!canvas || typeof Chart === 'undefined') return
@@ -160,7 +177,9 @@ function renderChartFuente(rows) {
   if (chartFuente) chartFuente.destroy()
 
   if (!rows.length) {
-    canvas.parentElement.innerHTML = '<div class="empty-state">Sin datos de origen todavía</div>'
+    if (canvas.parentElement) {
+      canvas.parentElement.innerHTML = '<div class="empty-state">Sin datos de origen todavía</div>'
+    }
     return
   }
 
@@ -183,37 +202,206 @@ function renderChartFuente(rows) {
   })
 }
 
-function fmtFecha(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-
-const ETAPA_PILL = {
-  lead: 'crm-pill--lead',
-  oportunidad: 'crm-pill--opp',
-  cliente: 'crm-pill--cliente',
-  promotor: 'crm-pill--promotor',
-}
-
-function renderContactos(rows) {
-  const tbody = document.getElementById('crm-contactos-tbody')
-  if (!tbody) return
-
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Sin contactos todavía</td></tr>'
+// ── 1. COTIZADOS POR MES ────────────────────────────────────────────────
+function renderChartServiciosMes(canvasId, data) {
+  const canvas = document.getElementById(canvasId)
+  if (!canvas || typeof Chart === 'undefined') return
+  if (!data || !data.meses || !data.datasets || !data.datasets.length) {
+    if (canvas.parentElement) {
+      canvas.parentElement.innerHTML = '<div class="empty-state">Sin datos de servicios cotizados por mes</div>'
+    }
     return
   }
 
-  tbody.innerHTML = rows.map(c => `
+  const labels = data.meses.map(fmtMes)
+  const datasets = data.datasets.map((ds, idx) => ({
+    label: ds.label,
+    data: ds.data,
+    backgroundColor: SERVICIO_COLORS[idx % SERVICIO_COLORS.length],
+    borderRadius: 4,
+    stack: 'servicios',
+  }))
+
+  if (chartServiciosMes) chartServiciosMes.destroy()
+  chartServiciosMes = new Chart(canvas, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.dataset.label}: ${context.raw} unidad(es)`
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
+  })
+}
+
+// ── 2. COTIZADOS TOTAL ──────────────────────────────────────────────────
+function renderChartServiciosTotal(canvasId, rows) {
+  const canvas = document.getElementById(canvasId)
+  if (!canvas || typeof Chart === 'undefined') return
+  if (!rows || !Array.isArray(rows) || !rows.length) {
+    if (canvas.parentElement) {
+      canvas.parentElement.innerHTML = '<div class="empty-state">Sin servicios cotizados aún</div>'
+    }
+    return
+  }
+
+  const labels = rows.map(r => r.servicio)
+  const cantidades = rows.map(r => r.cantidad_total)
+  const colors = labels.map((_, i) => SERVICIO_COLORS[i % SERVICIO_COLORS.length])
+
+  if (chartServiciosTotal) chartServiciosTotal.destroy()
+  chartServiciosTotal = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Cantidad cotizada',
+        data: cantidades,
+        backgroundColor: colors,
+        borderRadius: 5
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const row = rows[context.dataIndex]
+              return `Cotizado ${row.cantidad_total} unidad(es) (${row.cotizaciones_count} cotizaciones) — ${row.monto_total_uf} UF`
+            }
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
+  })
+}
+
+// ── 3. CONTRATADOS POR MES ──────────────────────────────────────────────
+function renderChartContratadosMes(canvasId, data) {
+  const canvas = document.getElementById(canvasId)
+  if (!canvas || typeof Chart === 'undefined') return
+  if (!data || !data.meses || !data.datasets || !data.datasets.length) {
+    if (canvas.parentElement) {
+      canvas.parentElement.innerHTML = '<div class="empty-state">Sin datos de servicios contratados por mes</div>'
+    }
+    return
+  }
+
+  const labels = data.meses.map(fmtMes)
+  const datasets = data.datasets.map((ds, idx) => ({
+    label: ds.label,
+    data: ds.data,
+    backgroundColor: SERVICIO_COLORS[idx % SERVICIO_COLORS.length],
+    borderRadius: 4,
+    stack: 'servicios',
+  }))
+
+  if (chartContratadosMes) chartContratadosMes.destroy()
+  chartContratadosMes = new Chart(canvas, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.dataset.label}: ${context.raw} unidad(es) contratada(s)`
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
+  })
+}
+
+// ── 4. CONTRATADOS TOTAL ────────────────────────────────────────────────
+function renderChartContratadosTotal(canvasId, rows) {
+  const canvas = document.getElementById(canvasId)
+  if (!canvas || typeof Chart === 'undefined') return
+  if (!rows || !Array.isArray(rows) || !rows.length) {
+    if (canvas.parentElement) {
+      canvas.parentElement.innerHTML = '<div class="empty-state">Sin servicios contratados aún</div>'
+    }
+    return
+  }
+
+  const labels = rows.map(r => r.servicio)
+  const cantidades = rows.map(r => r.cantidad_total)
+  const colors = labels.map((_, i) => SERVICIO_COLORS[i % SERVICIO_COLORS.length])
+
+  if (chartContratadosTotal) chartContratadosTotal.destroy()
+  chartContratadosTotal = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Cantidad contratada',
+        data: cantidades,
+        backgroundColor: colors,
+        borderRadius: 5
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const row = rows[context.dataIndex]
+              return `Contratado ${row.cantidad_total} unidad(es) (${row.cotizaciones_count} ventas) — ${row.monto_total_uf} UF`
+            }
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
+  })
+}
+
+// ── CONTACTOS RECIENTES ────────────────────────────────────────────────
+function renderContactos(list) {
+  const tbody = document.getElementById('crm-contactos-tbody')
+  if (!tbody) return
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Sin contactos recientes</td></tr>'
+    return
+  }
+
+  tbody.innerHTML = list.map(c => `
     <tr>
-      <td>${escapeHtml(c.company_name || '')}</td>
+      <td><strong>${escapeHtml(c.company_name || 'Sin empresa')}</strong></td>
       <td>${escapeHtml(c.contact_name || '')}</td>
-      <td><span class="crm-pill ${ETAPA_PILL[c.lifecycle_stage] || 'crm-pill--lead'}">${escapeHtml(c.lifecycle_label || 'Lead')}</span></td>
-      <td>${escapeHtml(c.origen || '—')}</td>
-      <td>${escapeHtml(c.country || '—')}</td>
-      <td>${fmtFecha(c.created_at)}</td>
+      <td><span class="crm-badge crm-badge--${escapeHtml(c.lifecycle_stage)}">${escapeHtml(c.lifecycle_label)}</span></td>
+      <td>${escapeHtml(c.industry || '-')}</td>
+      <td>${c.created_at ? new Date(c.created_at).toLocaleDateString('es-CL') : '-'}</td>
     </tr>
   `).join('')
 }
@@ -233,6 +421,8 @@ async function loadAnalytics() {
     renderLtv(data.ltv || {})
     renderIngresosVertical(data.ingresos_por_vertical || [])
     renderCicloVentaVertical(data.ciclo_venta_por_vertical || [], data.ciclo_venta_promedio_general_dias || 0)
+    if (data.servicios_mas_cotizados_por_mes) renderChartServiciosMes(data.servicios_mas_cotizados_por_mes)
+    if (data.servicios_mas_cotizados_total) renderChartServiciosTotal(data.servicios_mas_cotizados_total)
   } catch (e) {
     console.error('loadAnalytics CRM', e)
   }
@@ -307,7 +497,7 @@ function renderValorGanado(v) {
   setText('crm-valor-total', `${v.total_uf ?? 0} UF`)
   renderValorLista('crm-valor-empresa', v.por_empresa || [], r => r.company_nombre || 'Sin asignar')
   renderValorLista('crm-valor-cliente', v.por_cliente || [], r => r.cliente_nombre || '—')
-  renderValorLista('crm-valor-plazo',   v.por_plazo   || [], r => r.plazo_label || 'Sin especificar')
+  renderValorLista('crm-valor-plazo', v.por_plazo || [], r => r.plazo_label || 'Sin especificar')
 }
 
 function renderValorLista(contId, rows, getLabel) {

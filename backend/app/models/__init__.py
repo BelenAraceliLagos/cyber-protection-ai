@@ -1,5 +1,6 @@
 from app.models.activity_note import ActivityNote
 from app.models.client import Client
+from app.models.company import Company
 from app.models.milestone import Milestone
 from app.models.opportunity import Opportunity
 from app.models.profile import Profile
@@ -13,6 +14,7 @@ from app.models.user_role import UserRole
 __all__ = [
     "ActivityNote",
     "Client",
+    "Company",
     "Milestone",
     "Opportunity",
     "Profile",
@@ -23,3 +25,4 @@ __all__ = [
     "User",
     "UserRole",
 ]
+
