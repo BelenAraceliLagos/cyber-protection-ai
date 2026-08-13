@@ -1,11 +1,9 @@
-/* ── Tarjetas resumen ─────────────────────────────────────────────── */
 .crm-metrics-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
-@media (max-width: 960px) { .crm-metrics-row { grid-template-columns: repeat(2, 1fr); } }
 
 .crm-metric-box {
   background: var(--cp-white, #fff);

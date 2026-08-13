@@ -32,12 +32,14 @@ const REFRESH_MS = 45000  // Refresco automático cada 45s
 export async function initCrm() {
   if (!requireAuth()) return
   await cargarTodo()
+  bindPeriodSelector()
   bindAutoRefresh()
   bindBotonActualizar()
 }
 
 async function cargarTodo() {
   await loadDashboard()
+  await loadAnalytics()
   marcarUltimaActualizacion()
 }
 
@@ -92,7 +94,11 @@ async function loadDashboard() {
     renderChartServiciosTotal('crm-chart-servicios-total', data.servicios_mas_cotizados_total || [])
 
     // 2. Contratados
-    renderChartContratadosMes('crm-chart-contratados-mes', data.servicios_mas_contratados_por_mes || {})
+    window.crmContratadosMensual = data.servicios_mas_contratados_por_mes || {}
+    window.crmContratadosTrimestral = data.servicios_mas_contratados_trimestral || {}
+    window.crmContratadosCuatrimestral = data.servicios_mas_contratados_cuatrimestral || {}
+
+    renderContratadosPeriodo('mensual')
     renderChartContratadosTotal('crm-chart-contratados-total', data.servicios_mas_contratados_total || [])
 
     renderContactos(data.contactos_recientes || [])
@@ -128,6 +134,19 @@ function fmtMes(clave) {
   const [anio, mes] = (clave || '').split('-')
   const idx = parseInt(mes, 10) - 1
   return MES_LABEL[idx] ? `${MES_LABEL[idx]} ${anio}` : clave
+}
+
+function fmtPeriodo(clave) {
+  if (!clave) return ''
+  if (clave.includes('-Q')) {
+    const [anio, q] = clave.split('-Q')
+    return `T${q} ${anio}`
+  }
+  if (clave.includes('-C')) {
+    const [anio, c] = clave.split('-C')
+    return `C${c} ${anio}`
+  }
+  return fmtMes(clave)
 }
 
 const FUENTE_COLORS = ['#155FCF', '#22C9C6', '#F5A623', '#8B5CF6', '#EF4444', '#10B981', '#94A3B8']
@@ -298,14 +317,15 @@ function renderChartServiciosTotal(canvasId, rows) {
 function renderChartContratadosMes(canvasId, data) {
   const canvas = document.getElementById(canvasId)
   if (!canvas || typeof Chart === 'undefined') return
-  if (!data || !data.meses || !data.datasets || !data.datasets.length) {
+  const periodos = data.meses || data.periodos || []
+  if (!data || !periodos.length || !data.datasets || !data.datasets.length) {
     if (canvas.parentElement) {
-      canvas.parentElement.innerHTML = '<div class="empty-state">Sin datos de servicios contratados por mes</div>'
+      canvas.parentElement.innerHTML = '<div class="empty-state">Sin datos de servicios contratados para este periodo</div>'
     }
     return
   }
 
-  const labels = data.meses.map(fmtMes)
+  const labels = periodos.map(fmtPeriodo)
   const datasets = data.datasets.map((ds, idx) => ({
     label: ds.label,
     data: ds.data,
@@ -421,6 +441,13 @@ async function loadAnalytics() {
     renderLtv(data.ltv || {})
     renderIngresosVertical(data.ingresos_por_vertical || [])
     renderCicloVentaVertical(data.ciclo_venta_por_vertical || [], data.ciclo_venta_promedio_general_dias || 0)
+    
+    // Render leads no convertidos y KPIs adicionales
+    renderLeadsNoConvertidos(data.leads_no_convertidos || [])
+    setText('crm-m-conversion-rate', (data.tasa_conversion_leads_clientes ?? 0) + '%')
+    setText('crm-m-perdidas', (data.ventas_perdidas_uf ?? 0) + ' UF')
+    setText('crm-m-proyeccion', (data.proyeccion_trimestral_uf ?? 0) + ' UF')
+
     if (data.servicios_mas_cotizados_por_mes) renderChartServiciosMes(data.servicios_mas_cotizados_por_mes)
     if (data.servicios_mas_cotizados_total) renderChartServiciosTotal(data.servicios_mas_cotizados_total)
   } catch (e) {
@@ -577,6 +604,62 @@ function renderEstancadas(rows, umbral) {
       <td><span class="crm-pill crm-pill--opp">${escapeHtml(r.etapa_label || '')}</span></td>
       <td class="crm-dias-estancada">${r.dias_sin_movimiento} días</td>
       <td>${r.valor_uf ?? 0}</td>
+    </tr>
+  `).join('')
+}
+
+function bindPeriodSelector() {
+  const container = document.querySelector('.crm-period-selector')
+  if (!container) return
+  if (container.dataset.bound) return
+  container.dataset.bound = 'true'
+  container.addEventListener('click', (e) => {
+    const btn = e.target.closest('button')
+    if (!btn) return
+    container.querySelectorAll('button').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    const period = btn.dataset.period
+    renderContratadosPeriodo(period)
+  })
+}
+
+function renderContratadosPeriodo(period) {
+  let dataset = {}
+  if (period === 'mensual') {
+    dataset = window.crmContratadosMensual || {}
+  } else if (period === 'trimestral') {
+    dataset = window.crmContratadosTrimestral || {}
+  } else if (period === 'cuatrimestral') {
+    dataset = window.crmContratadosCuatrimestral || {}
+  }
+  renderChartContratadosMes('crm-chart-contratados-mes', dataset)
+}
+
+function renderLeadsNoConvertidos(list) {
+  const countBadge = document.getElementById('crm-leads-no-convertidos-count')
+  if (countBadge) countBadge.textContent = list.length
+  
+  const tbody = document.getElementById('crm-leads-no-convertidos-tbody')
+  if (!tbody) return
+  
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Ningún lead recurrente sin conversión</td></tr>'
+    return
+  }
+  
+  tbody.innerHTML = list.map(c => `
+    <tr>
+      <td><strong>${escapeHtml(c.company_name || 'Sin empresa')}</strong></td>
+      <td>${escapeHtml(c.contact_name || '')}</td>
+      <td>${escapeHtml(c.email || '')}</td>
+      <td><span class="crm-badge crm-badge--opp" style="background: #FEE2E2; color: #B91C1C; font-weight: 700; border-radius: 999px; padding: 2px 8px;">${c.num_quotations} cotizaciones</span></td>
+      <td style="font-weight: 600;">${c.total_quoted_uf} UF</td>
+      <td>${c.last_quotation_date ? new Date(c.last_quotation_date).toLocaleDateString('es-CL') : '-'}</td>
+      <td>
+        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+          ${(c.services_quoted || []).map(s => `<span class="crm-pill crm-pill--lead" style="font-size: 0.7rem; padding: 1px 6px;">${escapeHtml(s)}</span>`).join('')}
+        </div>
+      </td>
     </tr>
   `).join('')
 }

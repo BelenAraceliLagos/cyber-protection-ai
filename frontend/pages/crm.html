@@ -118,6 +118,18 @@
             <div class="crm-metric-box__val" id="crm-m-promotores">—</div>
             <div class="crm-metric-box__lbl">Promotores</div>
           </div>
+          <div class="crm-metric-box" style="border-top-color: #8B5CF6;">
+            <div class="crm-metric-box__val" id="crm-m-conversion-rate">—</div>
+            <div class="crm-metric-box__lbl">Tasa conversión</div>
+          </div>
+          <div class="crm-metric-box" style="border-top-color: #EF4444;">
+            <div class="crm-metric-box__val" id="crm-m-perdidas">—</div>
+            <div class="crm-metric-box__lbl">Ventas perdidas</div>
+          </div>
+          <div class="crm-metric-box" style="border-top-color: #F5A623;">
+            <div class="crm-metric-box__val" id="crm-m-proyeccion">—</div>
+            <div class="crm-metric-box__lbl">Proyección Q</div>
+          </div>
         </div>
 
         <!-- ── Gráficos de Oportunidades ────────────── -->
@@ -171,10 +183,15 @@
 
         <div class="crm-charts-grid page-enter page-enter--d2">
           <div class="card">
-            <div class="card__header">
+            <div class="card__header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <span class="card__title">
-                <i class="ti ti-chart-bar" aria-hidden="true"></i> Servicios más contratados por mes
+                <i class="ti ti-chart-bar" aria-hidden="true"></i> Servicios contratados
               </span>
+              <div class="crm-period-selector" style="display: flex; gap: 4px;">
+                <button class="btn btn--sm btn--secondary active" id="btn-period-mensual" data-period="mensual" style="padding: 4px 8px; font-size: 0.72rem; line-height: 1;">Mensual</button>
+                <button class="btn btn--sm btn--secondary" id="btn-period-trimestral" data-period="trimestral" style="padding: 4px 8px; font-size: 0.72rem; line-height: 1;">Trimestral</button>
+                <button class="btn btn--sm btn--secondary" id="btn-period-cuatrimestral" data-period="cuatrimestral" style="padding: 4px 8px; font-size: 0.72rem; line-height: 1;">Cuatrimestral</button>
+              </div>
             </div>
             <div class="card__body">
               <canvas id="crm-chart-contratados-mes" height="240"></canvas>
@@ -369,6 +386,35 @@
                 <tbody id="crm-estancadas-tbody">
                   <tr>
                     <td colspan="5" class="empty-state">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+        </div>
+
+        <!-- ── Leads recurrentes sin conversión (Historial) ────────────────── -->
+        <div class="card page-enter page-enter--d3">
+          <div class="card__header" style="display: flex; align-items: center;">
+            <span class="card__title"><i class="ti ti-user-exclamation" aria-hidden="true"></i> Leads recurrentes sin conversión</span>
+            <span class="crm-alert-badge" id="crm-leads-no-convertidos-count" style="background: #FEF3C7; color: #D97706; margin-left: 10px;">0</span>
+          </div>
+          <div class="card__body dashboard-card-body--flush">
+            <div class="table-wrapper dashboard-table-wrapper--flush">
+              <table class="table" aria-label="Leads recurrentes sin conversión">
+                <thead>
+                  <tr>
+                    <th>Empresa</th>
+                    <th>Contacto</th>
+                    <th>Email</th>
+                    <th>Cotizaciones</th>
+                    <th>Total Cotizado</th>
+                    <th>Última Cotización</th>
+                    <th>Servicios Cotizados</th>
+                  </tr>
+                </thead>
+                <tbody id="crm-leads-no-convertidos-tbody">
+                  <tr>
+                    <td colspan="7" class="empty-state">Cargando...</td>
                   </tr>
                 </tbody>
               </table>

@@ -171,6 +171,158 @@ def _get_servicios_contratados_por_mes(db: Session, ultimos_6):
     }
 
 
+def _get_servicios_contratados_trimestral(db: Session):
+    hoy = datetime.now(timezone.utc)
+    cur_year = hoy.year
+    cur_quarter = (hoy.month - 1) // 3 + 1
+    
+    quarters = []
+    y, q = cur_year, cur_quarter
+    for _ in range(6):
+        quarters.append((y, q))
+        q -= 1
+        if q == 0:
+            q = 4
+            y -= 1
+    quarters.reverse()
+    quarters_keys = [f"{y}-Q{q}" for y, q in quarters]
+
+    q_items = (
+        db.query(QuotationItem, Quotation, Service)
+        .join(Quotation, QuotationItem.quotation_id == Quotation.id)
+        .join(Service, QuotationItem.service_id == Service.id)
+        .filter(Quotation.status == "accepted")
+        .all()
+    )
+
+    conteo_por_servicio = defaultdict(lambda: {qk: 0 for qk in quarters_keys})
+    monto_por_servicio = defaultdict(lambda: {qk: 0.0 for qk in quarters_keys})
+
+    for item, quot, srv in q_items:
+        if not quot or not quot.created_at or not srv:
+            continue
+        dt = quot.created_at
+        q_num = (dt.month - 1) // 3 + 1
+        clave_q = f"{dt.year}-Q{q_num}"
+        if clave_q in quarters_keys:
+            qty = item.quantity or 0
+            price = item.price or 0.0
+            srv_name = srv.name or "Sin nombre"
+            conteo_por_servicio[srv_name][clave_q] += qty
+            monto_por_servicio[srv_name][clave_q] += round(qty * price, 1)
+
+    datasets = []
+    for srv_name, q_dict in conteo_por_servicio.items():
+        valores = [q_dict[qk] for qk in quarters_keys]
+        datasets.append({
+            "label": srv_name,
+            "data": valores,
+            "total_cantidad": sum(valores),
+            "monto_total_uf": round(sum(monto_por_servicio[srv_name].values()), 1)
+        })
+    datasets.sort(key=lambda x: x["total_cantidad"], reverse=True)
+
+    return {
+        "periodos": quarters_keys,
+        "datasets": datasets
+    }
+
+
+def _get_servicios_contratados_cuatrimestral(db: Session):
+    hoy = datetime.now(timezone.utc)
+    cur_year = hoy.year
+    cur_quad = (hoy.month - 1) // 4 + 1
+    
+    quads = []
+    y, c = cur_year, cur_quad
+    for _ in range(6):
+        quads.append((y, c))
+        c -= 1
+        if c == 0:
+            c = 3
+            y -= 1
+    quads.reverse()
+    quads_keys = [f"{y}-C{c}" for y, c in quads]
+
+    q_items = (
+        db.query(QuotationItem, Quotation, Service)
+        .join(Quotation, QuotationItem.quotation_id == Quotation.id)
+        .join(Service, QuotationItem.service_id == Service.id)
+        .filter(Quotation.status == "accepted")
+        .all()
+    )
+
+    conteo_por_servicio = defaultdict(lambda: {qk: 0 for qk in quads_keys})
+    monto_por_servicio = defaultdict(lambda: {qk: 0.0 for qk in quads_keys})
+
+    for item, quot, srv in q_items:
+        if not quot or not quot.created_at or not srv:
+            continue
+        dt = quot.created_at
+        c_num = (dt.month - 1) // 4 + 1
+        clave_c = f"{dt.year}-C{c_num}"
+        if clave_c in quads_keys:
+            qty = item.quantity or 0
+            price = item.price or 0.0
+            srv_name = srv.name or "Sin nombre"
+            conteo_por_servicio[srv_name][clave_c] += qty
+            monto_por_servicio[srv_name][clave_c] += round(qty * price, 1)
+
+    datasets = []
+    for srv_name, c_dict in conteo_por_servicio.items():
+        valores = [c_dict[ck] for ck in quads_keys]
+        datasets.append({
+            "label": srv_name,
+            "data": valores,
+            "total_cantidad": sum(valores),
+            "monto_total_uf": round(sum(monto_por_servicio[srv_name].values()), 1)
+        })
+    datasets.sort(key=lambda x: x["total_cantidad"], reverse=True)
+
+    return {
+        "periodos": quads_keys,
+        "datasets": datasets
+    }
+
+
+def _get_leads_no_convertidos(db: Session):
+    clients = db.query(Client).filter(Client.lifecycle_stage.notin_(["cliente", "promotor"])).all()
+    leads_info = []
+    for c in clients:
+        quots = c.quotations
+        if not quots:
+            continue
+        has_accepted = any(q.status == "accepted" for q in quots)
+        if has_accepted:
+            continue
+        total_quoted_uf = sum(q.total or 0.0 for q in quots)
+        num_quotations = len(quots)
+        last_quot = max(quots, key=lambda q: q.created_at or datetime.min)
+        last_date = last_quot.created_at.isoformat() if last_quot.created_at else None
+        
+        services_quoted = []
+        for q in quots:
+            for item in q.items:
+                if item.service and item.service.name not in services_quoted:
+                    services_quoted.append(item.service.name)
+                    
+        leads_info.append({
+            "id": c.id,
+            "company_name": c.company_name,
+            "contact_name": c.contact_name,
+            "email": c.email,
+            "phone": c.phone,
+            "num_quotations": num_quotations,
+            "total_quoted_uf": round(total_quoted_uf, 1),
+            "last_quotation_date": last_date,
+            "services_quoted": services_quoted,
+            "lifecycle_stage": c.lifecycle_stage
+        })
+    leads_info.sort(key=lambda x: (-x["num_quotations"], -x["total_quoted_uf"]))
+    return leads_info
+
+
+
 def _get_servicios_contratados_total(db: Session):
     """Calcula el ranking acumulado de servicios efectivamente contratados."""
     contratados_total_query = (
@@ -332,6 +484,8 @@ def get_crm_dashboard(
         "servicios_mas_cotizados_por_mes": _get_servicios_cotizados_por_mes(db, ultimos_6),
         "servicios_mas_cotizados_total": _get_servicios_cotizados_total(db),
         "servicios_mas_contratados_por_mes": _get_servicios_contratados_por_mes(db, ultimos_6),
+        "servicios_mas_contratados_trimestral": _get_servicios_contratados_trimestral(db),
+        "servicios_mas_contratados_cuatrimestral": _get_servicios_contratados_cuatrimestral(db),
         "servicios_mas_contratados_total": _get_servicios_contratados_total(db),
         "lifecycle_labels": LIFECYCLE_LABELS,
         "origen_labels": {k: v for k, v in ORIGEN_LABELS.items() if k},
@@ -470,6 +624,14 @@ def get_crm_analytics(db: Session = Depends(get_db)):
 
     ultimos_6 = [_restar_meses(hoy, i) for i in range(5, -1, -1)]
 
+    # Nuevas Métricas
+    clients_all = db.query(Client).all()
+    converted_clients = [c for c in clients_all if c.lifecycle_stage in ("cliente", "promotor")]
+    tasa_conversion_leads_clientes = round((len(converted_clients) / len(clients_all)) * 100, 1) if clients_all else 0.0
+
+    ventas_perdidas_uf = round(db.query(func.sum(Quotation.total)).filter(Quotation.status == "rejected").scalar() or 0.0, 1)
+    proyeccion_trimestral_uf = round(total_ganado_uf * 0.5, 1)
+
     return {
         "embudo": embudo,
         "tasa_victoria": tasa_victoria,
@@ -484,5 +646,9 @@ def get_crm_analytics(db: Session = Depends(get_db)):
         "ciclo_venta_por_vertical": ciclo_vertical,
         "ciclo_venta_promedio_general_dias": 24,
         "servicios_mas_cotizados_por_mes": _get_servicios_cotizados_por_mes(db, ultimos_6),
-        "servicios_mas_cotizados_total": _get_servicios_cotizados_total(db)
+        "servicios_mas_cotizados_total": _get_servicios_cotizados_total(db),
+        "leads_no_convertidos": _get_leads_no_convertidos(db),
+        "tasa_conversion_leads_clientes": tasa_conversion_leads_clientes,
+        "ventas_perdidas_uf": ventas_perdidas_uf,
+        "proyeccion_trimestral_uf": proyeccion_trimestral_uf
     }
