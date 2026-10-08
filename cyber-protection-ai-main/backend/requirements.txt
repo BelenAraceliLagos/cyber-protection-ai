@@ -1,0 +1,23 @@
+# ── Backend FastAPI ───────────────────────────────────────────────────
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt==4.0.1          # versión compatible con passlib — NO actualizar
+pydantic[email]
+python-multipart       # requerido por FastAPI para subida de archivos (UploadFile)
+
+# ── Generación de propuestas PDF ──────────────────────────────────────
+weasyprint             # generación PDF desde HTML/CSS (reemplaza reportlab)
+pdf2image              # conversión pdf_base.pdf → PNG (setup inicial, requiere poppler)
+pillow                 # manipulación de imágenes
+requests
+
+# ── Lectura de archivos históricos (módulo de ingesta) ───────────────
+pdfplumber             # extracción de texto desde PDFs
+python-docx            # lectura de archivos Word (.docx)
+openpyxl               # lectura de archivos Excel (.xlsx)
+reportlab

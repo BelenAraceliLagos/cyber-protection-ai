@@ -1,0 +1,5 @@
+# Backups y dumps de base de datos (contienen datos reales de clientes)
+*.dump
+
+# Logs
+*.log

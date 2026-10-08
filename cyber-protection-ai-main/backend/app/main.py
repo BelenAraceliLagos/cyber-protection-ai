@@ -1,0 +1,69 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+from app.core.database import Base, engine
+
+# Importar modelos antes que routers para que SQLAlchemy resuelva relaciones
+from app.models.client import Client
+from app.models.user import User
+from app.models.service import Service
+from app.models.quotation import Quotation
+from app.models.opportunity import Opportunity
+from app.models.milestone import Milestone
+
+from app.routers.client import router as client_router
+from app.routers.auth import router as auth_router
+from app.routers.service import router as service_router
+from app.routers.quotation import router as quotation_router
+from app.routers.proposal import router as proposal_router
+from app.routers.user import router as user_router
+from app.routers.opportunity import router as opportunity_router
+from app.routers.crm import router as crm_router
+from app.routers.company import router as company_router
+from app.routers.data_transfer import router as data_transfer_router
+from app.routers.fonts import router as fonts_router
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(
+    title="Cyber Protection AI",
+    version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5500",
+        "http://127.0.0.1:5500",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "*"],  # para desarrollo
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(client_router)
+app.include_router(auth_router)
+app.include_router(service_router)
+app.include_router(quotation_router)
+app.include_router(proposal_router)
+app.include_router(user_router)
+app.include_router(opportunity_router)
+app.include_router(crm_router)
+app.include_router(company_router)
+app.include_router(data_transfer_router)
+app.include_router(fonts_router)
+
+@app.get("/")
+def root():
+    return {
+        "message": "Backend funcionando correctamente"
+    }
+    
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)
