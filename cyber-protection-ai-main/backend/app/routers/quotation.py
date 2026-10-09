@@ -41,7 +41,9 @@ TAX_RATE = 0.19
     "/",
     response_model=QuotationResponse
 )
+
 def create_quotation(
+    
     quotation_data: QuotationCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -168,6 +170,11 @@ def export_pdf(
         raise HTTPException(
             status_code=404,
             detail="Quotation not found"
+        )
+    if not quotation.generated_text or not quotation.generated_text.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="La cotización no tiene texto generado por IA. Genera el texto antes de exportar el PDF."
         )
 
     pdf_path = generate_quotation_pdf(
