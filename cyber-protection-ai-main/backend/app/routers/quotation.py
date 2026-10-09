@@ -86,11 +86,12 @@ def create_quotation(
             Service.id == item.service_id
         ).first()
 
-        if not service:
+        if not service.active:
             raise HTTPException(
-                status_code=404,
-                detail=f"Service {item.service_id} not found"
+                status_code=400,
+                detail=f"Service {item.service_id} is inactive"
             )
+        
 
         item_total = service.base_price * item.quantity
 
