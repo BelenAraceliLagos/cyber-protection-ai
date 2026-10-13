@@ -1350,6 +1350,16 @@ def sec_servicios(data: dict, agrupado: dict) -> str:
 
     return "".join(paginas)
 
+def sec_justificacion(data: dict) -> str:
+    """Página propia: Justificación de Servicios (texto generado por IA)."""
+    texto = (data.get("justificacion_servicios") or "").strip()
+    if not texto:
+        return ""
+    html = ""
+    for par in texto.split("\n\n"):
+        if par.strip():
+            html += f"<p>{par.strip()}</p>"
+    return _page_banner("Justificación de Servicios", html)
 
 def sec_cumplimiento(data: dict) -> str:
     """Página propia: Cumplimiento Normativo."""
@@ -1678,6 +1688,7 @@ def generar_propuesta(data: dict, output_path: str, usar_ia: bool = True):
         sec_introduccion(data),
         sec_alcance(data),
         sec_servicios(data, agrupado),
+        sec_justificacion(data),
         sec_cumplimiento(data),
         sec_matriz(data),
         sec_metodologia(data),
