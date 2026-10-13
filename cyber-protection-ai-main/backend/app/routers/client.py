@@ -6,10 +6,12 @@ from app.core.database import get_db
 from app.models.client import Client
 from app.models.opportunity import Opportunity
 from app.schemas.client import ClientCreate, ClientResponse
+from app.core.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/clients",
-    tags=["Clients"]
+    tags=["Clients"],
+    dependencies=[Depends(get_current_user)]
 )
 
 @router.post("/", response_model=ClientResponse)

@@ -13,8 +13,13 @@ from app.models.opportunity import Opportunity
 from app.models.quotation import Quotation
 from app.models.quotation_item import QuotationItem
 from app.models.service import Service
+from app.core.dependencies import get_current_user
 
-router = APIRouter(prefix="/crm", tags=["CRM"])
+router = APIRouter(
+    prefix="/crm",
+    tags=["CRM"],
+    dependencies=[Depends(get_current_user)]
+)
 
 # ── DICCIONARIOS DE ETIQUETAS ───────────────────────────────────────────
 ORIGEN_LABELS = {

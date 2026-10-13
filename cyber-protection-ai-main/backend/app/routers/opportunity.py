@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.core.database import get_db
+from app.core.dependencies import get_current_user
 from app.models.opportunity import Opportunity
 from app.models.milestone import Milestone
 from app.models.client import Client
@@ -12,8 +13,11 @@ from app.schemas.opportunity import (
     MilestoneCreate
 )
 
-router = APIRouter(prefix="/opportunities", tags=["Opportunities"])
-
+router = APIRouter(
+    prefix="/opportunities",
+    tags=["Opportunities"],
+    dependencies=[Depends(get_current_user)]
+)
 ETAPA_ORDER = ["prospecto","propuesta","negociacion","aprobacion","ganado","perdido"]
 
 
@@ -128,6 +132,20 @@ def patch_opportunity(opp_id: int, body: OpportunityPatch, db: Session = Depends
     if not opp:
         raise HTTPException(status_code=404, detail="Oportunidad no encontrada")
     data = body.model_dump(exclude_unset=True)
+
+    # Campos obligatorios que lleguen en null se ignoran (evita un 500 en la BD)
+    for campo in ("titulo", "etapa", "probabilidad", "valor_uf"):
+        if campo in data and data[campo] is None:
+            del data[campo]
+
+    # Validar el cliente si se está cambiando
+    if "cliente_id" in data:
+        if data["cliente_id"] is None:
+            raise HTTPException(status_code=400, detail="El cliente no puede quedar vacío")
+        nuevo_cliente = db.query(Client).filter(Client.id == data["cliente_id"]).first()
+        if not nuevo_cliente:
+            raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
     if "company_id" in data and data["company_id"] is not None:
         company = db.query(Company).filter(Company.id == data["company_id"]).first()
         if not company:
