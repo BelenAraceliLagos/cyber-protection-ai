@@ -12,6 +12,8 @@ from app.core.dependencies import get_current_user
 from app.models.quotation_item import QuotationItem
 from app.models.user import User
 from app.models.service import Service
+from app.routers.user import require_admin
+
 
 from app.schemas.service import (
     ServiceCreate,
@@ -30,7 +32,7 @@ router = APIRouter(
 def create_service(
     service: ServiceCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
 
     new_service = Service(
@@ -65,7 +67,7 @@ def update_service(
     service_id: int,
     service: ServiceCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
 
     db_service = db.query(Service).filter(
@@ -95,7 +97,7 @@ def update_service(
 def delete_service(
     service_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
     
 
