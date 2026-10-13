@@ -127,7 +127,7 @@ def patch_opportunity(opp_id: int, body: OpportunityPatch, db: Session = Depends
     opp = db.query(Opportunity).filter(Opportunity.id == opp_id).first()
     if not opp:
         raise HTTPException(status_code=404, detail="Oportunidad no encontrada")
-    data = body.model_dump(exclude_none=True)
+    data = body.model_dump(exclude_unset=True)
     if "company_id" in data and data["company_id"] is not None:
         company = db.query(Company).filter(Company.id == data["company_id"]).first()
         if not company:

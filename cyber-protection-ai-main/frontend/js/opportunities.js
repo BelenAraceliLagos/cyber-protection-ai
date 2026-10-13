@@ -562,7 +562,7 @@ function openEditOppModal(id) {
   setVal('f-cliente', opp.cliente_id   || '')
   setVal('f-company', opp.company_id   || '')
   setVal('f-etapa',   opp.etapa        || 'prospecto')
-  setVal('f-prob',    opp.probabilidad || 30)
+  setVal('f-prob',    opp.probabilidad ?? 30)
   setVal('f-valor',   opp.valor_uf     || 0)
   setVal('f-plazo',   opp.plazo_meses  || '')
   setVal('f-notas',   opp.notas        || '')
@@ -574,13 +574,15 @@ async function saveOpportunity() {
   const cliId  = parseInt(document.getElementById('f-cliente')?.value)
   if (!titulo) return showAlert('El título es obligatorio.', 'error')
   if (!cliId)  return showAlert('Selecciona un cliente.', 'error')
+  const probRaw = parseInt(document.getElementById('f-prob')?.value)
+  const probabilidad = Number.isNaN(probRaw) ? 30 : Math.min(100, Math.max(0, probRaw))
 
   const body = {
     cliente_id:   cliId,
     company_id:   document.getElementById('f-company')?.value ? Number(document.getElementById('f-company').value) : null,
     titulo,
     etapa:        document.getElementById('f-etapa')?.value  || 'prospecto',
-    probabilidad: parseInt(document.getElementById('f-prob')?.value)   || 30,
+    probabilidad,
     valor_uf:     parseFloat(document.getElementById('f-valor')?.value) || 0,
     plazo_meses:  document.getElementById('f-plazo')?.value ? Number(document.getElementById('f-plazo').value) : null,
     notas:        document.getElementById('f-notas')?.value.trim() || '',
