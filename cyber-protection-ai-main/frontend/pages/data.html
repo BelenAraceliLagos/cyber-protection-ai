@@ -240,25 +240,37 @@
   import { initDataTransfer } from '../js/data_transfer.js'
   import { initFontsAdmin } from '../js/fonts_admin.js'
   import { requireAuth }      from '../js/utils.js'
+
   requireAuth()
-  loadUserInfo()
   initSidebar()
   initProfileModal()
-  initImportServices()
-  initDataTransfer()
-  initFontsAdmin()
+  const user = await loadUserInfo()
 
-  // Tabs: Importar servicios (Excel) <-> Sincronización por módulo <-> Fuentes
-  const tabButtons = document.querySelectorAll('.data-tabs__btn')
-  const tabPanels = { excel: document.getElementById('tab-excel'), sync: document.getElementById('tab-sync'), fonts: document.getElementById('tab-fonts') }
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      tabButtons.forEach(b => { b.classList.remove('data-tabs__btn--active'); b.setAttribute('aria-selected', 'false') })
-      btn.classList.add('data-tabs__btn--active')
-      btn.setAttribute('aria-selected', 'true')
-      Object.entries(tabPanels).forEach(([key, panel]) => { if (panel) panel.hidden = (key !== btn.dataset.tab) })
+  if (user?.role !== 'admin') {
+    document.querySelector('.main__content').innerHTML = `
+      <div class="empty-state page-enter">
+        <div class="empty-state__icon"><i class="ti ti-lock" aria-hidden="true"></i></div>
+        <p class="empty-state__title">Sección solo para administradores</p>
+        <p class="empty-state__desc">Pide a un administrador que realice la carga o la sincronización de datos.</p>
+      </div>`
+  } else {
+    initImportServices()
+    initDataTransfer()
+    initFontsAdmin()
+
+    // Tabs: Importar servicios (Excel) <-> Sincronización por módulo <-> Fuentes
+    const tabButtons = document.querySelectorAll('.data-tabs__btn')
+    const tabPanels = { excel: document.getElementById('tab-excel'), sync: document.getElementById('tab-sync'), fonts: document.getElementById('tab-fonts') }
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => { b.classList.remove('data-tabs__btn--active'); b.setAttribute('aria-selected', 'false') })
+        btn.classList.add('data-tabs__btn--active')
+        btn.setAttribute('aria-selected', 'true')
+        Object.entries(tabPanels).forEach(([key, panel]) => { if (panel) panel.hidden = (key !== btn.dataset.tab) })
+      })
     })
-  })
+  }
 </script>
+
 </body>
 </html>
