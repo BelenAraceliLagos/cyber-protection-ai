@@ -579,9 +579,11 @@
 
 <!-- Scripts -->
 <script type="module">
-  import { initSidebar }   from '../js/sidebar.js'
+  import { initSidebar }   from '../js/sidebar.js' 
+  import { loadUserInfo } from '../js/auth.js'
   import { initCompanies } from '../js/companies.js'
-
+  
+  loadUserInfo()
   initSidebar()
   initCompanies()
 </script>
