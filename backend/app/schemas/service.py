@@ -5,6 +5,7 @@ class ServiceCreate(BaseModel):
     name: str
     description: Optional[str] = None
     base_price: float
+    active: bool = True
 
 class ServiceResponse(ServiceCreate):
     id: int

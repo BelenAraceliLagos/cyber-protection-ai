@@ -17,6 +17,8 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 def generate_quotation_pdf(
     quotation: Quotation
 ):
+    if not quotation.generated_text or not quotation.generated_text.strip():
+        raise ValueError("La cotización no tiene texto generado")
 
     filename = f"quotation_{quotation.id}.pdf"
 

@@ -4,11 +4,14 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.client import Client
+from app.models.opportunity import Opportunity
 from app.schemas.client import ClientCreate, ClientResponse
+from app.core.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/clients",
-    tags=["Clients"]
+    tags=["Clients"],
+    dependencies=[Depends(get_current_user)]
 )
 
 @router.post("/", response_model=ClientResponse)
@@ -96,6 +99,22 @@ def delete_client(
         raise HTTPException(
             status_code=404,
             detail="Client not found"
+        )
+
+    oportunidades = db.query(Opportunity).filter(
+        Opportunity.cliente_id == client_id
+    ).all()
+
+    if oportunidades:
+        nombres = ", ".join(f'"{o.titulo}"' for o in oportunidades[:3])
+        extra = f" y {len(oportunidades) - 3} mas" if len(oportunidades) > 3 else ""
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"No se puede eliminar: este cliente tiene {len(oportunidades)} "
+                f"oportunidad(es) asociada(s) ({nombres}{extra}). "
+                f"Mueve o elimina esas oportunidades primero, o reasignalas a otro cliente."
+            )
         )
 
     db.delete(client)

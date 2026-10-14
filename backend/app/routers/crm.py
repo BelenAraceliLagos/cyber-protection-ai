@@ -13,8 +13,13 @@ from app.models.opportunity import Opportunity
 from app.models.quotation import Quotation
 from app.models.quotation_item import QuotationItem
 from app.models.service import Service
+from app.core.dependencies import get_current_user
 
-router = APIRouter(prefix="/crm", tags=["CRM"])
+router = APIRouter(
+    prefix="/crm",
+    tags=["CRM"],
+    dependencies=[Depends(get_current_user)]
+)
 
 # ── DICCIONARIOS DE ETIQUETAS ───────────────────────────────────────────
 ORIGEN_LABELS = {
@@ -23,6 +28,7 @@ ORIGEN_LABELS = {
     "redes_sociales": "Redes sociales",
     "email_marketing": "Email marketing",
     "trafico_directo": "Tráfico directo",
+    "b2b": "B2B",
     "evento": "Evento",
     "otro": "Otro",
     None: "Sin especificar",
@@ -582,14 +588,21 @@ def get_crm_analytics(db: Session = Depends(get_db)):
         for k, v in sorted(por_cliente_ganados.items(), key=lambda x: -x[1])
     ]
 
+    por_plazo_acum = defaultdict(float)
+    for o in ganadas:
+        etiqueta = f"{o.plazo_meses} meses" if o.plazo_meses else "Sin plazo definido"
+        por_plazo_acum[etiqueta] += o.valor_uf or 0.0
+
+    valor_por_plazo = [
+        {"plazo_label": k, "valor_uf": round(v, 1)}
+        for k, v in sorted(por_plazo_acum.items(), key=lambda x: -x[1])
+    ]
+
     valor_ganado = {
         "total_uf": total_ganado_uf,
         "por_empresa": por_empresa,
         "por_cliente": valor_por_cliente,
-        "por_plazo": [
-            {"plazo_label": "Mensual recurrente", "valor_uf": round(total_ganado_uf * 0.7, 1)},
-            {"plazo_label": "Anual anticipado", "valor_uf": round(total_ganado_uf * 0.3, 1)}
-        ]
+        "por_plazo": valor_por_plazo
     }
 
     conversion_etapas = []
@@ -611,11 +624,15 @@ def get_crm_analytics(db: Session = Depends(get_db)):
         "clientes_con_ventas": len(valor_por_cliente),
         "por_cliente": valor_por_cliente
     }
+    ingresos_por_industria = defaultdict(float)
+    for o in ganadas:
+        c = clients_by_id.get(o.cliente_id)
+        industria = c.industry if c and c.industry else "Sin industria"
+        ingresos_por_industria[industria] += o.valor_uf or 0.0
 
     ingresos_vertical = [
-        {"industria": "Finanzas & Fintech", "valor_uf": round(total_ganado_uf * 0.4, 1)},
-        {"industria": "Tecnología & SaaS", "valor_uf": round(total_ganado_uf * 0.3, 1)},
-        {"industria": "Salud & Retail", "valor_uf": round(total_ganado_uf * 0.3, 1)}
+        {"industria": k, "valor_uf": round(v, 1)}
+        for k, v in sorted(ingresos_por_industria.items(), key=lambda x: -x[1])
     ]
     ciclo_vertical = [
         {"industria": "Finanzas & Fintech", "dias_promedio": 28, "cantidad_deals": len(ganadas)},
@@ -650,5 +667,10 @@ def get_crm_analytics(db: Session = Depends(get_db)):
         "leads_no_convertidos": _get_leads_no_convertidos(db),
         "tasa_conversion_leads_clientes": tasa_conversion_leads_clientes,
         "ventas_perdidas_uf": ventas_perdidas_uf,
-        "proyeccion_trimestral_uf": proyeccion_trimestral_uf
+        "proyeccion_trimestral_uf": proyeccion_trimestral_uf,
+        "indicadores_demostrativos": [
+            "ciclo_venta_por_vertical",
+            "ciclo_venta_promedio_general_dias",
+            "proyeccion_trimestral_uf",
+        ],
     }

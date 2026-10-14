@@ -211,6 +211,7 @@ def construir_data_propuesta(
         "alcance_intro":            textos["alcance_intro"],
         "valor_estrategico":        textos["valor_estrategico"],
         "cierre_intro":             textos["cierre_intro"],
+        "justificacion_servicios":  textos.get("justificacion_servicios", ""),
 
         "antecedente_titulo":       textos.get("antecedente_titulo"),
         "antecedente_descripcion":  textos.get("antecedente_descripcion", ""),
@@ -282,6 +283,12 @@ def generate_proposal(
     ).all()
     if not servicios:
         raise HTTPException(status_code=404, detail="No se encontraron los servicios indicados")
+    inactivos = [s.name for s in servicios if not s.active]
+    if inactivos:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Servicios inactivos: {', '.join(inactivos)}. Quítalos de la selección."
+        )
 
     # 3. Título del proyecto
     titulo = request.titulo_proyecto or "Propuesta de Servicios de Ciberseguridad"
@@ -321,6 +328,7 @@ def generate_proposal(
         logo_cliente_path=logo_uri,
         company=company,
         db_session=db,
+        
     )
 
     # 7. Generar el PDF
