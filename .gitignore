@@ -33,5 +33,5 @@ propuestas_generadas/
 # Carpetas temporales
 tmp/
 
-# Las migraciones SQL (estructura, sin datos) sí se versionan
+# Las migraciones SQL (estructura, sin datos) sï¿½ se versionan
 !backend/migrations/*.sql
