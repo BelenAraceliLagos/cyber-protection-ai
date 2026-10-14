@@ -33,6 +33,7 @@ export async function initReport() {
   bindServiciosModal()
   bindPreviewToggle()
   updatePreview()
+  actualizarBoton()
 }
 
 async function cargarClientes() {
@@ -49,7 +50,7 @@ async function cargarClientes() {
 
 async function cargarServicios() {
   try {
-    servicios = await servicesAPI.getAll()
+        servicios = (await servicesAPI.getAll()).filter(s => s.active)
     renderCatalogo()
   } catch (e) { showAlert('Error cargando servicios', 'error') }
 }
@@ -61,6 +62,7 @@ async function cargarCompanies() {
     console.log("entrando cargarCompanies")
 
     companies = await proposalsAPI.getCompanies()
+    companies = companies.filter(c => c.active !== false)
 
     console.log("companies:", companies)
 
@@ -106,6 +108,7 @@ function bindCompany(){
       companySel =
         companies.find(c=>c.id===id)
         || null
+      actualizarBoton()
       updatePreview()
     }
   )
@@ -303,8 +306,25 @@ function actualizarBoton() {
   const btn  = document.getElementById('r-generar-btn')
   const sinIA = document.getElementById('r-sin-ia')?.checked
   if (!btn) return
-  const ok = clienteSel && seleccionados.size > 0
+
+  const faltan = []
+  if (!clienteSel) faltan.push('un cliente')
+  if (!companySel) faltan.push('una empresa emisora')
+  if (!seleccionados.size) faltan.push('al menos un servicio')
+
+  const ok = faltan.length === 0
   btn.disabled = !ok
+  btn.title = ok ? '' : `Falta seleccionar ${faltan.join(', ')}`
+
+  let hint = document.getElementById('r-generar-hint')
+  if (!hint) {
+    hint = document.createElement('div')
+    hint.id = 'r-generar-hint'
+    hint.style.cssText = 'font-size:12px;margin-top:6px;color:var(--cp-text-muted);'
+    btn.insertAdjacentElement('afterend', hint)
+  }
+  hint.textContent = ok ? '' : `Falta seleccionar ${faltan.join(', ')}.`
+
   btn.innerHTML = ok
     ? `<i class="ti ti-${sinIA ? 'file-download' : 'sparkles'} btn__icon"></i> ${sinIA ? 'Generar PDF' : 'Generar informe'}`
     : '<i class="ti ti-sparkles btn__icon"></i> Generar informe'
@@ -405,6 +425,10 @@ function bindGenerar() {
 
   btn?.addEventListener('click', async () => {
     if (!clienteSel || !seleccionados.size) return
+    if (!companySel) {
+      showAlert('Selecciona una empresa emisora antes de generar.', 'warning')
+      return
+    }
 
     const usarIA   = !sinIA?.checked
     const titulo   = document.getElementById('r-titulo')?.value.trim()
