@@ -151,6 +151,7 @@ def _export_clients(db: Session) -> List[Dict[str, Any]]:
             "website": c.website,
             "contact_position": c.contact_position,
             "contact_phone": c.contact_phone,
+            "lifecycle_auto": c.lifecycle_auto,
         })
     return out
 
