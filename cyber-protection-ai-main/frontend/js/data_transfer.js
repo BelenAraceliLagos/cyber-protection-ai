@@ -54,6 +54,22 @@ function reportSummary(rep) {
   }
   return msg
 }
+function renderResult(cell, rep) {
+  if (!cell) return
+  cell.textContent = reportSummary(rep)
+
+  const errores = (rep && rep.errores) || []
+  if (!errores.length) return
+
+  const lista = document.createElement('ul')
+  lista.style.cssText = 'margin:6px 0 0;padding-left:18px;font-size:0.78rem;color:#B45309;'
+  errores.forEach(texto => {
+    const item = document.createElement('li')
+    item.textContent = texto
+    lista.appendChild(item)
+  })
+  cell.appendChild(lista)
+}
 
 export function initDataTransfer(containerId = 'sync-panel') {
   const container = document.getElementById(containerId)
@@ -115,7 +131,7 @@ export function initDataTransfer(containerId = 'sync-panel') {
         const data = await readJsonFile(file)
         const result = await dataTransferAPI.importModule(module, data)
         const rep = result[module]
-        if (resultCell) resultCell.textContent = reportSummary(rep)
+        renderResult(resultCell, rep)
         showAlert(`Importación de ${module} completa: ${reportSummary(rep)}`, 'success', 7000)
       } catch (err) {
         showAlert('Error al importar: ' + err.message, 'error')
@@ -144,7 +160,7 @@ export function initDataTransfer(containerId = 'sync-panel') {
       const results = await dataTransferAPI.importAll(data)
       MODULES.forEach(m => {
         const resultCell = container.querySelector(`.sync-result[data-module="${m.key}"]`)
-        if (resultCell && results[m.key]) resultCell.textContent = reportSummary(results[m.key])
+        if (results[m.key]) renderResult(resultCell, results[m.key])
       })
       showAlert('Importación completa. Revisa los resultados por módulo.', 'success', 7000)
     } catch (err) {
