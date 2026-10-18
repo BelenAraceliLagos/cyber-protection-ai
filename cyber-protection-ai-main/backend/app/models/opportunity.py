@@ -16,6 +16,10 @@ class Opportunity(Base):
     notas        = Column(Text, default="")
     created_at   = Column(DateTime(timezone=True), server_default=func.now())
     updated_at   = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    closed_at      = Column(DateTime(timezone=True), nullable=True)  # cuándo pasó a ganado/perdido
+    motivo_cierre  = Column(String, nullable=True)                   # motivo de pérdida (lista fija)
+    detalle_cierre = Column(Text, nullable=True)                     # comentario libre opcional
+    motivo_previo  = Column(String, nullable=True)                   # "antes perdida por..." al reabrir
 
     client = relationship("Client", backref="opportunities")
     company = relationship("Company")
