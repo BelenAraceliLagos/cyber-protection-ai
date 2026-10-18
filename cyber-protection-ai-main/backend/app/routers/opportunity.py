@@ -8,6 +8,7 @@ from app.models.opportunity import Opportunity
 from app.models.milestone import Milestone
 from app.models.client import Client
 from app.models.company import Company
+from datetime import datetime, timezone
 from app.schemas.opportunity import (
     OpportunityCreate, OpportunityPatch, OpportunityResponse,
     MilestoneCreate
@@ -33,6 +34,10 @@ def _enrich(opp: Opportunity, db: Session) -> dict:
         "valor_uf":       opp.valor_uf,
         "plazo_meses":    opp.plazo_meses,
         "notas":          opp.notas,
+        "closed_at":      opp.closed_at.isoformat() if opp.closed_at else None,
+        "motivo_cierre":  opp.motivo_cierre,
+        "detalle_cierre": opp.detalle_cierre,
+        "motivo_previo":  opp.motivo_previo,
         "cliente_nombre": opp.client.company_name if opp.client else "",
         "company_nombre": opp.company.name if opp.company else None,
         "hitos": [
@@ -150,6 +155,21 @@ def patch_opportunity(opp_id: int, body: OpportunityPatch, db: Session = Depends
         company = db.query(Company).filter(Company.id == data["company_id"]).first()
         if not company:
             raise HTTPException(status_code=404, detail="Empresa emisora no encontrada")
+    etapa_anterior = opp.etapa
+    etapa_nueva = data.get("etapa", etapa_anterior)
+
+    if etapa_nueva != etapa_anterior:
+        if etapa_nueva in ("ganado", "perdido"):
+            opp.closed_at = datetime.now(timezone.utc)
+        if etapa_anterior == "perdido":
+            # Se reabre: el motivo queda como recordatorio y sale de los indicadores
+            opp.motivo_previo = opp.motivo_cierre
+            opp.closed_at = None
+            opp.motivo_cierre = None
+            opp.detalle_cierre = None
+        if etapa_nueva != "perdido":
+            data.pop("motivo_cierre", None)
+            data.pop("detalle_cierre", None)
     for field, value in data.items():
         setattr(opp, field, value)
 

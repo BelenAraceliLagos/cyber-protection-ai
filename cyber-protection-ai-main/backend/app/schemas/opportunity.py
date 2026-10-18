@@ -42,6 +42,8 @@ class OpportunityPatch(BaseModel):
     valor_uf:     Optional[float] = None
     plazo_meses:  Optional[int]   = None
     notas:        Optional[str]   = None
+    motivo_cierre:  Optional[str] = None
+    detalle_cierre: Optional[str] = None
     probabilidad: Optional[int]   = Field(None, ge=0, le=100)
 
 
@@ -49,6 +51,10 @@ class OpportunityResponse(OpportunityCreate):
     id:             int
     cliente_nombre: Optional[str] = None
     company_nombre: Optional[str] = None
+    closed_at:      Optional[datetime] = None
+    motivo_cierre:  Optional[str] = None
+    detalle_cierre: Optional[str] = None
+    motivo_previo:  Optional[str] = None
     hitos:          List[MilestoneResponse] = []
 
     class Config:
