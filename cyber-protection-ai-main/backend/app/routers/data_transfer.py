@@ -399,7 +399,12 @@ def _import_opportunities(db: Session, rows: List[Dict[str, Any]]) -> Dict[str, 
     db.commit()
     return rep
 
-
+def _firma_items(items):
+    """Convierte los servicios de una cotización en una lista comparable."""
+    return sorted(
+        (nombre, cantidad, precio)
+        for nombre, cantidad, precio in items
+    )
 def _import_quotations(db: Session, rows: List[Dict[str, Any]]) -> Dict[str, Any]:
     rep = _report()
     for row in rows:
@@ -417,7 +422,30 @@ def _import_quotations(db: Session, rows: List[Dict[str, Any]]) -> Dict[str, Any
             user = None
             if row.get("created_by_email"):
                 user = db.query(User).filter(User.email == row["created_by_email"]).first()
+            fecha = _parse_dt(row.get("created_at"))
+            empresa_id = company.id if company else None
 
+            items_nuevos = []
+            for it in row.get("items", []) or []:
+                items_nuevos.append((it.get("service_name"), it.get("quantity", 1), it.get("price")))
+
+            candidatas = db.query(Quotation).filter(
+                Quotation.client_id == client.id,
+                Quotation.company_id == empresa_id,
+                Quotation.created_at == fecha,
+                Quotation.total == row.get("total", 0),
+            ).all()
+
+            repetida = False
+            for q in candidatas:
+                items_q = [(i.service.name if i.service else None, i.quantity, i.price) for i in q.items]
+                if _firma_items(items_q) == _firma_items(items_nuevos):
+                    repetida = True
+                    break
+
+            if repetida:
+                rep["omitidos"] += 1
+                continue
             quotation = Quotation(
                 client_id=client.id,
                 company_id=company.id if company else None,
