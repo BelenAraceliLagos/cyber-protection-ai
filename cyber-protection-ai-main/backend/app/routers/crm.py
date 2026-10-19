@@ -640,13 +640,38 @@ def get_crm_analytics(db: Session = Depends(get_db)):
     ]
 
     ultimos_6 = [_restar_meses(hoy, i) for i in range(5, -1, -1)]
+    lista_perdidas = []
+    for o in perdidas:
+        c = clients_by_id.get(o.cliente_id)
+        lista_perdidas.append({
+            "id": o.id,
+            "titulo": o.titulo,
+            "cliente_nombre": c.company_name if c and c.company_name else "Sin cliente",
+            "company_nombre": o.company.name if o.company else "Sin asignar",
+            "valor_uf": o.valor_uf or 0.0,
+            "plazo_meses": o.plazo_meses,
+            "motivo": o.motivo_cierre or "Sin motivo",
+            "detalle": o.detalle_cierre or "",
+            "closed_at": o.closed_at.isoformat() if o.closed_at else None,
+        })
+    valor_perdido_uf = round(sum(p["valor_uf"] for p in lista_perdidas), 1)
+    conteo_motivos = defaultdict(lambda: {"cantidad": 0, "valor_uf": 0.0})
+    for p in lista_perdidas:
+        conteo_motivos[p["motivo"]]["cantidad"] += 1
+        conteo_motivos[p["motivo"]]["valor_uf"] += p["valor_uf"]
+
+    motivos_frecuentes = [
+        {"motivo": k, "cantidad": v["cantidad"], "valor_uf": round(v["valor_uf"], 1)}
+        for k, v in sorted(conteo_motivos.items(), key=lambda x: -x[1]["cantidad"])
+    ]
+    lista_perdidas.sort(key=lambda x: x["closed_at"] or "", reverse=True)
 
     # Nuevas Métricas
     clients_all = db.query(Client).all()
     converted_clients = [c for c in clients_all if c.lifecycle_stage in ("cliente", "promotor")]
     tasa_conversion_leads_clientes = round((len(converted_clients) / len(clients_all)) * 100, 1) if clients_all else 0.0
 
-    ventas_perdidas_uf = round(db.query(func.sum(Quotation.total)).filter(Quotation.status == "rejected").scalar() or 0.0, 1)
+    ventas_perdidas_uf = valor_perdido_uf
     proyeccion_trimestral_uf = round(total_ganado_uf * 0.5, 1)
 
     return {
@@ -667,6 +692,12 @@ def get_crm_analytics(db: Session = Depends(get_db)):
         "leads_no_convertidos": _get_leads_no_convertidos(db),
         "tasa_conversion_leads_clientes": tasa_conversion_leads_clientes,
         "ventas_perdidas_uf": ventas_perdidas_uf,
+        "oportunidades_perdidas": lista_perdidas,
+        "resumen_perdidas": {
+            "cantidad": len(lista_perdidas),
+            "valor_uf": valor_perdido_uf,
+            "motivos_frecuentes": motivos_frecuentes,
+        },
         "proyeccion_trimestral_uf": proyeccion_trimestral_uf,
         "indicadores_demostrativos": [
             "ciclo_venta_por_vertical",

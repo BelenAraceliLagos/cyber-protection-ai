@@ -249,7 +249,45 @@
     </div>
   </div>
 </div>
-
+<!-- ── MODAL MOTIVO DE PÉRDIDA ────────────── -->
+<div class="modal-backdrop" id="lost-modal" role="dialog" aria-modal="true" aria-labelledby="lost-modal-title">
+  <div class="modal">
+    <div class="modal__header">
+      <h2 class="modal__title" id="lost-modal-title">Oportunidad perdida</h2>
+      <button class="modal__close" id="btn-close-lost-modal" aria-label="Cerrar">
+        <i class="ti ti-x" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="form__row form__row--2">
+        <div class="form__group opp-form-group--full">
+          <label for="lost-motivo">¿Por qué se perdió? (opcional)</label>
+          <select id="lost-motivo">
+            <option value="">— Sin especificar —</option>
+            <option value="Precio / presupuesto">Precio / presupuesto</option>
+            <option value="Mala negociación">Mala negociación</option>
+            <option value="El servicio no cumple lo requerido">El servicio no cumple lo requerido</option>
+            <option value="Eligió a la competencia">Eligió a la competencia</option>
+            <option value="Sin respuesta del cliente">Sin respuesta del cliente</option>
+            <option value="Proyecto cancelado o postergado">Proyecto cancelado o postergado</option>
+            <option value="Cambio de prioridades del cliente">Cambio de prioridades del cliente</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="form__group opp-form-group--full">
+          <label for="lost-detalle">Comentario (opcional)</label>
+          <textarea id="lost-detalle" placeholder="Argumenta qué pasó, para aprender y mejorar..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--secondary" id="btn-skip-lost">Omitir</button>
+      <button class="btn btn--primary" id="btn-save-lost">
+        <i class="ti ti-check btn__icon" aria-hidden="true"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
 <!-- ── MODAL NUEVO HITO ───────────────────── -->
 <div class="modal-backdrop" id="milestone-modal" role="dialog" aria-modal="true">
   <div class="modal">

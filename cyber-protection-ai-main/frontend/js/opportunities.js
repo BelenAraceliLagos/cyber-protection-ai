@@ -169,6 +169,12 @@ function bindButtons() {
     ?.addEventListener('click', openMilestoneModal)
   document.getElementById('gantt-opp-select')
     ?.addEventListener('change', renderGanttView)
+  document.getElementById('btn-save-lost')
+    ?.addEventListener('click', () => confirmLost(true))
+  document.getElementById('btn-skip-lost')
+    ?.addEventListener('click', () => confirmLost(false))
+  document.getElementById('btn-close-lost-modal')
+    ?.addEventListener('click', () => confirmLost(false))
 
   ;['opp-modal','milestone-modal'].forEach(id => {
     const el = document.getElementById(id)
@@ -309,7 +315,11 @@ function renderKanban() {
       if (!oppId || !newEtapa) return
       const opp = state.allOpps.find(o => o.id === oppId)
       if (!opp || opp.etapa === newEtapa) return
-      await moveOpportunityToEtapa(oppId, newEtapa)
+       if (newEtapa === 'perdido') {
+        openLostModal(oppId)
+      } else {
+        await moveOpportunityToEtapa(oppId, newEtapa)
+      }
     })
   })
 }
@@ -325,7 +335,34 @@ async function moveOpportunityToEtapa(oppId, newEtapa) {
     showAlert('No se pudo mover la oportunidad: ' + e.message, 'error')
   }
 }
+let lostOppId = null
 
+function openLostModal(oppId) {
+  lostOppId = oppId
+  setVal('lost-motivo', '')
+  setVal('lost-detalle', '')
+  openModal('lost-modal')
+}
+
+async function confirmLost(conDatos) {
+  if (!lostOppId) return
+  const body = { etapa: 'perdido' }
+  if (conDatos) {
+    const motivo  = document.getElementById('lost-motivo')?.value || ''
+    const detalle = document.getElementById('lost-detalle')?.value.trim() || ''
+    if (motivo)  body.motivo_cierre  = motivo
+    if (detalle) body.detalle_cierre = detalle
+  }
+  const id = lostOppId
+  lostOppId = null
+  closeModal('lost-modal')
+  try {
+    await apiFetch(`/opportunities/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
+    await loadPipeline()
+  } catch (e) {
+    showAlert('No se pudo mover la oportunidad: ' + e.message, 'error')
+  }
+}
 function dealCard(opp) {
   const oppId = Number(opp.id) || 0
   const prob  = Number(opp.probabilidad) || 0
@@ -339,6 +376,15 @@ function dealCard(opp) {
   const hitoTxt = prox
     ? `<i class="ti ti-calendar opp-icon--xs" aria-hidden="true"></i> ${escapeHtml(TIPO_LABEL[prox.tipo] || prox.tipo || '')} — ${fmtDate(prox.fecha_inicio)}`
     : 'Sin hito agendado'
+  let lostTag = ''
+  if (opp.etapa === 'perdido') {
+    const motivo = opp.motivo_cierre || 'Sin motivo'
+    const fecha  = opp.closed_at ? fmtDate(opp.closed_at) : 'sin fecha'
+    lostTag = `<div class="dc-meta"><i class="ti ti-circle-x opp-icon--xs" aria-hidden="true"></i> ${escapeHtml(motivo)} · ${escapeHtml(fecha)}</div>`
+  }
+  const prevTag = (opp.etapa !== 'perdido' && opp.motivo_previo)
+    ? `<div class="dc-meta">Antes perdida por: ${escapeHtml(opp.motivo_previo)}</div>`
+    : ''
   const companyTag = opp.company_nombre
     ? `<span class="dc-company">${escapeHtml(opp.company_nombre)}</span>`
     : ''
@@ -347,6 +393,7 @@ function dealCard(opp) {
       <div class="dc-nombre">${escapeHtml(opp.titulo || opp.cliente_nombre || '')}</div>
       ${companyTag}
       <div class="dc-meta">${hitoTxt}</div>
+      ${lostTag}${prevTag}
       ${Number(opp.valor_uf) > 0
         ? `<div class="dc-uf"><i class="ti ti-currency-dollar opp-icon--xs" aria-hidden="true"></i> ${escapeHtml(String(opp.valor_uf))} UF/mes</div>`
         : ''}
@@ -375,6 +422,24 @@ function renderDealDetail(opp) {
   const plazo         = opp.plazo_meses ? Number(opp.plazo_meses) : null
   const valorTotal     = plazo ? valorMensual * plazo : null
   const probabilidad   = Math.max(0, Math.min(100, Number(opp.probabilidad) || 0))
+   let cierreHtml = ''
+  if (opp.etapa === 'perdido') {
+    const motivo  = opp.motivo_cierre || 'Sin motivo'
+    const fecha   = opp.closed_at ? new Date(opp.closed_at).toLocaleDateString('es-CL') : 'Sin fecha'
+    const detalle = opp.detalle_cierre
+      ? `<p class="deal-note">${escapeHtml(opp.detalle_cierre)}</p>`
+      : ''
+    cierreHtml = `
+      <div class="dd-field"><i class="ti ti-circle-x" aria-hidden="true"></i>
+        <div><span class="dd-field__lbl">Motivo de pérdida</span><span class="dd-field__val">${escapeHtml(motivo)}</span></div>
+      </div>
+      <div class="dd-field"><i class="ti ti-calendar" aria-hidden="true"></i>
+        <div><span class="dd-field__lbl">Fecha de cierre</span><span class="dd-field__val">${escapeHtml(fecha)}</span></div>
+      </div>
+      ${detalle}`
+  } else if (opp.motivo_previo) {
+    cierreHtml = `<p class="deal-note">Antes perdida por: ${escapeHtml(opp.motivo_previo)}</p>`
+  }
 
   panel.innerHTML = `
     <div class="dd-card">
@@ -411,7 +476,7 @@ function renderDealDetail(opp) {
           <div><span class="dd-field__lbl">Email</span><span class="dd-field__val dd-field__val--accent">${escapeHtml(cli?.email || '—')}</span></div>
         </div>
       </div>
-
+      ${cierreHtml ? `<div class="dd-card__fields">${cierreHtml}</div>` : ''}
       ${opp.notas ? `<p class="deal-note">${escapeHtml(opp.notas)}</p>` : ''}
 
       <div class="dd-card__actions">
