@@ -394,6 +394,41 @@
       </div>
 
         <!-- ── Leads recurrentes sin conversión (Historial) ────────────────── -->
+                 <!-- ── Negocios perdidos ──────────────────────────────────── -->
+        <div class="card page-enter page-enter--d3">
+          <div class="card__header" style="display: flex; align-items: center;">
+            <span class="card__title"><i class="ti ti-circle-x" aria-hidden="true"></i> Negocios perdidos</span>
+            <span class="crm-alert-badge" id="crm-perdidas-count" style="margin-left: 10px;">0</span>
+          </div>
+          <div class="card__body">
+            <div class="crm-valor-total" id="crm-perdidas-valor">0 UF/mes</div>
+            <p class="crm-hint">Valor mensual de los negocios que no se concretaron</p>
+            <div class="crm-valor-col__title">Motivos más frecuentes</div>
+            <div id="crm-perdidas-motivos"></div>
+          </div>
+          <div class="card__body dashboard-card-body--flush">
+            <div class="table-wrapper dashboard-table-wrapper--flush">
+              <table class="table" aria-label="Negocios perdidos">
+                <thead>
+                  <tr>
+                    <th>Oportunidad</th>
+                    <th>Cliente</th>
+                    <th>Empresa emisora</th>
+                    <th>Valor (UF/mes)</th>
+                    <th>Motivo</th>
+                    <th>Comentario</th>
+                    <th>Fecha de cierre</th>
+                  </tr>
+                </thead>
+                <tbody id="crm-perdidas-tbody">
+                  <tr>
+                    <td colspan="7" class="empty-state">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
         <div class="card page-enter page-enter--d3">
           <div class="card__header" style="display: flex; align-items: center;">
             <span class="card__title"><i class="ti ti-user-exclamation" aria-hidden="true"></i> Leads recurrentes sin conversión</span>

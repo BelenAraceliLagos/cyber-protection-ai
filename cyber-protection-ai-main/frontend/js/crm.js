@@ -441,6 +441,7 @@ async function loadAnalytics() {
     renderLtv(data.ltv || {})
     renderIngresosVertical(data.ingresos_por_vertical || [])
     renderCicloVentaVertical(data.ciclo_venta_por_vertical || [], data.ciclo_venta_promedio_general_dias || 0)
+    renderPerdidas(data.oportunidades_perdidas || [], data.resumen_perdidas || {})
     
     // Render leads no convertidos y KPIs adicionales
     renderLeadsNoConvertidos(data.leads_no_convertidos || [])
@@ -685,4 +686,45 @@ function marcarDemostrativo(idElemento) {
 
   const destino = contenedor.querySelector('.card__header') || contenedor
   destino.appendChild(etiqueta)
+}
+function renderPerdidas(lista, resumen) {
+  setText('crm-perdidas-count', resumen.cantidad ?? 0)
+  setText('crm-perdidas-valor', `${resumen.valor_uf ?? 0} UF/mes`)
+
+  const motivos = resumen.motivos_frecuentes || []
+  const cont = document.getElementById('crm-perdidas-motivos')
+  if (cont) {
+    if (!motivos.length) {
+      cont.innerHTML = '<div class="empty-state empty-state--compact">Sin datos todavía</div>'
+    } else {
+      const max = Math.max(...motivos.map(m => m.cantidad), 1)
+      cont.innerHTML = motivos.map(m => `
+        <div class="crm-valor-row">
+          <span class="crm-valor-row__lbl">${escapeHtml(m.motivo)}</span>
+          <div class="crm-valor-row__bar-wrap">
+            <div class="crm-valor-row__bar" style="width:${Math.max(6, m.cantidad / max * 100)}%"></div>
+          </div>
+          <span class="crm-valor-row__val">${m.cantidad} (${m.valor_uf} UF)</span>
+        </div>
+      `).join('')
+    }
+  }
+
+  const tbody = document.getElementById('crm-perdidas-tbody')
+  if (!tbody) return
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Ningún negocio perdido 🎉</td></tr>'
+    return
+  }
+  tbody.innerHTML = lista.map(p => `
+    <tr>
+      <td><strong>${escapeHtml(p.titulo || '')}</strong></td>
+      <td>${escapeHtml(p.cliente_nombre || '')}</td>
+      <td>${escapeHtml(p.company_nombre || '')}</td>
+      <td>${p.valor_uf}</td>
+      <td>${escapeHtml(p.motivo || '')}</td>
+      <td>${escapeHtml(p.detalle || '—')}</td>
+      <td>${p.closed_at ? new Date(p.closed_at).toLocaleDateString('es-CL') : 'Sin fecha'}</td>
+    </tr>
+  `).join('')
 }
