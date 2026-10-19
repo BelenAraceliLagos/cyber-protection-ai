@@ -87,6 +87,8 @@ def create_opportunity(body: OpportunityCreate, db: Session = Depends(get_db)):
         if not company:
             raise HTTPException(status_code=404, detail="Empresa emisora no encontrada")
     opp = Opportunity(**body.model_dump())
+    if opp.etapa in ("ganado", "perdido"):
+        opp.closed_at = datetime.now(timezone.utc)
     db.add(opp)
 
     # CRM: crear una oportunidad avanza al cliente de "lead" a "oportunidad" (si aplica)

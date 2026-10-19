@@ -170,6 +170,8 @@ def _export_opportunities(db: Session) -> List[Dict[str, Any]]:
             "etapa": o.etapa,
             "probabilidad": o.probabilidad,
             "valor_uf": o.valor_uf,
+            "plazo_meses": o.plazo_meses,
+            "company_name": o.company.name if o.company else None,
             "notas": o.notas,
             "milestones": [{
                 "tipo": m.tipo,
@@ -251,6 +253,9 @@ def _import_companies(db: Session, rows: List[Dict[str, Any]]) -> Dict[str, Any]
     rep = _report()
     for row in rows:
         try:
+            company = None
+            if row.get("company_name"):
+                company = db.query(Company).filter(Company.name == row["company_name"]).first()
             existing = db.query(Company).filter(Company.name == row["name"]).first()
             if existing:
                 for k, v in row.items():
@@ -350,7 +355,10 @@ def _import_opportunities(db: Session, rows: List[Dict[str, Any]]) -> Dict[str, 
                 rep["omitidos"] += 1
                 rep["errores"].append(f"{row.get('titulo')}: cliente no encontrado, importa clientes primero")
                 continue
-
+            
+            company = None
+            if row.get("company_name"):
+                company = db.query(Company).filter(Company.name == row["company_name"]).first()
             existing = (
                 db.query(Opportunity)
                 .filter(Opportunity.cliente_id == client.id, Opportunity.titulo == row["titulo"])
@@ -361,8 +369,10 @@ def _import_opportunities(db: Session, rows: List[Dict[str, Any]]) -> Dict[str, 
                 existing.probabilidad = row.get("probabilidad", existing.probabilidad)
                 existing.valor_uf = row.get("valor_uf", existing.valor_uf)
                 existing.notas = row.get("notas", existing.notas)
+                existing.plazo_meses = row.get("plazo_meses", existing.plazo_meses)
+                if company:
+                    existing.company_id = company.id
                 opp = existing
-                # sincroniza hijos: reemplaza por completo
                 db.query(Milestone).filter(Milestone.opportunity_id == opp.id).delete()
                 db.query(ActivityNote).filter(ActivityNote.opportunity_id == opp.id).delete()
                 rep["actualizados"] += 1
@@ -374,6 +384,8 @@ def _import_opportunities(db: Session, rows: List[Dict[str, Any]]) -> Dict[str, 
                     probabilidad=row.get("probabilidad", 30),
                     valor_uf=row.get("valor_uf", 0.0),
                     notas=row.get("notas", ""),
+                    plazo_meses=row.get("plazo_meses"),
+                    company_id=company.id if company else None,
                 )
                 db.add(opp)
                 db.flush()  # para obtener opp.id
