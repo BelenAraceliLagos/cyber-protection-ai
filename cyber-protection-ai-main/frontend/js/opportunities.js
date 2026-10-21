@@ -527,9 +527,47 @@ function renderGanttView() {
   const opp   = state.allOpps.find(o => o.id === id)
   if (!opp || !cont) return
   const hitos = opp.hitos || []
+  const valorMensual = Number(opp.valor_uf) || 0
+  const plazo        = opp.plazo_meses ? Number(opp.plazo_meses) : null
+  const valorTotal   = plazo ? valorMensual * plazo : null
+  const colorEtapa   = opp.etapa === 'ganado' ? 'p-verde' : opp.etapa === 'perdido' ? 'p-rojo' : 'p-media'
+
+  let cierreTxt = ''
+  if (opp.etapa === 'perdido') {
+    const f = opp.closed_at ? new Date(opp.closed_at).toLocaleDateString('es-CL') : 'sin fecha'
+    cierreTxt = `Perdida el ${escapeHtml(f)} · Motivo: ${escapeHtml(opp.motivo_cierre || 'Sin motivo')}`
+    if (opp.detalle_cierre) cierreTxt += ` · ${escapeHtml(opp.detalle_cierre)}`
+  } else if (opp.etapa === 'ganado') {
+    const f = opp.closed_at ? new Date(opp.closed_at).toLocaleDateString('es-CL') : 'sin fecha'
+    cierreTxt = `Ganada el ${escapeHtml(f)}`
+  }
+
+  const cabeceraHtml = `
+    <div class="dd-card" style="margin-bottom:12px;">
+      <div class="dd-card__header">
+        <div>
+          <p class="dd-card__title">${escapeHtml(opp.titulo || '')}</p>
+          <span class="prob-pill ${colorEtapa}">${escapeHtml(ETAPA_LABEL[opp.etapa] || opp.etapa || '')}</span>
+          ${opp.company_nombre ? `<span class="dc-company">${escapeHtml(opp.company_nombre)}</span>` : ''}
+        </div>
+        <div class="dd-card__value">
+          <p class="dd-card__value-main">${escapeHtml(String(valorMensual))} UF<span>/mes</span></p>
+          <p class="dd-card__value-sub">${plazo ? `${plazo} meses · ${escapeHtml(String(valorTotal))} UF total` : 'Plazo sin especificar'}</p>
+        </div>
+      </div>
+      <div class="dd-card__fields">
+        <div class="dd-field"><i class="ti ti-building" aria-hidden="true"></i>
+          <div><span class="dd-field__lbl">Cliente</span><span class="dd-field__val">${escapeHtml(opp.cliente_nombre || '—')}</span></div>
+        </div>
+        <div class="dd-field"><i class="ti ti-percentage" aria-hidden="true"></i>
+          <div><span class="dd-field__lbl">Probabilidad</span><span class="dd-field__val">${Number(opp.probabilidad) || 0}%</span></div>
+        </div>
+      </div>
+      ${cierreTxt ? `<p class="deal-note">${cierreTxt}</p>` : ''}
+    </div>`
 
   if (!hitos.length) {
-    cont.innerHTML = '<div class="empty-state empty-state--lg">Sin hitos. Haz clic en <strong>+ Agregar hito</strong> para comenzar.</div>'
+    cont.innerHTML = cabeceraHtml + '<div class="empty-state empty-state--lg">Sin hitos. Haz clic en <strong>+ Agregar hito</strong> para comenzar.</div>'
     return
   }
 
@@ -586,7 +624,7 @@ function renderGanttView() {
       </tr>`
   }).join('')
 
-  cont.innerHTML = `
+  cont.innerHTML = cabeceraHtml + `
     <div class="gantt-wrap">
       <table class="gantt-tbl">
         <thead><tr><th class="gantt-heading--label">Hito</th>${weekHdrs}</tr></thead>
