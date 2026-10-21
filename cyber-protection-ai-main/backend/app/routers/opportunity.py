@@ -35,6 +35,7 @@ def _enrich(opp: Opportunity, db: Session) -> dict:
         "plazo_meses":    opp.plazo_meses,
         "notas":          opp.notas,
         "closed_at":      opp.closed_at.isoformat() if opp.closed_at else None,
+        "created_at":     opp.created_at.isoformat() if opp.created_at else None,
         "motivo_cierre":  opp.motivo_cierre,
         "detalle_cierre": opp.detalle_cierre,
         "motivo_previo":  opp.motivo_previo,

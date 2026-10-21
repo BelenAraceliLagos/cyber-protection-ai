@@ -169,6 +169,10 @@ function bindButtons() {
     ?.addEventListener('click', openMilestoneModal)
   document.getElementById('gantt-opp-select')
     ?.addEventListener('change', renderGanttView)
+  document.getElementById('gsub-opp')
+    ?.addEventListener('click', () => showGanttSub('opp'))
+  document.getElementById('gsub-general')
+    ?.addEventListener('click', () => showGanttSub('general'))
   document.getElementById('btn-save-lost')
     ?.addEventListener('click', () => confirmLost(true))
   document.getElementById('btn-skip-lost')
@@ -543,28 +547,26 @@ function renderGanttView() {
   }
 
   const cabeceraHtml = `
-    <div class="dd-card" style="margin-bottom:12px;">
-      <div class="dd-card__header">
-        <div>
-          <p class="dd-card__title">${escapeHtml(opp.titulo || '')}</p>
-          <span class="prob-pill ${colorEtapa}">${escapeHtml(ETAPA_LABEL[opp.etapa] || opp.etapa || '')}</span>
-          ${opp.company_nombre ? `<span class="dc-company">${escapeHtml(opp.company_nombre)}</span>` : ''}
-        </div>
-        <div class="dd-card__value">
-          <p class="dd-card__value-main">${escapeHtml(String(valorMensual))} UF<span>/mes</span></p>
-          <p class="dd-card__value-sub">${plazo ? `${plazo} meses · ${escapeHtml(String(valorTotal))} UF total` : 'Plazo sin especificar'}</p>
-        </div>
-      </div>
-      <div class="dd-card__fields">
+    <details class="dd-card" style="margin-bottom:14px; padding:16px 20px; font-size:1.05rem;">
+      <summary style="cursor:pointer; display:flex; flex-wrap:wrap; gap:16px; align-items:center; font-size:1.15rem;">
+        <strong style="font-size:1.4rem;">${escapeHtml(opp.titulo || '')}</strong>
+        <span class="prob-pill ${colorEtapa}">${escapeHtml(ETAPA_LABEL[opp.etapa] || opp.etapa || '')}</span>
+        ${opp.company_nombre ? `<span class="dc-company">${escapeHtml(opp.company_nombre)}</span>` : ''}
+        <span>${escapeHtml(String(valorMensual))} UF/mes</span>
+        <span>${Number(opp.probabilidad) || 0}%</span>
+        ${opp.etapa === 'perdido' ? '<span style="color:#B91C1C;font-weight:600;">Perdida</span>' : ''}
+        <small style="margin-left:auto;color:#64748b;">ver detalle ▾</small>
+      </summary>
+      <div class="dd-card__fields" style="margin-top:10px;">
         <div class="dd-field"><i class="ti ti-building" aria-hidden="true"></i>
           <div><span class="dd-field__lbl">Cliente</span><span class="dd-field__val">${escapeHtml(opp.cliente_nombre || '—')}</span></div>
         </div>
-        <div class="dd-field"><i class="ti ti-percentage" aria-hidden="true"></i>
-          <div><span class="dd-field__lbl">Probabilidad</span><span class="dd-field__val">${Number(opp.probabilidad) || 0}%</span></div>
+        <div class="dd-field"><i class="ti ti-cash" aria-hidden="true"></i>
+          <div><span class="dd-field__lbl">Valor total</span><span class="dd-field__val">${plazo ? `${plazo} meses · ${escapeHtml(String(valorTotal))} UF` : 'Plazo sin especificar'}</span></div>
         </div>
       </div>
       ${cierreTxt ? `<p class="deal-note">${cierreTxt}</p>` : ''}
-    </div>`
+    </details>`
 
   if (!hitos.length) {
     cont.innerHTML = cabeceraHtml + '<div class="empty-state empty-state--lg">Sin hitos. Haz clic en <strong>+ Agregar hito</strong> para comenzar.</div>'
@@ -770,4 +772,51 @@ function setVal(id, val)  { const el = document.getElementById(id); if (el) el.v
 function fmtDate(iso) {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+}
+function renderGanttGeneral() {
+  const opps = state.allOpps
+  const activas  = opps.filter(o => o.etapa !== 'ganado' && o.etapa !== 'perdido')
+  const ganadas  = opps.filter(o => o.etapa === 'ganado')
+  const perdidas = opps.filter(o => o.etapa === 'perdido')
+  const suma = lista => Math.round(lista.reduce((s, o) => s + (Number(o.valor_uf) || 0), 0) * 10) / 10
+
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+  const limite = new Date(hoy.getTime() + 7 * 86400000)
+  let hitosPend = 0, hitosProx = 0
+  opps.forEach(o => (o.hitos || []).forEach(h => {
+    if (h.completado) return
+    hitosPend++
+    if (h.fecha_inicio) {
+      const d = new Date(h.fecha_inicio)
+      if (d >= hoy && d <= limite) hitosProx++
+    }
+  }))
+
+  const caja = (valor, etiqueta) =>
+    `<div class="metric-box"><div class="metric-box__val">${valor}</div><div class="metric-box__lbl">${etiqueta}</div></div>`
+
+  const cont = document.getElementById('gg-metricas')
+  if (cont) cont.innerHTML =
+    caja(opps.length, 'Oportunidades') +
+    caja(activas.length, 'Activas') +
+    caja(ganadas.length, 'Ganadas') +
+    caja(perdidas.length, 'Perdidas') +
+    caja(suma(activas) + ' UF', 'En juego (UF/mes)') +
+    caja(suma(ganadas) + ' UF', 'Ganado (UF/mes)') +
+    caja(suma(perdidas) + ' UF', 'Perdido (UF/mes)') +
+    caja(hitosPend, 'Hitos pendientes') +
+    caja(hitosProx, 'Hitos próx. 7 días')
+}
+
+function showGanttSub(cual) {
+  const general = cual === 'general'
+  const g = document.getElementById('gantt-general')
+  const o = document.getElementById('gantt-por-opp')
+  if (g) g.style.display = general ? '' : 'none'
+  if (o) o.style.display = general ? 'none' : ''
+  const bo = document.getElementById('gsub-opp')
+  const bg = document.getElementById('gsub-general')
+  if (bo) bo.className = 'btn btn--sm ' + (general ? 'btn--secondary' : 'btn--primary')
+  if (bg) bg.className = 'btn btn--sm ' + (general ? 'btn--primary' : 'btn--secondary')
+  if (general) renderGanttGeneral()
 }

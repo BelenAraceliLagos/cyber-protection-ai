@@ -147,6 +147,19 @@
       <!-- ── GANTT ──────────────────────────────── -->
       <section id="tab-gantt" class="opp-tab-panel--hidden">
         <div class="card page-enter">
+          <div class="gantt-subtabs" style="display:flex; gap:8px; margin-bottom:12px;">
+          <button type="button" class="btn btn--sm btn--primary" id="gsub-opp">Por oportunidad</button>
+          <button type="button" class="btn btn--sm btn--secondary" id="gsub-general">Panorama general</button>
+        </div>
+
+        <div id="gantt-general" style="display:none;">
+          <div class="metrics-row" id="gg-metricas"></div>
+          <div class="card" style="padding:16px;">
+            <div id="gg-timeline"><div class="empty-state">Cargando...</div></div>
+          </div>
+        </div>
+
+        <div id="gantt-por-opp">
           <div class="gantt-controls">
             <div>
               <label class="gantt-control-label" for="gantt-opp-select">Oportunidad</label>
@@ -173,7 +186,7 @@
             <div class="gantt-legend-item">
               <div class="gantt-today-key"></div>Hoy
             </div>
-          </div>
+        </div>
         </div>
       </section>
 

@@ -349,4 +349,9 @@
   min-width: 165px;
   text-align: left;
 }
-
+.gantt-tbl .hito-lbl { padding: 14px 12px; }
+.gantt-tbl .hl-name  { font-size: 0.95rem; }
+.gantt-tbl .hl-sub   { font-size: 0.8rem; }
+.gantt-tbl .gantt-cell--timeline { height: 64px; }
+.gantt-tbl .gantt-bar { height: 34px; line-height: 34px; font-size: 0.85rem; }
+.gantt-tbl thead th { font-size: 0.85rem; padding: 10px 6px; }
