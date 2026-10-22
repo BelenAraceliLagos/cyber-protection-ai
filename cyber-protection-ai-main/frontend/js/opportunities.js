@@ -880,7 +880,13 @@ function renderGanttTimeline() {
     marcasMes.push(`<div style="position:absolute; left:${pct(m)}%; top:0; bottom:0; border-left:1px dashed #CBD5E1; padding-left:4px; font-size:0.8rem; color:#64748B;">${MES[m.getMonth()]} ${m.getFullYear()}</div>`)
     m.setMonth(m.getMonth() + 1)
   }
-
+   const marcasSemana = []
+  const s = new Date(minD)
+  s.setDate(s.getDate() + ((8 - s.getDay()) % 7))
+  while (s <= maxD) {
+    marcasSemana.push(`<div style="position:absolute; left:${pct(s)}%; top:12px; bottom:0; border-left:1px dotted #E2E8F0; padding-left:3px; font-size:0.7rem; color:#94A3B8;">${s.getDate()}</div>`)
+    s.setDate(s.getDate() + 7)
+  }
   const filas = lista.map(o => {
     const est = estadoDe(o)
     const ini = pct(inicioDe(o))
@@ -906,7 +912,7 @@ function renderGanttTimeline() {
       const arriba = i % 2 === 1
       const posY = arriba ? 'bottom:calc(50% + 10px)' : 'top:calc(50% + 10px)'
       return `<div title="${escapeAttr((h.titulo || '') + ' · ' + (TIPO_LABEL[h.tipo] || h.tipo || '') + ' · ' + fmtDate(h.fecha_inicio))}" style="position:absolute; left:${pct(h.fecha_inicio)}%; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:#fff; border:3px solid #0F172A;"></div>
-       <div style="position:absolute; left:${pct(h.fecha_inicio)}%; ${posY}; transform:translateX(-50%); font-size:0.72rem; color:#334155; white-space:nowrap;">${escapeHtml((h.titulo || '').slice(0, 18))} · ${escapeHtml(fmtDate(h.fecha_inicio))}</div>`
+       <div style="position:absolute; left:${pct(h.fecha_inicio)}%; ${posY}; transform:translateX(-50%); font-size:0.72rem; color:#334155; white-space:nowrap;">${escapeHtml((h.titulo || '').slice(0, 26))} · ${escapeHtml(fmtDate(h.fecha_inicio))}</div>`
     }).join('')
 
     return `
@@ -931,7 +937,7 @@ function renderGanttTimeline() {
   cont.innerHTML = filtrosHtml + `
     <div style="display:flex;">
       <div style="width:220px; flex-shrink:0;"></div>
-      <div style="position:relative; flex:1; height:24px;">${marcasMes.join('')}</div>
+      <div style="position:relative; flex:1; height:34px;">${marcasMes.join('')}${marcasSemana.join('')}</div>
     </div>
     <div style="position:relative;">
       ${filas}
