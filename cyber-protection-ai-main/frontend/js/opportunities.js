@@ -902,7 +902,8 @@ function renderGanttTimeline() {
       : ''
 
     const puntos = (o.hitos || []).filter(h => h.fecha_inicio).map(h =>
-      `<div title="${escapeAttr((h.titulo || '') + ' · ' + (TIPO_LABEL[h.tipo] || h.tipo || '') + ' · ' + fmtDate(h.fecha_inicio))}" style="position:absolute; left:${pct(h.fecha_inicio)}%; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:#fff; border:3px solid #0F172A;"></div>`
+      `<div title="${escapeAttr((h.titulo || '') + ' · ' + (TIPO_LABEL[h.tipo] || h.tipo || '') + ' · ' + fmtDate(h.fecha_inicio))}" style="position:absolute; left:${pct(h.fecha_inicio)}%; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:#fff; border:3px solid #0F172A;"></div>
+       <div style="position:absolute; left:${pct(h.fecha_inicio)}%; top:calc(50% + 10px); transform:translateX(-50%); font-size:0.72rem; color:#334155; white-space:nowrap;">${escapeHtml((h.titulo || '').slice(0, 18))} · ${escapeHtml(fmtDate(h.fecha_inicio))}</div>`
     ).join('')
 
     return `
