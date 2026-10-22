@@ -615,6 +615,7 @@ function renderGanttView() {
         <td class="hito-lbl">
           <div class="hl-name">${escapeHtml(h.titulo || '')}</div>
           <div class="hl-sub">${escapeHtml(TIPO_LABEL[h.tipo] || h.tipo || '')} · ${statusTxt}</div>
+          <div class="hl-sub">${h.fecha_inicio ? escapeHtml(fmtDate(h.fecha_inicio)) : 'Sin fecha'}${h.fecha_fin ? ' → ' + escapeHtml(fmtDate(h.fecha_fin)) : ''}</div>
         </td>
         <td class="gantt-cell gantt-cell--timeline" colspan="${weeks.length}" style="min-width:${weeks.length*44}px">
           <div class="gantt-today-line" style="left:${todayPct}%"></div>
@@ -901,10 +902,12 @@ function renderGanttTimeline() {
       ? `<div title="${escapeAttr(detalle)}" style="position:absolute; left:${pct(o.closed_at)}%; top:2px; font-size:1.3rem; color:${COLOR[est]}; transform:translateX(-4px); white-space:nowrap;">⚑ <span style="font-size:0.8rem; font-weight:600;">${escapeHtml(o.motivo_cierre || (est === 'ganado' ? 'Ganada' : 'Sin motivo'))}</span></div>`
       : ''
 
-    const puntos = (o.hitos || []).filter(h => h.fecha_inicio).map(h =>
-      `<div title="${escapeAttr((h.titulo || '') + ' · ' + (TIPO_LABEL[h.tipo] || h.tipo || '') + ' · ' + fmtDate(h.fecha_inicio))}" style="position:absolute; left:${pct(h.fecha_inicio)}%; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:#fff; border:3px solid #0F172A;"></div>
-       <div style="position:absolute; left:${pct(h.fecha_inicio)}%; top:calc(50% + 10px); transform:translateX(-50%); font-size:0.72rem; color:#334155; white-space:nowrap;">${escapeHtml((h.titulo || '').slice(0, 18))} · ${escapeHtml(fmtDate(h.fecha_inicio))}</div>`
-    ).join('')
+    const puntos = (o.hitos || []).filter(h => h.fecha_inicio).map((h, i) => {
+      const arriba = i % 2 === 1
+      const posY = arriba ? 'bottom:calc(50% + 10px)' : 'top:calc(50% + 10px)'
+      return `<div title="${escapeAttr((h.titulo || '') + ' · ' + (TIPO_LABEL[h.tipo] || h.tipo || '') + ' · ' + fmtDate(h.fecha_inicio))}" style="position:absolute; left:${pct(h.fecha_inicio)}%; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:#fff; border:3px solid #0F172A;"></div>
+       <div style="position:absolute; left:${pct(h.fecha_inicio)}%; ${posY}; transform:translateX(-50%); font-size:0.72rem; color:#334155; white-space:nowrap;">${escapeHtml((h.titulo || '').slice(0, 18))} · ${escapeHtml(fmtDate(h.fecha_inicio))}</div>`
+    }).join('')
 
     return `
       <div class="gg-fila" data-opp="${Number(o.id)}" style="display:flex; align-items:center; border-bottom:1px solid #E2E8F0; cursor:pointer;" title="${escapeAttr(tip)}">
