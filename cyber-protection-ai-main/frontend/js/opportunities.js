@@ -898,7 +898,7 @@ function renderGanttTimeline() {
     const motivoTxt = est === 'perdido' ? (o.motivo_cierre || 'Sin motivo') : ''
 
     const bandera = est !== 'activo' && o.closed_at
-      ? `<div title="${escapeAttr(detalle)}" style="position:absolute; left:${pct(o.closed_at)}%; top:2px; font-size:1.3rem; color:${COLOR[est]}; transform:translateX(-4px); white-space:nowrap;">⚑ <span style="font-size:0.8rem; font-weight:600;">${escapeHtml(motivoTxt || ETIQ[est])}</span></div>`
+      ? `<div title="${escapeAttr(detalle)}" style="position:absolute; left:${pct(o.closed_at)}%; top:2px; font-size:1.3rem; color:${COLOR[est]}; transform:translateX(-4px); white-space:nowrap;">⚑ <span style="font-size:0.8rem; font-weight:600;">${escapeHtml(o.motivo_cierre || (est === 'ganado' ? 'Ganada' : 'Sin motivo'))}</span></div>`
       : ''
 
     const puntos = (o.hitos || []).filter(h => h.fecha_inicio).map(h =>
