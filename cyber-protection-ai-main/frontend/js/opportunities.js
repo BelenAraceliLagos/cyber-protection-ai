@@ -1,8 +1,7 @@
 'use strict'
-
 import {
   requireAuth, showAlert, openModal, closeModal,
-  escapeHtml
+  escapeHtml, escapeAttr
 } from './utils.js'
 
 /**
@@ -818,5 +817,141 @@ function showGanttSub(cual) {
   const bg = document.getElementById('gsub-general')
   if (bo) bo.className = 'btn btn--sm ' + (general ? 'btn--secondary' : 'btn--primary')
   if (bg) bg.className = 'btn btn--sm ' + (general ? 'btn--primary' : 'btn--secondary')
-  if (general) renderGanttGeneral()
+  if (general) { renderGanttGeneral(); renderGanttTimeline() }
+}
+function renderGanttTimeline() {
+  const cont = document.getElementById('gg-timeline')
+  if (!cont) return
+
+  const filtroEstado = document.getElementById('gg-filtro-estado')?.value || ''
+  const filtroEmpresa = document.getElementById('gg-filtro-empresa')?.value || ''
+
+  const estadoDe = o => o.etapa === 'ganado' ? 'ganado' : o.etapa === 'perdido' ? 'perdido' : 'activo'
+  const lista = state.allOpps.filter(o =>
+    (!filtroEstado || estadoDe(o) === filtroEstado) &&
+    (!filtroEmpresa || String(o.company_id || '') === filtroEmpresa)
+  )
+
+  const empresasOpts = '<option value="">Todas las empresas</option>' +
+    state.companies.map(c => `<option value="${Number(c.id)}" ${String(c.id) === filtroEmpresa ? 'selected' : ''}>${escapeHtml(c.name || '')}</option>`).join('')
+  const filtrosHtml = `
+    <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+      <select id="gg-filtro-estado">
+        <option value="" ${!filtroEstado ? 'selected' : ''}>Todos los estados</option>
+        <option value="activo" ${filtroEstado === 'activo' ? 'selected' : ''}>Activas</option>
+        <option value="ganado" ${filtroEstado === 'ganado' ? 'selected' : ''}>Ganadas</option>
+        <option value="perdido" ${filtroEstado === 'perdido' ? 'selected' : ''}>Perdidas</option>
+      </select>
+      <select id="gg-filtro-empresa">${empresasOpts}</select>
+    </div>`
+
+  if (!lista.length) {
+    cont.innerHTML = filtrosHtml + '<div class="empty-state">No hay oportunidades con ese filtro</div>'
+    bindGanttFiltros()
+    return
+  }
+
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+  const DIA = 86400000
+  const inicioDe = o => o.created_at ? new Date(o.created_at) : hoy
+  const finDe = o => o.closed_at ? new Date(o.closed_at) : hoy
+
+  let minD = new Date(Math.min(...lista.map(o => inicioDe(o).getTime()), hoy.getTime()))
+  let maxD = new Date(Math.max(...lista.map(o => finDe(o).getTime()), hoy.getTime()))
+  lista.forEach(o => (o.hitos || []).forEach(h => {
+    if (h.fecha_inicio) {
+      const d = new Date(h.fecha_inicio)
+      if (d < minD) minD = d
+      if (d > maxD) maxD = d
+    }
+  }))
+  minD = new Date(minD.getTime() - 5 * DIA)
+  maxD = new Date(maxD.getTime() + 10 * DIA)
+  const rango = (maxD - minD) / DIA
+  const pct = d => Math.max(0, Math.min(100, ((new Date(d) - minD) / DIA) / rango * 100))
+
+  const COLOR = { activo: '#378ADD', ganado: '#1D9E75', perdido: '#DC2626' }
+  const MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+
+  const marcasMes = []
+  const m = new Date(minD.getFullYear(), minD.getMonth() + 1, 1)
+  while (m <= maxD) {
+    marcasMes.push(`<div style="position:absolute; left:${pct(m)}%; top:0; bottom:0; border-left:1px dashed #CBD5E1; padding-left:4px; font-size:0.8rem; color:#64748B;">${MES[m.getMonth()]} ${m.getFullYear()}</div>`)
+    m.setMonth(m.getMonth() + 1)
+  }
+
+  const filas = lista.map(o => {
+    const est = estadoDe(o)
+    const ini = pct(inicioDe(o))
+    const fin = Math.max(pct(finDe(o)), ini + 1.5)
+    const dias = Math.max(0, Math.round((finDe(o) - inicioDe(o)) / DIA))
+    const detalle = est === 'perdido'
+      ? `Perdida: ${o.motivo_cierre || 'Sin motivo'}${o.detalle_cierre ? ' — ' + o.detalle_cierre : ''}`
+      : est === 'ganado' ? 'Ganada' : 'En curso'
+    const tip = `${o.titulo || ''} · ${dias} días · ${detalle}`
+    const fmtLarga = iso => iso ? new Date(iso).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) : '—'
+    const fechasTxt = est === 'activo'
+      ? `Creada ${fmtLarga(o.created_at)} → en curso`
+      : `Creada ${fmtLarga(o.created_at)} → cerrada ${fmtLarga(o.closed_at)}`
+    const ETIQ = { activo: 'Activa', ganado: 'Ganada', perdido: 'Perdida' }
+    const valorTxt = `${Number(o.valor_uf) || 0} UF/mes`
+    const motivoTxt = est === 'perdido' ? (o.motivo_cierre || 'Sin motivo') : ''
+
+    const bandera = est !== 'activo' && o.closed_at
+      ? `<div title="${escapeAttr(detalle)}" style="position:absolute; left:${pct(o.closed_at)}%; top:2px; font-size:1.3rem; color:${COLOR[est]}; transform:translateX(-4px); white-space:nowrap;">⚑ <span style="font-size:0.8rem; font-weight:600;">${escapeHtml(motivoTxt || ETIQ[est])}</span></div>`
+      : ''
+
+    const puntos = (o.hitos || []).filter(h => h.fecha_inicio).map(h =>
+      `<div title="${escapeAttr((h.titulo || '') + ' · ' + (TIPO_LABEL[h.tipo] || h.tipo || '') + ' · ' + fmtDate(h.fecha_inicio))}" style="position:absolute; left:${pct(h.fecha_inicio)}%; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:#fff; border:3px solid #0F172A;"></div>`
+    ).join('')
+
+    return `
+      <div class="gg-fila" data-opp="${Number(o.id)}" style="display:flex; align-items:center; border-bottom:1px solid #E2E8F0; cursor:pointer;" title="${escapeAttr(tip)}">
+        <div style="width:220px; padding:12px; flex-shrink:0;">
+          <div style="font-weight:600;">${escapeHtml(o.titulo || '')}</div>
+          <div style="font-size:0.8rem; color:#64748B;">${escapeHtml(o.cliente_nombre || '')} · ${dias} días</div>
+          <div style="font-size:0.78rem; color:#475569;">${escapeHtml(fechasTxt)}</div>
+        </div>
+        <div style="position:relative; flex:1; height:56px;">
+          <div style="position:absolute; left:${ini}%; width:${fin - ini}%; top:18px; height:20px; border-radius:10px; background:${COLOR[est]}; opacity:0.85;"></div>
+          ${bandera}${puntos}
+        </div>
+      <div style="width:150px; padding:8px 12px; flex-shrink:0; text-align:right; font-size:0.85rem;">
+          <div style="font-weight:600; color:${COLOR[est]};">${ETIQ[est]}</div>
+          <div>${escapeHtml(valorTxt)}</div>
+          <div style="color:#64748B;">${dias} días</div>
+        </div>
+      </div>`
+  }).join('')
+
+  cont.innerHTML = filtrosHtml + `
+    <div style="display:flex;">
+      <div style="width:220px; flex-shrink:0;"></div>
+      <div style="position:relative; flex:1; height:24px;">${marcasMes.join('')}</div>
+    </div>
+    <div style="position:relative;">
+      ${filas}
+      <div style="position:absolute; left:calc(220px + (100% - 220px) * ${pct(hoy) / 100}); top:0; bottom:0; border-left:2px solid #DC2626; pointer-events:none;" title="Hoy"></div>
+    </div>
+    <div style="display:flex; gap:18px; margin-top:12px; font-size:0.85rem;">
+      <span><span style="color:#378ADD;">■</span> Activa</span>
+      <span><span style="color:#1D9E75;">■</span> Ganada</span>
+      <span><span style="color:#DC2626;">■</span> Perdida</span>
+      <span>⚑ Cierre</span>
+      <span>● Hito</span>
+      <span style="color:#DC2626;">| Hoy</span>
+    </div>`
+
+  bindGanttFiltros()
+  cont.querySelectorAll('.gg-fila').forEach(fila => {
+    fila.addEventListener('click', () => {
+      showGanttSub('opp')
+      goToGantt(Number(fila.dataset.opp))
+    })
+  })
+}
+
+function bindGanttFiltros() {
+  document.getElementById('gg-filtro-estado')?.addEventListener('change', renderGanttTimeline)
+  document.getElementById('gg-filtro-empresa')?.addEventListener('change', renderGanttTimeline)
 }
