@@ -49,6 +49,7 @@ def _enrich(opp: Opportunity, db: Session) -> dict:
                 "titulo":         h.titulo,
                 "descripcion":    h.descripcion,
                 "completado":     h.completado,
+                "importancia":    h.importancia or "Normal",
                 "fecha_inicio":   h.fecha_inicio.isoformat() if h.fecha_inicio else None,
                 "fecha_fin":      h.fecha_fin.isoformat()    if h.fecha_fin    else None,
             }
@@ -213,6 +214,7 @@ def add_milestone(opp_id: int, body: MilestoneCreate, db: Session = Depends(get_
         "titulo":         ms.titulo,
         "descripcion":    ms.descripcion,
         "completado":     ms.completado,
+        "importancia":    ms.importancia or "Normal",
         "fecha_inicio":   ms.fecha_inicio.isoformat() if ms.fecha_inicio else None,
         "fecha_fin":      ms.fecha_fin.isoformat()    if ms.fecha_fin    else None,
     }
