@@ -708,6 +708,7 @@ function openMilestoneModal() {
   setVal('ms-titulo', ''); setVal('ms-desc', '')
   setVal('ms-inicio', ''); setVal('ms-fin',  '')
   setVal('ms-tipo', 'reunion'); setVal('ms-estado', 'false')
+  setVal('ms-importancia', 'Normal')
   openModal('milestone-modal')
 }
 
@@ -723,6 +724,7 @@ async function saveMilestone() {
     titulo,
     descripcion:  document.getElementById('ms-desc')?.value.trim() || '',
     completado:   document.getElementById('ms-estado')?.value === 'true',
+    importancia:  document.getElementById('ms-importancia')?.value || 'Normal',
     fecha_inicio: fi ? new Date(fi).toISOString() : null,
     fecha_fin:    ff ? new Date(ff).toISOString() : null,
   }
