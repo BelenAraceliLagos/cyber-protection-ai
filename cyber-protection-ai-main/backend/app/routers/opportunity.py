@@ -9,6 +9,8 @@ from app.models.milestone import Milestone
 from app.models.client import Client
 from app.models.company import Company
 from datetime import datetime, timezone
+from pydantic import BaseModel
+from datetime import datetime
 from app.schemas.opportunity import (
     OpportunityCreate, OpportunityPatch, OpportunityResponse,
     MilestoneCreate
@@ -218,3 +220,31 @@ def add_milestone(opp_id: int, body: MilestoneCreate, db: Session = Depends(get_
         "fecha_inicio":   ms.fecha_inicio.isoformat() if ms.fecha_inicio else None,
         "fecha_fin":      ms.fecha_fin.isoformat()    if ms.fecha_fin    else None,
     }
+class MilestonePatch(BaseModel):
+    tipo:         Optional[str] = None
+    titulo:       Optional[str] = None
+    descripcion:  Optional[str] = None
+    completado:   Optional[bool] = None
+    importancia:  Optional[str] = None
+    fecha_inicio: Optional[datetime] = None
+    fecha_fin:    Optional[datetime] = None
+
+@router.patch("/milestones/{ms_id}")
+def patch_milestone(ms_id: int, body: MilestonePatch, db: Session = Depends(get_db)):
+    ms = db.query(Milestone).filter(Milestone.id == ms_id).first()
+    if not ms:
+        raise HTTPException(status_code=404, detail="Hito no encontrado")
+    for campo, valor in body.model_dump(exclude_unset=True).items():
+        setattr(ms, campo, valor)
+    db.commit()
+    db.refresh(ms)
+    return {"id": ms.id, "ok": True}
+
+
+@router.delete("/milestones/{ms_id}", status_code=204)
+def delete_milestone(ms_id: int, db: Session = Depends(get_db)):
+    ms = db.query(Milestone).filter(Milestone.id == ms_id).first()
+    if not ms:
+        raise HTTPException(status_code=404, detail="Hito no encontrado")
+    db.delete(ms)
+    db.commit()

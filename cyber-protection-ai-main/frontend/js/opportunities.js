@@ -165,7 +165,7 @@ function bindButtons() {
   document.getElementById('btn-close-ms-modal')
     ?.addEventListener('click', () => closeModal('milestone-modal'))
   document.getElementById('add-milestone-btn')
-    ?.addEventListener('click', openMilestoneModal)
+    ?.addEventListener('click', () => openMilestoneModal())
   document.getElementById('gantt-opp-select')
     ?.addEventListener('change', renderGanttView)
   document.getElementById('gsub-opp')
@@ -596,8 +596,12 @@ function renderGanttView() {
     return `<th class="${isHoy ? 'hoy-col' : ''}">${w.getDate()} ${MES[w.getMonth()]}</th>`
   }).join('')
 
-  const rows = hitos.map(h => {
+  const COLOR_IMP = { 'Crítico': '#DC2626', 'Importante': '#F59E0B', 'Necesario': '#3B82F6', 'Normal': '#94A3B8' }
+
+  const rows = hitos.map((h, idx) => {
     let barClass = 'bar-planned'
+    const imp      = h.importancia || 'Normal'
+    const colorImp = COLOR_IMP[imp] || COLOR_IMP['Normal']
     if (h.completado) barClass = h.tipo === 'inicio_servicio' ? 'bar-success' : 'bar-done'
     else if (h.fecha_inicio && new Date(h.fecha_inicio) < today) barClass = 'bar-pending'
 
@@ -620,7 +624,7 @@ function renderGanttView() {
         <td class="gantt-cell gantt-cell--timeline" colspan="${weeks.length}" style="min-width:${weeks.length*44}px">
           <div class="gantt-today-line" style="left:${todayPct}%"></div>
           ${h.fecha_inicio
-            ? `<div class="gantt-bar ${barClass}" style="${barStyle}">${escapeHtml((h.titulo||'').substring(0,18))}</div>`
+            ? `<div class="gantt-bar gantt-bar--click ${barClass}" data-hito="${idx}" style="${barStyle}; border-left:14px solid ${colorImp}; cursor:pointer;" title="Clic para ver el detalle">${escapeHtml((h.titulo||'').substring(0,22))} <small>· ${escapeHtml(imp)}</small></div>`
             : ''}
         </td>
       </tr>`
@@ -632,7 +636,43 @@ function renderGanttView() {
         <thead><tr><th class="gantt-heading--label">Hito</th>${weekHdrs}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
-    </div>`
+    </div>
+    <div id="hito-detalle"></div>`
+
+  // Clic en una barra: muestra el detalle completo del hito debajo de la carta
+  cont.querySelectorAll('.gantt-bar--click').forEach(bar => {
+    bar.addEventListener('click', () => {
+      const h = hitos[Number(bar.dataset.hito)]
+      if (!h) return
+      const imp = h.importancia || 'Normal'
+      const estado = h.completado ? 'Completado'
+        : (h.fecha_inicio && new Date(h.fecha_inicio) < today ? 'Pendiente' : 'Proyectado')
+      const caja = document.getElementById('hito-detalle')
+      if (!caja) return
+      caja.innerHTML = `
+        <div class="deal-note" style="margin-top:14px; padding:14px 16px; border-left:6px solid ${COLOR_IMP[imp] || COLOR_IMP['Normal']}; background:#F8FAFC; border-radius:8px; font-size:0.95rem; line-height:1.6;">
+          <div style="font-size:1.05rem; font-weight:700; margin-bottom:6px;">${escapeHtml(h.titulo || '')}</div>
+          <div><strong>Tipo:</strong> ${escapeHtml(TIPO_LABEL[h.tipo] || h.tipo || '—')}</div>
+          <div><strong>Importancia:</strong> ${escapeHtml(imp)}</div>
+          <div><strong>Estado:</strong> ${estado}</div>
+          <div><strong>Fecha:</strong> ${h.fecha_inicio ? escapeHtml(fmtDate(h.fecha_inicio)) : 'Sin fecha'}${h.fecha_fin ? ' → ' + escapeHtml(fmtDate(h.fecha_fin)) : ''}</div>
+          <div><strong>Descripción:</strong> ${h.descripcion ? escapeHtml(h.descripcion) : '<em>Sin descripción</em>'}</div>
+          <button type="button" class="btn btn--sm" data-editar="${h.id}" style="margin-top:10px; margin-right:8px;">Editar hito</button>
+          <button type="button" class="btn btn--danger btn--sm" data-borrar="${h.id}" style="margin-top:10px;">Borrar hito</button>
+        </div>`
+      caja.querySelector('[data-editar]').addEventListener('click', () => openMilestoneModal(h))
+      caja.querySelector('[data-borrar]').addEventListener('click', async () => {
+        if (!confirm('¿Borrar el hito "' + h.titulo + '"?')) return
+        try {
+          await apiFetch(`/opportunities/milestones/${h.id}`, { method: 'DELETE' })
+          showAlert('Hito borrado.')
+          await loadPipeline()
+          renderGanttView()
+        } catch (e) { showAlert('Error: ' + e.message, 'error') }
+      })
+      caja.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+  })
 }
 
 function goToGantt(id) {
@@ -704,11 +744,15 @@ async function saveOpportunity() {
   } catch (e) { showAlert('Error: ' + e.message, 'error') }
 }
 
-function openMilestoneModal() {
-  setVal('ms-titulo', ''); setVal('ms-desc', '')
-  setVal('ms-inicio', ''); setVal('ms-fin',  '')
-  setVal('ms-tipo', 'reunion'); setVal('ms-estado', 'false')
-  setVal('ms-importancia', 'Normal')
+function openMilestoneModal(hito) {
+  state.editingMsId = hito ? hito.id : null
+  setVal('ms-titulo', hito?.titulo || '')
+  setVal('ms-desc', hito?.descripcion || '')
+  setVal('ms-inicio', hito?.fecha_inicio ? hito.fecha_inicio.slice(0, 10) : '')
+  setVal('ms-fin', hito?.fecha_fin ? hito.fecha_fin.slice(0, 10) : '')
+  setVal('ms-tipo', hito?.tipo || 'reunion')
+  setVal('ms-estado', hito?.completado ? 'true' : 'false')
+  setVal('ms-importancia', hito?.importancia || 'Normal')
   openModal('milestone-modal')
 }
 
@@ -729,9 +773,14 @@ async function saveMilestone() {
     fecha_fin:    ff ? new Date(ff).toISOString() : null,
   }
   try {
-    await apiFetch(`/opportunities/${id}/milestones`, { method: 'POST', body: JSON.stringify(body) })
+    if (state.editingMsId) {
+      await apiFetch(`/opportunities/milestones/${state.editingMsId}`, { method: 'PATCH', body: JSON.stringify(body) })
+      showAlert('Hito actualizado.')
+    } else {
+      await apiFetch(`/opportunities/${id}/milestones`, { method: 'POST', body: JSON.stringify(body) })
+      showAlert('Hito agregado.')
+    }
     closeModal('milestone-modal')
-    showAlert('Hito agregado.')
     await loadPipeline()
     renderGanttView()
   } catch (e) { showAlert('Error: ' + e.message, 'error') }
