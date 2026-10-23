@@ -27,6 +27,7 @@ class Milestone(Base):
     fecha_inicio = Column(DateTime(timezone=True))
     fecha_fin = Column(DateTime(timezone=True))
     completado = Column(Boolean)
+    importancia = Column(String, default="Normal")
     creado_en = Column(DateTime(timezone=True), server_default=func.now())
 
     opportunity = relationship("Opportunity", back_populates="milestones")
