@@ -9,6 +9,7 @@ class MilestoneCreate(BaseModel):
     titulo:       str
     descripcion:  str = ""
     completado:   bool = False
+    importancia:  str = "Normal"
     fecha_inicio: Optional[datetime] = None
     fecha_fin:    Optional[datetime] = None
 
