@@ -9,9 +9,11 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 
 from app.core.dependencies import get_current_user
-
+from app.models.quotation_item import QuotationItem
 from app.models.user import User
 from app.models.service import Service
+from app.routers.user import require_admin
+
 
 from app.schemas.service import (
     ServiceCreate,
@@ -30,7 +32,7 @@ router = APIRouter(
 def create_service(
     service: ServiceCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
 
     new_service = Service(
@@ -65,7 +67,7 @@ def update_service(
     service_id: int,
     service: ServiceCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
 
     db_service = db.query(Service).filter(
@@ -81,6 +83,7 @@ def update_service(
     db_service.name = service.name
     db_service.description = service.description
     db_service.base_price = service.base_price
+    db_service.active = service.active
 
     db.commit()
     db.refresh(db_service)
@@ -94,19 +97,28 @@ def update_service(
 def delete_service(
     service_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
+    
 
     db_service = db.query(Service).filter(
         Service.id == service_id
     ).first()
+    usado = db.query(QuotationItem).filter(
+        QuotationItem.service_id == service_id
+    ).first()
+    if usado:
+        raise HTTPException(
+            status_code=409,
+            detail="El servicio está en cotizaciones existentes. Desactívalo en lugar de eliminarlo."
+        )
 
     if not db_service:
         raise HTTPException(
             status_code=404,
             detail="Service not found"
         )
-
+    
     db.delete(db_service)
 
     db.commit()

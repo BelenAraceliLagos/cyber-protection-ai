@@ -447,6 +447,10 @@ async function loadAnalytics() {
     setText('crm-m-conversion-rate', (data.tasa_conversion_leads_clientes ?? 0) + '%')
     setText('crm-m-perdidas', (data.ventas_perdidas_uf ?? 0) + ' UF')
     setText('crm-m-proyeccion', (data.proyeccion_trimestral_uf ?? 0) + ' UF')
+        const demo = data.indicadores_demostrativos || []
+    if (demo.includes('ciclo_venta_promedio_general_dias')) marcarDemostrativo('crm-ciclo-venta')
+    if (demo.includes('ciclo_venta_por_vertical'))          marcarDemostrativo('crm-vertical-ciclo-tbody')
+    if (demo.includes('proyeccion_trimestral_uf'))          marcarDemostrativo('crm-m-proyeccion')
 
     if (data.servicios_mas_cotizados_por_mes) renderChartServiciosMes(data.servicios_mas_cotizados_por_mes)
     if (data.servicios_mas_cotizados_total) renderChartServiciosTotal(data.servicios_mas_cotizados_total)
@@ -646,7 +650,7 @@ function renderLeadsNoConvertidos(list) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Ningún lead recurrente sin conversión</td></tr>'
     return
   }
-  
+
   tbody.innerHTML = list.map(c => `
     <tr>
       <td><strong>${escapeHtml(c.company_name || 'Sin empresa')}</strong></td>
@@ -662,4 +666,23 @@ function renderLeadsNoConvertidos(list) {
       </td>
     </tr>
   `).join('')
+}
+
+function marcarDemostrativo(idElemento) {
+  const el = document.getElementById(idElemento)
+  if (!el) return
+
+  const contenedor = el.closest('.card, .crm-metric-box')
+  if (!contenedor || contenedor.querySelector('.crm-demo-badge')) return
+
+  const etiqueta = document.createElement('span')
+  etiqueta.className = 'crm-demo-badge'
+  etiqueta.textContent = 'Dato de ejemplo'
+  etiqueta.title = 'Este indicador aún no se calcula con datos reales'
+  etiqueta.style.cssText =
+    'display:inline-block;margin:4px 8px;padding:2px 8px;border-radius:999px;' +
+    'background:#FEF3C7;color:#B45309;font-size:0.68rem;font-weight:700;'
+
+  const destino = contenedor.querySelector('.card__header') || contenedor
+  destino.appendChild(etiqueta)
 }
