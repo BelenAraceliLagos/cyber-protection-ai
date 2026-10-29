@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CISO Assistant — Cyber-Protection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/pages/ciso_assistant.css">
+</head>
+
+<body>
+
+  <div id="alert-container" class="alert-container"></div>
+  <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="app">
+
+    <!-- TOPBAR (Mobile) -->
+    <header class="topbar" role="banner">
+      <button class="topbar__hamburger" id="hamburger" aria-label="Abrir menú">
+        <i class="ti ti-menu-2" aria-hidden="true"></i>
+      </button>
+      <div class="topbar__logo">
+        <span style="font-weight:700; color:var(--cp-blue-dark)">Cyber-Protection AI</span>
+      </div>
+    </header>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar" aria-label="Navegación principal">
+      <div class="sidebar__header">
+        <div class="sidebar__logo">
+          <i class="ti ti-shield-lock" style="font-size:1.8rem; color:var(--cp-teal)"></i>
+          <span class="sidebar__brand-name">Cyber-Protection</span>
+        </div>
+        <button class="sidebar__collapse-btn" id="sidebar-collapse-btn" aria-label="Colapsar menú">
+          <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-collapse-icon"></i>
+        </button>
+      </div>
+
+      <div class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__item">
+          <i class="ti ti-layout-dashboard" aria-hidden="true"></i>
+          <span class="sidebar__label">Dashboard</span>
+        </a>
+        <a href="clients.html" class="sidebar__item">
+          <i class="ti ti-users" aria-hidden="true"></i>
+          <span class="sidebar__label">Clientes</span>
+        </a>
+        <a href="companies.html" class="sidebar__item">
+          <i class="ti ti-building" aria-hidden="true"></i>
+          <span class="sidebar__label">Empresas</span>
+        </a>
+        <a href="services.html" class="sidebar__item">
+          <i class="ti ti-briefcase" aria-hidden="true"></i>
+          <span class="sidebar__label">Servicios</span>
+        </a>
+        <a href="crm.html" class="sidebar__item">
+          <i class="ti ti-chart-dots" aria-hidden="true"></i>
+          <span class="sidebar__label">CRM / Oportunidades</span>
+        </a>
+        <a href="ciso_assistant.html" class="sidebar__item sidebar__item--active">
+          <i class="ti ti-shield-check" aria-hidden="true"></i>
+          <span class="sidebar__label">CISO Assistant</span>
+        </a>
+        <a href="report.html" class="sidebar__item">
+          <i class="ti ti-file-text" aria-hidden="true"></i>
+          <span class="sidebar__label">Generar Informe</span>
+        </a>
+        <a href="import.html" class="sidebar__item">
+          <i class="ti ti-file-spreadsheet" aria-hidden="true"></i>
+          <span class="sidebar__label">Importar Excel</span>
+        </a>
+        <a href="ingestion.html" class="sidebar__item">
+          <i class="ti ti-history" aria-hidden="true"></i>
+          <span class="sidebar__label">Historial IA</span>
+        </a>
+        <a href="data.html" class="sidebar__item">
+          <i class="ti ti-database-export" aria-hidden="true"></i>
+          <span class="sidebar__label">Gestión Datos</span>
+        </a>
+
+        <div class="sidebar__divider"></div>
+      </div>
+
+      <div class="sidebar__user">
+        <div class="sidebar__user-avatar"><i class="ti ti-user"></i></div>
+        <div class="sidebar__user-info">
+          <span class="sidebar__user-name" id="user-name-display">Usuario</span>
+          <span class="sidebar__user-role" id="user-role-display">CISO / Consultor</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="content">
+
+      <!-- CISO HEADER BANNER -->
+      <section class="ciso-header">
+        <div class="ciso-header__title-block">
+          <h1><i class="ti ti-shield-check"></i> CISO Assistant & Compliance Manager</h1>
+          <p class="ciso-header__subtitle">Cumplimiento Normativo — Ley de Protección de Datos Personales de Chile (Ley 21.719 / 19.628)</p>
+        </div>
+        <div class="ciso-header__client-selector">
+          <label for="ciso-client-select"><i class="ti ti-building-store"></i> Empresa Cliente:</label>
+          <select id="ciso-client-select" class="ciso-header__select">
+            <option value="demo1">Banco Santander Chile (Financiero)</option>
+            <option value="demo2" selected>Fintech Andes SpA (Tecnología / Pagos)</option>
+            <option value="demo3">Clínica Salud Protegida (Salud)</option>
+            <option value="demo4">Retail Global Chile S.A. (E-Commerce)</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- EXECUTIVE KPI GRID -->
+      <section class="ciso-kpi-grid">
+        <div class="ciso-kpi-card">
+          <div class="ciso-kpi-icon ciso-kpi-icon--score">
+            <i class="ti ti-chart-pie"></i>
+          </div>
+          <div class="ciso-kpi-data">
+            <div class="ciso-kpi-data__label">Cumplimiento Global</div>
+            <div class="ciso-kpi-data__value" id="kpi-score-val">64%</div>
+            <div class="ciso-kpi-data__sub"><span class="badge-status badge-status--warning">Riesgo Moderado</span></div>
+          </div>
+        </div>
+
+        <div class="ciso-kpi-card">
+          <div class="ciso-kpi-icon ciso-kpi-icon--gaps">
+            <i class="ti ti-alert-triangle"></i>
+          </div>
+          <div class="ciso-kpi-data">
+            <div class="ciso-kpi-data__label">Brechas Críticas</div>
+            <div class="ciso-kpi-data__value" id="kpi-gaps-val">7 Pendientes</div>
+            <div class="ciso-kpi-data__sub">De 24 Controles Clave</div>
+          </div>
+        </div>
+
+        <div class="ciso-kpi-card">
+          <div class="ciso-kpi-icon ciso-kpi-icon--risk">
+            <i class="ti ti-gavel"></i>
+          </div>
+          <div class="ciso-kpi-data">
+            <div class="ciso-kpi-data__label">Exposición a Sanción</div>
+            <div class="ciso-kpi-data__value" id="kpi-fine-val">Hasta 10.000 UTM</div>
+            <div class="ciso-kpi-data__sub">Infracción Grave (Ley 21.719)</div>
+          </div>
+        </div>
+
+        <div class="ciso-kpi-card">
+          <div class="ciso-kpi-icon ciso-kpi-icon--progress">
+            <i class="ti ti-list-check"></i>
+          </div>
+          <div class="ciso-kpi-data">
+            <div class="ciso-kpi-data__label">Estatus de Actividades</div>
+            <div class="ciso-kpi-data__value" id="kpi-rat-val">6 RAT / 2 EIPD</div>
+            <div class="ciso-kpi-data__sub">Registros Validados</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NAVIGATION TABS -->
+      <div class="ciso-tabs">
+        <button class="ciso-tab-btn active" data-tab="tab-diag"><i class="ti ti-dashboard"></i> Diagnóstico</button>
+        <button class="ciso-tab-btn" data-tab="tab-checklist"><i class="ti ti-checkbox"></i> Checklist Normativo</button>
+        <button class="ciso-tab-btn" data-tab="tab-scoring"><i class="ti ti-chart-bar"></i> Brechas & Scoring</button>
+        <button class="ciso-tab-btn" data-tab="tab-matrix"><i class="ti ti-grid-dots"></i> Mapa Valor / Complejidad</button>
+        <button class="ciso-tab-btn" data-tab="tab-rat"><i class="ti ti-report-analytics"></i> RAT (RoPA)</button>
+        <button class="ciso-tab-btn" data-tab="tab-eipd"><i class="ti ti-shield-alert"></i> EIPD (DPIA)</button>
+        <button class="ciso-tab-btn" data-tab="tab-docs"><i class="ti ti-file-code"></i> Generador Documental</button>
+        <button class="ciso-tab-btn" data-tab="tab-reports"><i class="ti ti-send"></i> Informes & Cotizaciones</button>
+      </div>
+
+      <!-- TAB 1: DIAGNÓSTICO -->
+      <div id="tab-diag" class="ciso-tab-content active">
+        <div class="ciso-card">
+          <div class="ciso-card__header">
+            <div class="ciso-card__title"><i class="ti ti-chart-radar"></i> Resumen de Diagnóstico por Dominios Normativos</div>
+            <span class="badge-status badge-status--info">Ley 21.719 Chile</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+            <div>
+              <div class="domain-progress">
+                <div class="domain-progress__info">
+                  <span>1. Principios de Tratamiento & Legitimidad</span>
+                  <span>80%</span>
+                </div>
+                <div class="domain-progress__bar-bg"><div class="domain-progress__bar-fill fill-high" style="width: 80%;"></div></div>
+              </div>
+
+              <div class="domain-progress">
+                <div class="domain-progress__info">
+                  <span>2. Derechos ARCOP (Acceso, Rectificación, etc.)</span>
+                  <span>45%</span>
+                </div>
+                <div class="domain-progress__bar-bg"><div class="domain-progress__bar-fill fill-mid" style="width: 45%;"></div></div>
+              </div>
+
+              <div class="domain-progress">
+                <div class="domain-progress__info">
+                  <span>3. Medidas de Seguridad Técnicas y Ciberseguridad</span>
+                  <span>70%</span>
+                </div>
+                <div class="domain-progress__bar-bg"><div class="domain-progress__bar-fill fill-high" style="width: 70%;"></div></div>
+              </div>
+
+              <div class="domain-progress">
+                <div class="domain-progress__info">
+                  <span>4. Gestión y Notificación de Brechas (Incidentes)</span>
+                  <span>30%</span>
+                </div>
+                <div class="domain-progress__bar-bg"><div class="domain-progress__bar-fill fill-low" style="width: 30%;"></div></div>
+              </div>
+
+              <div class="domain-progress">
+                <div class="domain-progress__info">
+                  <span>5. Transferencias Internacionales de Datos</span>
+                  <span>60%</span>
+                </div>
+                <div class="domain-progress__bar-bg"><div class="domain-progress__bar-fill fill-mid" style="width: 60%;"></div></div>
+              </div>
+
+              <div class="domain-progress">
+                <div class="domain-progress__info">
+                  <span>6. Gobernanza, DPO & Evaluaciones de Impacto</span>
+                  <span>50%</span>
+                </div>
+                <div class="domain-progress__bar-bg"><div class="domain-progress__bar-fill fill-mid" style="width: 50%;"></div></div>
+              </div>
+            </div>
+
+            <div style="background: var(--cp-bg); padding: 20px; border-radius: var(--radius-md);">
+              <h4 style="margin-bottom: 12px; color: var(--cp-blue-dark);"><i class="ti ti-bulb"></i> Dictamen Ejecutivo del Consultor</h4>
+              <p style="font-size: 0.9rem; margin-bottom: 12px;">La organización <strong>Fintech Andes SpA</strong> presenta una postura técnica aceptable en cifrado de datos, pero requiere atención urgente en la respuesta ante brechas y el mecanismo formal para la atención de derechos ARCOP de los usuarios.</p>
+              <ul style="font-size: 0.875rem; list-style: disc; padding-left: 20px; color: var(--cp-text-muted);">
+                <li>Falta protocolo obligatorio de notificación a la Agencia en < 72h.</li>
+                <li>Inexistencia de contrato formal DPA con proveedores Cloud secundarios.</li>
+                <li>Se recomienda contratar servicio de DPO As a Service y Pentest Anual.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: CHECKLIST NORMATIVO -->
+      <div id="tab-checklist" class="ciso-tab-content">
+        <div class="ciso-card">
+          <div class="ciso-card__header">
+            <div class="ciso-card__title"><i class="ti ti-list-check"></i> Checklist Técnico-Normativo Ley 21.719</div>
+            <div>
+              <button class="btn btn--secondary btn--sm" id="btn-reset-checklist"><i class="ti ti-refresh"></i> Recalcular Score</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table" id="ciso-checklist-table">
+              <thead>
+                <tr>
+                  <th>Artículo / Dominio</th>
+                  <th>Requisito Normativo</th>
+                  <th>Impacto</th>
+                  <th>Estado Actual</th>
+                  <th>Servicio Asociado Recomendado</th>
+                </tr>
+              </thead>
+              <tbody id="checklist-tbody">
+                <!-- Javascript populates interactive controls -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: BRECHAS & SCORING -->
+      <div id="tab-scoring" class="ciso-tab-content">
+        <div class="ciso-card">
+          <div class="ciso-card__header">
+            <div class="ciso-card__title"><i class="ti ti-calculator"></i> Calculadora de Riesgo de Sanción (Ley 21.719 Chile)</div>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <div>
+              <label>Tipo de Infracción Simulata:</label>
+              <select id="fine-sim-type" style="margin-bottom: 16px;">
+                <option value="leve">Leve (Hasta 5.000 UTM)</option>
+                <option value="grave" selected>Grave (Hasta 10.000 UTM)</option>
+                <option value="gravisima">Gravísima (Hasta 20.000 UTM o 4% Ingresos)</option>
+              </select>
+
+              <label>Agravantes Identificadas:</label>
+              <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+                <label style="font-weight:normal;"><input type="checkbox" id="chk-agr1" checked> Reincidencia o intencionalidad</label>
+                <label style="font-weight:normal;"><input type="checkbox" id="chk-agr2" checked> Afiliación de datos sensibles de menores</label>
+                <label style="font-weight:normal;"><input type="checkbox" id="chk-agr3"> Retardo en notificar la brecha al CSIRT / Agencia</label>
+              </div>
+            </div>
+
+            <div style="background: var(--cp-warning-bg); border: 1px solid var(--cp-warning-border); border-radius: var(--radius-md); padding: 20px;">
+              <h3 style="color: var(--cp-warning-text); margin-bottom: 8px;"><i class="ti ti-report-money"></i> Proyección de Multa Estimada</h3>
+              <div style="font-size: 2.2rem; font-weight: 800; color: var(--cp-warning-text);" id="sim-fine-total">7.500 UTM</div>
+              <p style="font-size: 0.85rem; color: var(--cp-warning-text);">Equivalente aprox. a <strong>$495.000.000 CLP</strong> (Valor UTM estimado). La adopción del programa de cumplimiento mitiga hasta un 50% de la sanción.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: MAPA VALOR / COMPLEJIDAD -->
+      <div id="tab-matrix" class="ciso-tab-content">
+        <div class="ciso-card">
+          <div class="ciso-card__header">
+            <div class="ciso-card__title"><i class="ti ti-grid-dots"></i> Matriz 2x2: Impacto en Cumplimiento vs Complejidad</div>
+            <span style="font-size:0.85rem; color:var(--cp-text-muted)">Haz clic en cualquier cuadrante para ver el paquete recomendado</span>
+          </div>
+
+          <div class="matrix-grid">
+            <div class="matrix-quadrant matrix-quadrant--quickwins">
+              <div class="matrix-quadrant__header">
+                <span class="matrix-quadrant__title" style="color:var(--cp-teal-dark)"><i class="ti ti-bolt"></i> Victorias Rápidas (Quick Wins)</span>
+                <span class="badge-status badge-status--success">Alto Impacto / Baja Complejidad</span>
+              </div>
+              <div class="matrix-item-tag"><span>Politica de Privacidad web</span> <strong>1-2 días</strong></div>
+              <div class="matrix-item-tag"><span>Procedimiento Ejercicio ARCOP</span> <strong>3 días</strong></div>
+              <div class="matrix-item-tag"><span>Cláusulas de Consentimiento</span> <strong>2 días</strong></div>
+            </div>
+
+            <div class="matrix-quadrant matrix-quadrant--strategic">
+              <div class="matrix-quadrant__header">
+                <span class="matrix-quadrant__title" style="color:var(--cp-blue-main)"><i class="ti ti-star"></i> Proyectos Estratégicos</span>
+                <span class="badge-status badge-status--info">Alto Impacto / Alta Complejidad</span>
+              </div>
+              <div class="matrix-item-tag"><span>Implementación DPO as a Service</span> <strong>Continuo</strong></div>
+              <div class="matrix-item-tag"><span>Pentesting & Ethical Hacking</span> <strong>2 semanas</strong></div>
+              <div class="matrix-item-tag"><span>Plan de Respuesta a Brechas</span> <strong>3 semanas</strong></div>
+            </div>
+
+            <div class="matrix-quadrant matrix-quadrant--secondary">
+              <div class="matrix-quadrant__header">
+                <span class="matrix-quadrant__title" style="color:var(--cp-warning-text)"><i class="ti ti-adjustments"></i> Acciones Secundarias</span>
+                <span class="badge-status badge-status--warning">Bajo Impacto / Baja Complejidad</span>
+              </div>
+              <div class="matrix-item-tag"><span>Capacitación en Privacidad</span> <strong>1 semana</strong></div>
+              <div class="matrix-item-tag"><span>Revisión de Contratos Históricos</span> <strong>2 semanas</strong></div>
+            </div>
+
+            <div class="matrix-quadrant matrix-quadrant--heavy">
+              <div class="matrix-quadrant__header">
+                <span class="matrix-quadrant__title" style="color:var(--cp-error-text)"><i class="ti ti-mountain"></i> Desafíos Mayores</span>
+                <span class="badge-status badge-status--danger">Bajo Impacto / Alta Complejidad</span>
+              </div>
+              <div class="matrix-item-tag"><span>Rediseño de Arquitectura de Datos</span> <strong>3-6 meses</strong></div>
+              <div class="matrix-item-tag"><span>EIPD para Algoritmos de IA</span> <strong>1-2 meses</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: RAT (RoPA) -->
+      <div id="tab-rat" class="ciso-tab-content">
+        <div class="ciso-card">
+          <div class="ciso-card__header">
+            <div class="ciso-card__title"><i class="ti ti-report-analytics"></i> Registro de Actividades de Tratamiento (RAT / Art. Ley 21.719)</div>
+            <button class="btn btn--primary btn--sm" id="btn-add-rat"><i class="ti ti-plus"></i> Registrar Nuevo Tratamiento</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Actividad de Tratamiento</th>
+                  <th>Categoría de Datos</th>
+                  <th>Finalidad</th>
+                  <th>Base Legal</th>
+                  <th>Medidas de Seguridad</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="rat-tbody">
+                <tr>
+                  <td><strong>RAT-001</strong></td>
+                  <td>Gestión de Clientes & Facturación</td>
+                  <td><span class="badge-status badge-status--info">Identificación & Financieros</span></td>
+                  <td>Ejecución de contrato comercial</td>
+                  <td>Contrato (Art. 13a)</td>
+                  <td>AES-256 + Control de acceso SSL</td>
+                  <td><button class="btn btn--secondary btn--sm"><i class="ti ti-eye"></i></button></td>
+                </tr>
+                <tr>
+                  <td><strong>RAT-002</strong></td>
+                  <td>Onboarding Digital & Biometría</td>
+                  <td><span class="badge-status badge-status--danger">Sensibles (Facial/Biométrico)</span></td>
+                  <td>Verificación de identidad y prevención de fraude</td>
+                  <td>Consentimiento Expreso</td>
+                  <td>Tokenización & Cifrado en reposo</td>
+                  <td><button class="btn btn--secondary btn--sm"><i class="ti ti-eye"></i></button></td>
+                </tr>
+                <tr>
+                  <td><strong>RAT-003</strong></td>
+                  <td>Marketing Directo & Analytics</td>
+                  <td><span class="badge-status badge-status--warning">Comportamiento / Navegación</span></td>
+                  <td>Envío de promociones y perfilamiento</td>
+                  <td>Consentimiento Revocable</td>
+                  <td>Pseudonimización IP</td>
+                  <td><button class="btn btn--secondary btn--sm"><i class="ti ti-eye"></i></button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 6: EIPD (DPIA) -->
+      <div id="tab-eipd" class="ciso-tab-content">
+        <div class="ciso-card">
+          <div class="ciso-card__header">
+            <div class="ciso-card__title"><i class="ti ti-shield-alert"></i> Evaluación de Impacto en Protección de Datos (EIPD)</div>
+          </div>
+          <p style="margin-bottom:16px; font-size:0.9rem;">Analizador de necesidad obligatoria de EIPD para tratamientos de alto riesgo según el marco de la regulación chilena.</p>
+
+          <div style="background:var(--cp-bg); padding:20px; border-radius:var(--radius-md); margin-bottom:20px;">
+            <h4 style="margin-bottom:12px;">Desencadenantes de EIPD Obligatoria:</h4>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <label style="font-weight:normal;"><input type="checkbox" checked> Tratamiento a gran escala de datos sensibles o biométricos</label>
+              <label style="font-weight:normal;"><input type="checkbox" checked> Perfilamiento sistemático y toma de decisiones automatizadas</label>
+              <label style="font-weight:normal;"><input type="checkbox"> Monitoreo sistemático de zonas de acceso público</label>
+              <label style="font-weight:normal;"><input type="checkbox"> Transferencias transfronterizas a países sin nivel adecuado</label>
+            </div>
+          </div>
+
+          <div class="alert alert--info">
+            <i class="ti ti-info-circle"></i> <strong>Resultado:</strong> El tratamiento <em>"Onboarding Digital & Biometría"</em> requiere una <strong>EIPD Formal urgente</strong> antes de su despliegue en producción.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 7: GENERADOR DOCUMENTAL -->
+      <div id="tab-docs" class="ciso-tab-content">
+        <div class="ciso-card">
+          <div class="ciso-card__header">
+            <div class="ciso-card__title"><i class="ti ti-file-code"></i> Modelos & Generador de Documentos de Cumplimiento</div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 280px 1fr; gap:20px;">
+            <div>
+              <label>Seleccionar Plantilla:</label>
+              <select id="doc-template-select" style="margin-bottom:16px;">
+                <option value="pol_priv">Política de Privacidad General</option>
+                <option value="clausula_cons">Cláusula Consentimiento Informado</option>
+                <option value="notif_brecha">Protocolo Notificación de Brecha</option>
+                <option value="dpa_contrato">Acuerdo Procesamiento Datos (DPA)</option>
+              </select>
+              <button class="btn btn--primary" id="btn-copy-doc" style="width:100%;"><i class="ti ti-copy"></i> Copiar Texto</button>
+            </div>
+
+            <div>
+              <div class="doc-preview-box" id="doc-preview-text">
+<!-- Template text injected via JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 8: INFORMES & COTIZACIÓN -->
+      <div id="tab-reports" class="ciso-tab-content">
+        <div class="ciso-card">
+          <div class="ciso-card__header">
+            <div class="ciso-card__title"><i class="ti ti-file-text"></i> Informe Ejecutivo de Cumplimiento Ley 21.719</div>
+            <button class="btn btn--secondary btn--sm" id="btn-export-ciso-pdf"><i class="ti ti-download"></i> Descargar Vista Previa PDF</button>
+          </div>
+          <p style="font-size:0.9rem; margin-bottom:16px;">Resumen para la gerencia general / directorio con el plan de mitigación recomendado.</p>
+
+          <div class="quote-convert-banner">
+            <div>
+              <h3><i class="ti ti-shopping-cart-plus"></i> Vincular Brechas con Cotización Comercial</h3>
+              <p style="font-size:0.875rem; opacity:0.9;">Transforma automáticamente los hallazgos del diagnóstico de CISO Assistant en una propuesta comercial formal de servicios Cyber-Protection.</p>
+            </div>
+            <button class="btn btn--secondary" id="btn-convert-quote" style="background:#FFF; color:#059669; font-weight:700; border:none; white-space:nowrap;">
+              <i class="ti ti-arrow-right"></i> Crear Cotización de Servicios
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script type="module" src="../js/ciso_assistant.js"></script>
+</body>
+
+</html>
