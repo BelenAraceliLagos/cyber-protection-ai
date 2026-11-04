@@ -1,3 +1,4 @@
+import re
 from pydantic import BaseModel, field_validator
 from typing import Optional
 from datetime import datetime
@@ -58,6 +59,14 @@ class ClientCreate(BaseModel):
     lifecycle_auto: Optional[bool] = True
     origen: Optional[str] = None
 
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        value = value.strip()
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", value):
+            raise ValueError("no es válido. Ejemplo: nombre@empresa.cl")
+        return value
+    
     @field_validator("rut")
     @classmethod
     def validate_rut(cls, value: Optional[str]) -> Optional[str]:

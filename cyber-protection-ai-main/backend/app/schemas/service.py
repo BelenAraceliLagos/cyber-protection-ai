@@ -1,10 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 class ServiceCreate(BaseModel):
     name: str
     description: Optional[str] = None
-    base_price: float
+    base_price: float = Field(ge=0)
     active: bool = True
 
 class ServiceResponse(ServiceCreate):

@@ -1,10 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
 class QuotationItemCreate(BaseModel):
     service_id: int
-    quantity: int = 1
+    quantity: int = Field(default=1, ge=1)
 
 class QuotationCreate(BaseModel):
     client_id: int

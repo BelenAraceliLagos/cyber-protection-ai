@@ -13,6 +13,28 @@ function setToken(token) {
 function removeToken() {
   sessionStorage.removeItem('cp_token')
 }
+const NOMBRE_CAMPO = {
+  base_price: 'Precio base',
+  quantity:   'Cantidad',
+  email:      'Correo',
+  name:       'Nombre',
+}
+
+function mensajeError(detail, status) {
+  if (!detail) return `Error ${status}`
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail.map(e => {
+      const campo = e.loc ? e.loc[e.loc.length - 1] : ''
+      let msg = e.msg || ''
+      if (e.type === 'greater_than_equal') msg = `debe ser mayor o igual a ${e.ctx?.ge}`
+      else if (e.type === 'missing')       msg = 'es obligatorio'
+      else msg = msg.replace('Value error, ', '')
+      return `${NOMBRE_CAMPO[campo] || campo}: ${msg}`
+    }).join(' · ')
+  }
+  return `Error ${status}`
+}
 
 async function request(method, endpoint, body = null) {
   const headers = { 'Content-Type': 'application/json' }
@@ -41,7 +63,7 @@ async function request(method, endpoint, body = null) {
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}))
-    throw new Error(data.detail || `Error ${response.status}`)
+    throw new Error(mensajeError(data.detail, response.status))
   }
 
   const text = await response.text()
