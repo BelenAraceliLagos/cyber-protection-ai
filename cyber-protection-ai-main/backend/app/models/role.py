@@ -5,6 +5,8 @@ from app.core.database import Base
 
 
 class Role(Base):
+    # RESIDUAL (H-A21): esta tabla NO gobierna permisos. El rol real es users.role.
+    # Se conserva sin uso hasta decidir con Andrés si se integra o se elimina.
     __tablename__ = "roles"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -15,5 +17,6 @@ class Role(Base):
         "UserRole",
         back_populates="role",
     )
+
     
     role_links = relationship("UserRole", back_populates="role", overlaps="user_links")
