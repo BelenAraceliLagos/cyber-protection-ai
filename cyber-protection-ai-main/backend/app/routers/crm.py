@@ -62,7 +62,11 @@ def _restar_meses(base: datetime, n: int):
         mes += 12
         anio -= 1
     return anio, mes
-
+def _con_zona(dt):
+    """Si la fecha no trae zona horaria, le pone UTC, para poder restar fechas sin error."""
+    if dt is None:
+        return None
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
 
 def _get_servicios_cotizados_por_mes(db: Session, ultimos_6):
     meses_keys = [f"{a}-{m:02d}" for a, m in ultimos_6]
@@ -634,10 +638,22 @@ def get_crm_analytics(db: Session = Depends(get_db)):
         {"industria": k, "valor_uf": round(v, 1)}
         for k, v in sorted(ingresos_por_industria.items(), key=lambda x: -x[1])
     ]
+    dias_por_industria = defaultdict(list)
+    todos_los_dias = []
+    for o in ganadas:
+        if not o.created_at or not o.closed_at:
+            continue
+        dias = (_con_zona(o.closed_at) - _con_zona(o.created_at)).days
+        c = clients_by_id.get(o.cliente_id)
+        industria = c.industry if c and c.industry else "Sin industria"
+        dias_por_industria[industria].append(dias)
+        todos_los_dias.append(dias)
+
     ciclo_vertical = [
-        {"industria": "Finanzas & Fintech", "dias_promedio": 28, "cantidad_deals": len(ganadas)},
-        {"industria": "Tecnología & SaaS", "dias_promedio": 19, "cantidad_deals": len(activas)}
+        {"industria": k, "dias_promedio": round(sum(v) / len(v), 1), "cantidad_deals": len(v)}
+        for k, v in sorted(dias_por_industria.items(), key=lambda x: sum(x[1]) / len(x[1]))
     ]
+    ciclo_general = round(sum(todos_los_dias) / len(todos_los_dias), 1) if todos_los_dias else 0
 
     ultimos_6 = [_restar_meses(hoy, i) for i in range(5, -1, -1)]
     lista_perdidas = []
@@ -686,7 +702,7 @@ def get_crm_analytics(db: Session = Depends(get_db)):
         "ltv": ltv,
         "ingresos_por_vertical": ingresos_vertical,
         "ciclo_venta_por_vertical": ciclo_vertical,
-        "ciclo_venta_promedio_general_dias": 24,
+        "ciclo_venta_promedio_general_dias": ciclo_general,
         "servicios_mas_cotizados_por_mes": _get_servicios_cotizados_por_mes(db, ultimos_6),
         "servicios_mas_cotizados_total": _get_servicios_cotizados_total(db),
         "leads_no_convertidos": _get_leads_no_convertidos(db),
@@ -700,8 +716,6 @@ def get_crm_analytics(db: Session = Depends(get_db)):
         },
         "proyeccion_trimestral_uf": proyeccion_trimestral_uf,
         "indicadores_demostrativos": [
-            "ciclo_venta_por_vertical",
-            "ciclo_venta_promedio_general_dias",
             "proyeccion_trimestral_uf",
         ],
     }
