@@ -187,6 +187,7 @@ function bindForm() {
     const data = {
       name:        document.getElementById('sf-name').value.trim(),
       description: document.getElementById('sf-description').value.trim() || null,
+      modalidad:   document.getElementById('sf-modalidad').value.trim() || null,
       base_price:  parseFloat(document.getElementById('sf-price').value) || 0,
       active:      document.getElementById('sf-active').value === 'true',
     }
@@ -257,6 +258,7 @@ function editService(id) {
   document.getElementById('service-modal-title').textContent = 'Editar servicio'
   document.getElementById('sf-name').value        = s.name
   document.getElementById('sf-description').value = s.description || ''
+  document.getElementById('sf-modalidad').value   = s.modalidad || ''
   document.getElementById('sf-price').value       = s.base_price
   document.getElementById('sf-active').value      = String(s.active)
   openModal('service-modal')
