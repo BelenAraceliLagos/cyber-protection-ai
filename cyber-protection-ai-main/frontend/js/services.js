@@ -147,6 +147,7 @@ function filaServicio(s) {
     <tr>
       <td>
         <div class="entity-cell__title">${escapeHtml(name)}</div>
+        ${s.modalidad ? `<span class="badge badge--info badge--xs">${escapeHtml(s.modalidad)}</span>` : ''}
         <div class="entity-cell__meta">${escapeHtml(s.description || '—')}</div>
       </td>
       <td><span class="entity-cell__title">${escapeHtml(price)}</span></td>
