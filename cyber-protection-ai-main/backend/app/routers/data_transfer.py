@@ -114,6 +114,7 @@ def _export_services(db: Session) -> List[Dict[str, Any]]:
         out.append({
             "name": s.name,
             "description": s.description,
+            "modalidad": s.modalidad,
             "base_price": s.base_price,
             "active": s.active,
         })
