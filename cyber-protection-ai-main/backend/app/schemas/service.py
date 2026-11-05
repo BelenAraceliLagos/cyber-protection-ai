@@ -4,6 +4,7 @@ from typing import Optional
 class ServiceCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    modalidad: Optional[str] = None
     base_price: float = Field(ge=0)
     active: bool = True
 

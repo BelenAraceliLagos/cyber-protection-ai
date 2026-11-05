@@ -82,6 +82,7 @@ def update_service(
 
     db_service.name = service.name
     db_service.description = service.description
+    db_service.modalidad = service.modalidad
     db_service.base_price = service.base_price
     db_service.active = service.active
 

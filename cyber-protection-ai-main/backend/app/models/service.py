@@ -11,6 +11,8 @@ class Service(Base):
 
     description = Column(Text)
 
+    modalidad = Column(String)
+
     base_price = Column(Float, nullable=False)
 
     active = Column(Boolean, default=True)
