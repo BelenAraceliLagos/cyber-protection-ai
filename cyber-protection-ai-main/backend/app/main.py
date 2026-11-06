@@ -24,6 +24,7 @@ from app.routers.crm import router as crm_router
 from app.routers.company import router as company_router
 from app.routers.data_transfer import router as data_transfer_router
 from app.routers.fonts import router as fonts_router
+from app.routers.ingestion import router as ingestion_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -63,6 +64,7 @@ app.include_router(crm_router)
 app.include_router(company_router)
 app.include_router(data_transfer_router)
 app.include_router(fonts_router)
+app.include_router(ingestion_router)
 
 @app.get("/")
 def root():
