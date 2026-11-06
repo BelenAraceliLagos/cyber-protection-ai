@@ -74,6 +74,7 @@ export function initSidebar() {
   ensureSidebarLogout()
   bindLogout()
   injectAdminItems()
+  document.querySelectorAll('a[href="ingestion.html"]').forEach(a => a.remove())
   highlightActiveItem()
 }
 

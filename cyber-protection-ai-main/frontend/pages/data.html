@@ -128,7 +128,7 @@
                 <i class="ti ti-folder-open btn__icon"></i>
                 Seleccionar archivo
               </button>
-              <input type="file" id="import-file-input" class="import-file-input" accept=".xlsx,.xls">
+              <input type="file" id="import-file-input" class="import-file-input" accept=".xlsx">
             </div>
 
             <!-- Preview del archivo -->
@@ -188,7 +188,7 @@
 
             <div class="import-note">
               <i class="ti ti-info-circle import-note__icon"></i>
-              El archivo debe tener una hoja con columnas <strong>Servicio</strong>, <strong>Descripción</strong> y <strong>Valor Ref. (UF)</strong>. Los precios con rango (ej: 50–150) se promedian automáticamente.
+              Usa la plantilla Plantilla_Catalogo_Servicios.xlsx: hoja "Catalogo", con las columnas Nombre, Modalidad, Descripción resumen, Precio y Activo. Antes de guardar verás una vista previa. <strong>Servicio</strong>, <strong>Descripción</strong> y <strong>Valor Ref. (UF)</strong>. Los precios con rango (ej: 50–150) se promedian automáticamente.
             </div>
           </div>
         </div>
@@ -228,9 +228,6 @@
     </main>
   </div>
 </div>
-
-<!-- SheetJS para leer Excel en el navegador -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <script type="module">
   import { initSidebar }      from '../js/sidebar.js'
