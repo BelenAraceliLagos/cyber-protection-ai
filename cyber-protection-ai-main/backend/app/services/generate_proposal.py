@@ -1597,9 +1597,9 @@ def categorizar_servicios(servicios, usar_ia=True):
                       f"Servicios:\n{lista}\n\n"
                        "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}")
             "Responde SOLO JSON sin backticks: {{nombre: categoría con emoji}}"
-            from app.services.ollama_service import MODEL as _OLLAMA_MODEL
+            from app.services.ollama_service import MODEL as _OLLAMA_MODEL, OLLAMA_URL as _OLLAMA_URL
             r = _requests.post(
-                "http://localhost:11434/api/generate",
+                _OLLAMA_URL,
                 json={"model": _OLLAMA_MODEL, "prompt": prompt,
                       "stream": False, "options": {"temperature": 0.1}},
                 timeout=60)

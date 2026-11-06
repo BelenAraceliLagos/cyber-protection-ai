@@ -93,31 +93,12 @@ export const servicesAPI = {
   delete(id)       { return request('DELETE', `/services/${id}`) }
 }
 
-/* ── REPORT (Ollama) ── */
-export const reportAPI = {
-  generate(quoteId)        { return request('POST', '/reports/generate', { quote_id: quoteId }) },
-  update(id, content)      { return request('PUT',  `/reports/${id}`, { content }) },
-  exportPdf(id)            { return request('POST', `/reports/${id}/export`) }
-}
-
 /* ── USERS (admin) ── */
 export const usersAPI = {
   getAll()         { return request('GET',    '/users') },
   create(data)     { return request('POST',   '/users/', data) },
   update(id, data) { return request('PUT',    `/users/${id}`, data) },
   delete(id)       { return request('DELETE', `/users/${id}`) }
-}
-
-/* ── IMPORT ── */
-export const importAPI = {
-  uploadFile(formData) {
-    const token = getToken()
-    return fetch(`${BASE_URL}/import/quotes`, {
-      method: 'POST',
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-      body: formData
-    }).then(r => r.json())
-  }
 }
 
 /* ── DATA TRANSFER (export/import por módulo) ── */

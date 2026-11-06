@@ -1,3 +1,18 @@
+"""
+routers/ai.py - ESTADO: NO ACTIVO (decision D-06, hallazgo H-A04).
+
+Genera el texto de una cotizacion con IA (Ollama) y lo guarda en
+quotations.generated_text. Funciona, pero NO esta registrado en main.py y
+el frontend no lo llama: la generacion de propuestas con IA se hace hoy por
+routers/proposal.py + services/generate_proposal.py.
+
+Para activarlo: agregar en main.py
+    from app.routers.ai import router as ai_router
+    app.include_router(ai_router)
+Antes de hacerlo, decidir con el equipo si reemplaza o complementa a
+proposal.py (ver decisiones.md, D-06).
+"""
+
 from fastapi import (
     APIRouter,
     Depends,

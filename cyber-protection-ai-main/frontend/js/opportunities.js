@@ -786,26 +786,6 @@ async function saveMilestone() {
   } catch (e) { showAlert('Error: ' + e.message, 'error') }
 }
 
-async function generatePDF(id) {
-  if (!confirm('¿Generar propuesta PDF con IA para esta oportunidad?')) return
-  showAlert('Generando PDF... esto puede tardar unos segundos.', 'info')
-  try {
-    const res = await fetch(`${BASE_URL}/opportunities/${id}/generate-pdf`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body:    JSON.stringify({ usar_ia: true, antecedente: '' }),
-    })
-    if (!res.ok) throw new Error(await res.text())
-    const blob = await res.blob()
-    const url  = URL.createObjectURL(blob)
-    const a    = Object.assign(document.createElement('a'), { href: url, download: `propuesta_${id}.pdf` })
-    document.body.appendChild(a); a.click(); a.remove()
-    URL.revokeObjectURL(url)
-    showAlert('PDF descargado correctamente.')
-    await loadPipeline()
-  } catch (e) { showAlert('Error generando PDF: ' + e.message, 'error') }
-}
-
 async function deleteOpp(id) {
   if (!confirm('¿Eliminar esta oportunidad? Esta acción no se puede deshacer.')) return
   try {

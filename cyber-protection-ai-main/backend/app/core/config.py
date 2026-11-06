@@ -1,7 +1,10 @@
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 
-load_dotenv(dotenv_path=__file__.replace("app\\core\\config.py", ".env"))
+# Carpeta backend/ (dos niveles sobre app/core/config.py). Funciona igual en
+# Windows, Linux y Docker (antes usaba una ruta con "\\" que solo servia en Windows).
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[2] / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 

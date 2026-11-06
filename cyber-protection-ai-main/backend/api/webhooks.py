@@ -1,3 +1,19 @@
+"""
+api/webhooks.py - ESTADO: NO ACTIVO, A PROPOSITO (decision D-06, hallazgo H-A04).
+
+Recibe prospectos (leads) desde el sitio web y los crea como clientes.
+NO esta registrado en main.py porque, tal como esta, cualquiera que conozca
+la URL podria crear clientes: la validacion de la clave secreta (x_api_key)
+esta comentada.
+
+Requisitos ANTES de activarlo:
+  1. Exigir una clave secreta leida desde el .env (por ejemplo WEBHOOK_API_KEY)
+     y rechazar con 401 si falta o no coincide.
+  2. Registrar el router en main.py y probar con la web real.
+  3. Limitar la frecuencia de llamadas (evitar spam de clientes falsos).
+Ver decisiones.md, D-06.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 from app.core.database import get_db

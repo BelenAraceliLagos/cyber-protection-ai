@@ -1,23 +1,33 @@
-# ── Backend FastAPI ───────────────────────────────────────────────────
-fastapi
-uvicorn
-sqlalchemy
-psycopg2-binary
-python-dotenv
-python-jose[cryptography]
-passlib[bcrypt]
-bcrypt==4.0.1          # versión compatible con passlib — NO actualizar
-pydantic[email]
-python-multipart       # requerido por FastAPI para subida de archivos (UploadFile)
+# Cyber Protection AI - dependencias del backend (versiones FIJAS).
+#
+# Las versiones son las que estaban instaladas y funcionando en el entorno
+# de desarrollo al 2026-11-06 (H-A22: instalacion reproducible).
+# Para actualizar una libreria: cambia el numero, prueba el sistema completo
+# (login, servicios, importador, PDF) y recien entonces haz commit.
+#
+# Instalar:  pip install -r requirements.txt
 
-# ── Generación de propuestas PDF ──────────────────────────────────────
-weasyprint             # generación PDF desde HTML/CSS (reemplaza reportlab)
-pdf2image              # conversión pdf_base.pdf → PNG (setup inicial, requiere poppler)
-pillow                 # manipulación de imágenes
-requests
+# -- Backend FastAPI ---------------------------------------------------
+fastapi==0.141.1
+uvicorn==0.52.3
+sqlalchemy==2.0.52
+psycopg2-binary==2.9.12
+python-dotenv==1.2.3
+python-jose[cryptography]==3.5.0
+passlib==1.7.4
+bcrypt==4.0.1            # version compatible con passlib - NO actualizar
+pydantic==2.13.4
+email-validator==2.3.0   # requerido por pydantic EmailStr
+python-multipart==0.0.32 # requerido por FastAPI para subida de archivos (UploadFile)
 
-# ── Lectura de archivos históricos (módulo de ingesta) ───────────────
-pdfplumber             # extracción de texto desde PDFs
-python-docx            # lectura de archivos Word (.docx)
-openpyxl               # lectura de archivos Excel (.xlsx)
-reportlab
+# -- Generacion de propuestas PDF --------------------------------------
+weasyprint==69.0         # PDF de propuesta (HTML/CSS). En Windows requiere MSYS2 (ver README)
+pdf2image==1.17.0        # conversion pdf_base.pdf -> PNG (setup inicial, requiere poppler)
+pillow==12.3.0           # manipulacion de imagenes
+requests==2.34.2         # llamadas a Ollama
+reportlab==5.0.0         # usado solo por services/pdf_service.py (PDF simple)
+
+# -- Lectura de archivos (importador / modulo de historial) -------------
+openpyxl==3.1.5          # Excel (.xlsx)
+pdfplumber==0.11.10      # texto desde PDFs
+python-docx==1.2.0       # archivos Word (.docx)
