@@ -178,21 +178,29 @@ def _css_base(company: dict = None) -> str:
     company = company or {}
     custom_fonts = company.get("_custom_fonts") or {}
 
-    # Color para el contenido interior:
-    # 1. Si la empresa tiene content_color explícito en BD → usarlo
-    # 2. Si no, calcular automáticamente por luminancia de primary_color
-    # content_color: 1) portada_config.banner.text_color, 2) content_color BD, 3) auto-luminancia
+    # Color para el contenido interior (cuerpo, tablas, notas al pie — SIEMPRE
+    # sobre fondo blanco): prioriza cuerpo.color, luego content_color de BD,
+    # y como último recurso calcula por luminancia de primary_color.
+    # IMPORTANTE: nunca usar banner.text_color aquí — ese color está pensado
+    # para contrastar contra el FONDO DEL BANNER (que puede ser oscuro), no
+    # contra la página blanca del interior. Confundir ambos deja el texto
+    # del cuerpo invisible cuando el banner usa texto blanco (ej. Atcom).
     _pc = company.get("portada_config") or {}
-    explicit_content = (
-        (_pc.get("banner") or {}).get("text_color")
-        or company.get("content_color")
-    ) if company else None
+    _cuerpo_cfg_temp = _pc.get("cuerpo") or {}
+    explicit_content = _cuerpo_cfg_temp.get("color") or company.get("content_color")
     if explicit_content:
         content_color = explicit_content
     elif _luminance(primary_color) > 0.5:
         content_color = "#1A2B5F"
     else:
         content_color = primary_color
+
+    # Color del texto DEL BANNER específicamente (puede ser blanco sobre un
+    # banner oscuro) — variable separada de content_color a propósito.
+    banner_text_color = (
+        (_pc.get("banner") or {}).get("text_color")
+        or content_color
+    )
 
     # secondary_color: puede venir de portada_config.banner.bg_color
     _banner_bg = (_pc.get("banner") or {}).get("bg_color")
@@ -433,7 +441,7 @@ body {{
 .banner-titulo {{
     font-family:   {banner_font};
     background:    {secondary_color};
-    color:         {content_color};
+    color:         {banner_text_color};
     font-size:     {banner_size}pt;
     font-weight:   {banner_weight};
     padding:       3mm 8mm;
@@ -1193,6 +1201,62 @@ def _srv_bloques(srv: dict, chars_por_linea: int, lineas_por_pagina: int) -> lis
         bloques.append((f'<li>{parte}</li>', lineas, True))
 
     return bloques
+    """
+    Genera uno o más bloques HTML para un servicio.
+    Si la descripción es larga la divide en chunks que caben en una página.
+    Cada bloque es (html, unidades_alto, es_continuacion).
+    Los bloques de continuación no repiten el nombre — texto continuo.
+    """
+    nombre = srv.get("nombre", "")
+    desc = ""
+    if srv.get("descripcion"):
+        desc = srv["descripcion"].split("|")[0].strip()
+    elif srv.get("bullets"):
+        b0 = srv["bullets"][0] if srv["bullets"] else ""
+        desc = b0.replace("Descripción: ", "").strip()
+
+    if not desc:
+        lineas = max(1, -(-len(nombre) // chars_por_linea))
+        return [(f'<li><strong>{nombre}</strong></li>', lineas, False)]
+
+    # Espacio disponible en primer bloque (descontando prefijo "Nombre: ")
+    prefijo = f"{nombre}: "
+    chars_primer_bloque = max(chars_por_linea - len(prefijo), 20) + (chars_por_linea * (lineas_por_pagina - 1))
+
+    if len(desc) <= chars_primer_bloque:
+        texto_total = len(prefijo) + len(desc)
+        lineas = max(1, -(-texto_total // chars_por_linea))
+        return [(f'<li><strong>{nombre}:</strong> {desc}</li>', lineas, False)]
+
+    bloques = []
+
+    # Primer bloque
+    corte = desc.rfind(" ", 0, chars_primer_bloque)
+    if corte == -1:
+        corte = chars_primer_bloque
+    primera_desc = desc[:corte].strip()
+    resto = desc[corte:].strip()
+
+    texto_total = len(prefijo) + len(primera_desc)
+    lineas = max(1, -(-texto_total // chars_por_linea))
+    bloques.append((f'<li><strong>{nombre}:</strong> {primera_desc}</li>', lineas, False))
+
+    # Bloques de continuación — sin encabezado, texto continuo
+    chars_bloque_cont = chars_por_linea * lineas_por_pagina
+    while resto:
+        if len(resto) <= chars_bloque_cont:
+            lineas = max(1, -(-len(resto) // chars_por_linea))
+            bloques.append((f'<li>{resto}</li>', lineas, True))
+            break
+        corte = resto.rfind(" ", 0, chars_bloque_cont)
+        if corte == -1:
+            corte = chars_bloque_cont
+        parte = resto[:corte].strip()
+        resto = resto[corte:].strip()
+        lineas = max(1, -(-len(parte) // chars_por_linea))
+        bloques.append((f'<li>{parte}</li>', lineas, True))
+
+    return bloques
 
 
 def sec_servicios(data: dict, agrupado: dict) -> str:
@@ -1286,6 +1350,16 @@ def sec_servicios(data: dict, agrupado: dict) -> str:
 
     return "".join(paginas)
 
+def sec_justificacion(data: dict) -> str:
+    """Página propia: Justificación de Servicios (texto generado por IA)."""
+    texto = (data.get("justificacion_servicios") or "").strip()
+    if not texto:
+        return ""
+    html = ""
+    for par in texto.split("\n\n"):
+        if par.strip():
+            html += f"<p>{par.strip()}</p>"
+    return _page_banner("Justificación de Servicios", html)
 
 def sec_cumplimiento(data: dict) -> str:
     """Página propia: Cumplimiento Normativo."""
@@ -1614,6 +1688,7 @@ def generar_propuesta(data: dict, output_path: str, usar_ia: bool = True):
         sec_introduccion(data),
         sec_alcance(data),
         sec_servicios(data, agrupado),
+        sec_justificacion(data),
         sec_cumplimiento(data),
         sec_matriz(data),
         sec_metodologia(data),

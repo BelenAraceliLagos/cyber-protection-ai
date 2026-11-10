@@ -1,3 +1,4 @@
+from app.models.company import Company
 from fastapi import (
     APIRouter,
     Depends,
@@ -40,7 +41,9 @@ TAX_RATE = 0.19
     "/",
     response_model=QuotationResponse
 )
+
 def create_quotation(
+    
     quotation_data: QuotationCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -55,9 +58,19 @@ def create_quotation(
             status_code=404,
             detail="Client not found"
         )
+    company = db.query(Company).filter(
+        Company.id == quotation_data.company_id
+    ).first()
+
+    if not company:
+        raise HTTPException(
+            status_code=404,
+            detail="Company not found"
+        )
 
     quotation = Quotation(
         client_id=quotation_data.client_id,
+        company_id=quotation_data.company_id,
         created_by=current_user.id
     )
 
@@ -73,11 +86,12 @@ def create_quotation(
             Service.id == item.service_id
         ).first()
 
-        if not service:
+        if not service.active:
             raise HTTPException(
-                status_code=404,
-                detail=f"Service {item.service_id} not found"
+                status_code=400,
+                detail=f"Service {item.service_id} is inactive"
             )
+        
 
         item_total = service.base_price * item.quantity
 
@@ -157,6 +171,11 @@ def export_pdf(
         raise HTTPException(
             status_code=404,
             detail="Quotation not found"
+        )
+    if not quotation.generated_text or not quotation.generated_text.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="La cotización no tiene texto generado por IA. Genera el texto antes de exportar el PDF."
         )
 
     pdf_path = generate_quotation_pdf(

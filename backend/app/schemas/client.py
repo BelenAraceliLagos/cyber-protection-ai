@@ -55,6 +55,7 @@ class ClientCreate(BaseModel):
     industry: Optional[str] = None
     notes: Optional[str] = None
     lifecycle_stage: Optional[str] = "lead"
+    lifecycle_auto: Optional[bool] = True
     origen: Optional[str] = None
 
     @field_validator("rut")

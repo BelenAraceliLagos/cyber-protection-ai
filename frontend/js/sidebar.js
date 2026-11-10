@@ -124,6 +124,24 @@ function injectAdminItems() {
   item.innerHTML = '<i class="ti ti-users-group" aria-hidden="true"></i><span class="sidebar__label">Usuarios</span>'
   nav.insertBefore(item, divider)
 }
+  ensureSidebarLogout()
+  bindLogout()
+  injectAdminItems()
+  hideAdminOnlyItems()
+  highlightActiveItem()
+
+function hideAdminOnlyItems() {
+  let isAdmin = false
+  try {
+    const token = sessionStorage.getItem('cp_token')
+    isAdmin = JSON.parse(atob(token.split('.')[1])).role === 'admin'
+  } catch { isAdmin = false }
+
+  if (isAdmin) return
+  document.querySelectorAll('.sidebar__item[href$="data.html"]').forEach(el => {
+    el.style.display = 'none'
+  })
+}
 
 function highlightActiveItem() {
   const current = window.location.pathname.split('/').pop()

@@ -93,6 +93,9 @@ export async function loadUserInfo() {
     if (nameEl) nameEl.textContent = displayName
     if (roleEl) roleEl.textContent = user?.role === 'admin' ? 'Administrador' : 'Comercial'
     if (initEl) initEl.textContent = getInitials(displayName)
+    if (user?.role !== 'admin') {
+    document.querySelectorAll('').forEach(el => { el.style.display = 'none' })
+    }
 
     return user
   } catch {

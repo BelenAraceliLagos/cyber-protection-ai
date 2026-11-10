@@ -1,6 +1,6 @@
 'use strict'
 
-import { servicesAPI } from './api.js'
+import { servicesAPI, authAPI } from './api.js'
 import {
   showAlert, showSpinner, hideSpinner,
   openModal, closeModal,
@@ -10,15 +10,28 @@ import { CATEGORIAS_ORDEN, agrupar } from './categories.js'
 
 let allServices = []
 let editingId   = null
+let isAdmin     = false
 
 export async function initServices() {
   if (!requireAuth()) return
+
+  try {
+    const me = await authAPI.getMe()
+    isAdmin = me?.role === 'admin'
+  } catch {
+    isAdmin = false
+  }
+
+  const newBtn = document.getElementById('new-service-btn')
+  if (newBtn) {
+    if (isAdmin) newBtn.addEventListener('click', openNewServiceModal)
+    else newBtn.style.display = 'none'
+  }
+
   await loadServices()
   bindSearch()
   bindForm()
   bindModalClose()
-  document.getElementById('new-service-btn')
-    ?.addEventListener('click', openNewServiceModal)
 }
 
 async function loadServices() {
@@ -40,7 +53,6 @@ async function loadServices() {
       </div>`
   }
 }
-
 // ── Render por categorías (igual que el módulo "Generar informe") ─────────
 function renderCategorias(services) {
   const cont  = document.getElementById('services-categorias')
@@ -120,6 +132,17 @@ function filaServicio(s) {
   const name  = s.name || ''
   const price = Number(s.base_price) > 0 ? `${Number(s.base_price).toFixed(1)} UF` : 'A convenir'
 
+  const acciones = isAdmin
+    ? `<div class="table-actions">
+          <button class="btn btn--sm btn--secondary" data-service-edit="${id}" aria-label="Editar">
+            <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
+          </button>
+          <button class="btn btn--sm btn--danger" data-service-delete="${id}" data-service-name="${escapeAttr(name)}">
+            <i class="ti ti-trash btn__icon" aria-hidden="true"></i>
+          </button>
+        </div>`
+    : '<span class="entity-cell__meta">—</span>'
+
   return `
     <tr>
       <td>
@@ -132,16 +155,7 @@ function filaServicio(s) {
           ${s.active ? 'Activo' : 'Inactivo'}
         </span>
       </td>
-      <td>
-        <div class="table-actions">
-          <button class="btn btn--sm btn--secondary" data-service-edit="${id}" aria-label="Editar">
-            <i class="ti ti-edit btn__icon" aria-hidden="true"></i>
-          </button>
-          <button class="btn btn--sm btn--danger" data-service-delete="${id}" data-service-name="${escapeAttr(name)}">
-            <i class="ti ti-trash btn__icon" aria-hidden="true"></i>
-          </button>
-        </div>
-      </td>
+      <td>${acciones}</td>
     </tr>`
 }
 

@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -30,14 +32,21 @@ app = FastAPI(
     version="1.0.0"
 )
 
+ORIGENES_PERMITIDOS = [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+]
+
+# Orígenes extra opcionales (ej. la IP de tu red), separados por coma:
+#   set CORS_ORIGINS=http://192.168.1.50:5500
+_extra = os.getenv("CORS_ORIGINS", "")
+ORIGENES_PERMITIDOS += [o.strip() for o in _extra.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
-        "*"],  # para desarrollo
+    allow_origins=ORIGENES_PERMITIDOS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

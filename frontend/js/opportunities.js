@@ -367,33 +367,64 @@ function renderDealDetail(opp) {
   if (!panel) return
   panel.classList.add('show')
   const cli       = state.clientes.find(c => c.id === opp.cliente_id)
+  const etapaKey  = opp.etapa === 'ganado' ? 'ganado' : opp.etapa === 'perdido' ? 'perdido' : 'activo'
   const pillClass = `p-${opp.etapa === 'ganado' ? 'verde' : opp.etapa === 'perdido' ? 'rojo' : 'media'}`
-  panel.innerHTML = `
-    <h3>
-      ${escapeHtml(opp.titulo || '')}
-      <span class="prob-pill prob-pill--spaced ${pillClass}">${escapeHtml(ETAPA_LABEL[opp.etapa] || opp.etapa || '')}</span>
-    </h3>
-    <div class="detail-grid">
-      <div><div class="di-lbl">Cliente</div><div class="di-val">${escapeHtml(opp.cliente_nombre || '—')}</div></div>
-      <div><div class="di-lbl">Valor</div><div class="di-val">${escapeHtml(String(opp.valor_uf || 0))} UF/mes</div></div>
-      <div><div class="di-lbl">Plazo</div><div class="di-val">${opp.plazo_meses ? escapeHtml(String(opp.plazo_meses)) + ' meses' : 'Sin especificar'}</div></div>
-      <div><div class="di-lbl">Probabilidad</div><div class="di-val">${escapeHtml(String(opp.probabilidad || 0))}%</div></div>
-      <div><div class="di-lbl">Contacto</div><div class="di-val">${escapeHtml(cli?.contact_name || '—')}</div></div>
-      <div><div class="di-lbl">Email</div><div class="di-val">${escapeHtml(cli?.email || '—')}</div></div>
-      <div><div class="di-lbl">Industria</div><div class="di-val">${escapeHtml(cli?.industry || '—')}</div></div>
-    </div>
-    ${opp.notas ? `<p class="deal-note">${escapeHtml(opp.notas)}</p>` : ''}
-    <div class="deal-actions">
-      <button class="btn btn--secondary btn--sm" id="dp-edit">
-        <i class="ti ti-edit btn__icon" aria-hidden="true"></i> Editar
-      </button>
+  const barClass  = `dd-bar__fill--${etapaKey}`
 
-      <button class="btn btn--secondary btn--sm" id="dp-gantt">
-        <i class="ti ti-timeline btn__icon" aria-hidden="true"></i> Ver Gantt
-      </button>
-      <button class="btn btn--sm btn--danger-soft" id="dp-del">
-        <i class="ti ti-trash btn__icon" aria-hidden="true"></i> Eliminar
-      </button>
+  const valorMensual = Number(opp.valor_uf) || 0
+  const plazo         = opp.plazo_meses ? Number(opp.plazo_meses) : null
+  const valorTotal     = plazo ? valorMensual * plazo : null
+  const probabilidad   = Math.max(0, Math.min(100, Number(opp.probabilidad) || 0))
+
+  panel.innerHTML = `
+    <div class="dd-card">
+      <div class="dd-card__header">
+        <div>
+          <p class="dd-card__title">${escapeHtml(opp.titulo || '')}</p>
+          <span class="prob-pill ${pillClass}">${escapeHtml(ETAPA_LABEL[opp.etapa] || opp.etapa || '')}</span>
+        </div>
+        <div class="dd-card__value">
+          <p class="dd-card__value-main">${escapeHtml(String(valorMensual))} UF<span>/mes</span></p>
+          <p class="dd-card__value-sub">${plazo ? `${plazo} meses &middot; ${escapeHtml(String(valorTotal))} UF total` : 'Plazo sin especificar'}</p>
+        </div>
+      </div>
+
+      <div class="dd-card__prob">
+        <div class="dd-card__prob-row">
+          <span>Probabilidad de cierre</span>
+          <span class="dd-card__prob-num">${probabilidad}%</span>
+        </div>
+        <div class="dd-bar"><div class="dd-bar__fill ${barClass}" style="width:${probabilidad}%"></div></div>
+      </div>
+
+      <div class="dd-card__fields">
+        <div class="dd-field"><i class="ti ti-building" aria-hidden="true"></i>
+          <div><span class="dd-field__lbl">Cliente</span><span class="dd-field__val">${escapeHtml(opp.cliente_nombre || '—')}</span></div>
+        </div>
+        <div class="dd-field"><i class="ti ti-briefcase" aria-hidden="true"></i>
+          <div><span class="dd-field__lbl">Industria</span><span class="dd-field__val">${escapeHtml(cli?.industry || '—')}</span></div>
+        </div>
+        <div class="dd-field"><i class="ti ti-user" aria-hidden="true"></i>
+          <div><span class="dd-field__lbl">Contacto</span><span class="dd-field__val">${escapeHtml(cli?.contact_name || '—')}</span></div>
+        </div>
+        <div class="dd-field"><i class="ti ti-mail" aria-hidden="true"></i>
+          <div><span class="dd-field__lbl">Email</span><span class="dd-field__val dd-field__val--accent">${escapeHtml(cli?.email || '—')}</span></div>
+        </div>
+      </div>
+
+      ${opp.notas ? `<p class="deal-note">${escapeHtml(opp.notas)}</p>` : ''}
+
+      <div class="dd-card__actions">
+        <button class="btn btn--secondary btn--sm" id="dp-edit">
+          <i class="ti ti-edit btn__icon" aria-hidden="true"></i> Editar
+        </button>
+        <button class="btn btn--secondary btn--sm" id="dp-gantt">
+          <i class="ti ti-timeline btn__icon" aria-hidden="true"></i> Ver Gantt
+        </button>
+        <button class="btn btn--sm btn--danger-soft dd-card__del" id="dp-del">
+          <i class="ti ti-trash btn__icon" aria-hidden="true"></i> Eliminar
+        </button>
+      </div>
     </div>`
 
   panel.querySelector('#dp-edit') .addEventListener('click', () => openEditOppModal(oppId))
@@ -531,7 +562,7 @@ function openEditOppModal(id) {
   setVal('f-cliente', opp.cliente_id   || '')
   setVal('f-company', opp.company_id   || '')
   setVal('f-etapa',   opp.etapa        || 'prospecto')
-  setVal('f-prob',    opp.probabilidad || 30)
+  setVal('f-prob',    opp.probabilidad ?? 30)
   setVal('f-valor',   opp.valor_uf     || 0)
   setVal('f-plazo',   opp.plazo_meses  || '')
   setVal('f-notas',   opp.notas        || '')
@@ -543,13 +574,15 @@ async function saveOpportunity() {
   const cliId  = parseInt(document.getElementById('f-cliente')?.value)
   if (!titulo) return showAlert('El título es obligatorio.', 'error')
   if (!cliId)  return showAlert('Selecciona un cliente.', 'error')
+  const probRaw = parseInt(document.getElementById('f-prob')?.value)
+  const probabilidad = Number.isNaN(probRaw) ? 30 : Math.min(100, Math.max(0, probRaw))
 
   const body = {
     cliente_id:   cliId,
     company_id:   document.getElementById('f-company')?.value ? Number(document.getElementById('f-company').value) : null,
     titulo,
     etapa:        document.getElementById('f-etapa')?.value  || 'prospecto',
-    probabilidad: parseInt(document.getElementById('f-prob')?.value)   || 30,
+    probabilidad,
     valor_uf:     parseFloat(document.getElementById('f-valor')?.value) || 0,
     plazo_meses:  document.getElementById('f-plazo')?.value ? Number(document.getElementById('f-plazo').value) : null,
     notas:        document.getElementById('f-notas')?.value.trim() || '',
